@@ -49,6 +49,8 @@
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    --pozo-orange: 24 95% 53%;
   }
 
   .dark {
@@ -98,4 +100,31 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom styles for the oil well map */
+.well-marker {
+  position: relative;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.mapboxgl-popup-content {
+  background: #2E3A59 !important;
+  border-radius: 8px !important;
+  color: white !important;
+  border: none !important;
+  padding: 12px !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #2E3A59 !important;
+}
+
+.mapboxgl-popup-close-button {
+  color: white !important;
 }

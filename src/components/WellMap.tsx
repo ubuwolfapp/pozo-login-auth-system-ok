@@ -55,6 +55,9 @@ const WellMap: React.FC = () => {
       zoom: mapConfig.zoom_inicial
     });
 
+    // Add navigation control to the map
+    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
     return () => {
       map.current?.remove();
     };
@@ -62,37 +65,44 @@ const WellMap: React.FC = () => {
 
   React.useEffect(() => {
     if (!map.current || !wells) return;
+    
+    // Clear any existing markers
+    const markers = document.querySelectorAll('.well-marker');
+    markers.forEach(marker => marker.remove());
 
     wells.forEach(well => {
       const el = document.createElement('div');
       el.className = 'well-marker';
       
-      // Custom SVG marker for oil well
+      // Custom oil well marker with tower icon
       el.innerHTML = `
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-          <path d="M12 22l-3-3H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2h-4l-3 3z" 
-                fill="#F97316" 
-                stroke="#F97316" 
-                stroke-width="2"/>
-        </svg>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="#F97316">
+            <path d="M12 2L8 6h3v6l-2 3v7h6v-7l-2-3V6h3L12 2z" />
+            <path d="M5 10h2v2H5zM17 10h2v2h-2zM5 14h2v2H5zM17 14h2v2h-2z" />
+          </svg>
+          <div style="color: white; font-weight: bold; text-shadow: 0 0 3px black;">${well.nombre}</div>
+        </div>
       `;
 
       const statusColor = well.estado === 'activo' ? '#10B981' : 
-                         well.estado === 'advertencia' ? '#F59E0B' : '#EF4444';
+                        well.estado === 'advertencia' ? '#F59E0B' : '#EF4444';
+      
+      // Add status indicator dot next to well name
+      if (well.estado !== 'activo') {
+        const statusDot = document.createElement('div');
+        statusDot.style.width = '12px';
+        statusDot.style.height = '12px';
+        statusDot.style.borderRadius = '50%';
+        statusDot.style.backgroundColor = statusColor;
+        statusDot.style.position = 'absolute';
+        statusDot.style.right = '-5px';
+        statusDot.style.top = '12px';
+        el.appendChild(statusDot);
+      }
 
       new mapboxgl.Marker(el)
         .setLngLat([well.longitud, well.latitud])
-        .setPopup(new mapboxgl.Popup({ offset: 25 })
-          .setHTML(`
-            <div class="p-3 bg-slate-800 text-white rounded-lg">
-              <h3 class="font-bold">${well.nombre}</h3>
-              <p class="text-sm">Producción: ${well.produccion_diaria} bbl/día</p>
-              <div class="flex items-center mt-2">
-                <span class="w-2 h-2 rounded-full mr-2" style="background-color: ${statusColor}"></span>
-                <span class="text-sm">${well.estado}</span>
-              </div>
-            </div>
-          `))
         .addTo(map.current);
     });
   }, [wells, map.current]);
