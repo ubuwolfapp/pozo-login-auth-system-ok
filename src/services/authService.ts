@@ -115,10 +115,9 @@ export const authService = {
       const { error: insertError } = await supabase
         .from('usuarios')
         .insert({
-          id: authData.user.id,
           email,
           nombre,
-          rol
+          rol,
         });
 
       if (insertError) {
