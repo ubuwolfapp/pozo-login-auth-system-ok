@@ -3,9 +3,27 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
 import { toast } from '@/components/ui/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import WellMap from '@/components/WellMap';
+import WellCard from '@/components/WellCard';
+import { Home, Bell, BarChart3, FileText, Settings, CircleDollarSign } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+
+  const { data: wells } = useQuery({
+    queryKey: ['wells'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('pozos')
+        .select('*');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   const handleLogout = async () => {
     try {
@@ -22,6 +40,13 @@ const Dashboard: React.FC = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleGenerateReport = () => {
+    toast({
+      title: "Generando reporte",
+      description: "El reporte se está generando..."
+    });
   };
 
   return (
@@ -42,13 +67,54 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
         
-        <div className="bg-white bg-opacity-10 backdrop-blur-sm p-6 rounded-lg">
-          <h2 className="text-white text-xl font-semibold mb-4">Bienvenido al Sistema de Monitoreo</h2>
-          <p className="text-white">
-            Esta es una página de demostración del dashboard. En una implementación completa, 
-            aquí se mostrarían los datos de monitoreo de pozos.
-          </p>
+        {/* Mapa de pozos */}
+        <div className="mb-8">
+          <WellMap />
         </div>
+
+        {/* Lista de pozos */}
+        <div className="grid gap-4 mb-8">
+          {wells?.map((well) => (
+            <WellCard
+              key={well.id}
+              nombre={well.nombre}
+              produccion_diaria={well.produccion_diaria}
+              estado={well.estado}
+            />
+          ))}
+        </div>
+
+        {/* Botón de generar reporte */}
+        <div className="flex justify-center mb-8">
+          <Button
+            onClick={handleGenerateReport}
+            className="bg-pozo-orange hover:bg-opacity-90 text-white px-8 py-3 rounded-md flex items-center gap-2"
+          >
+            <CircleDollarSign className="h-5 w-5" />
+            Generar Reporte
+          </Button>
+        </div>
+
+        {/* Barra de navegación inferior */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-slate-800 border-t border-slate-700 px-4 py-3">
+          <div className="container mx-auto flex justify-around items-center">
+            <Button variant="ghost" className="text-white">
+              <Home className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="text-white">
+              <Bell className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="text-white">
+              <BarChart3 className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="text-white">
+              <FileText className="h-6 w-6" />
+            </Button>
+            <Button variant="ghost" className="text-white">
+              <Settings className="h-6 w-6" />
+            </Button>
+          </div>
+        </nav>
       </div>
     </div>
   );

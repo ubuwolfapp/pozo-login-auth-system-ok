@@ -9,6 +9,60 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      pozos: {
+        Row: {
+          estado: string
+          id: string
+          latitud: number
+          longitud: number
+          nombre: string
+          produccion_diaria: number
+          ultima_actualizacion: string | null
+        }
+        Insert: {
+          estado: string
+          id?: string
+          latitud: number
+          longitud: number
+          nombre: string
+          produccion_diaria: number
+          ultima_actualizacion?: string | null
+        }
+        Update: {
+          estado?: string
+          id?: string
+          latitud?: number
+          longitud?: number
+          nombre?: string
+          produccion_diaria?: number
+          ultima_actualizacion?: string | null
+        }
+        Relationships: []
+      }
+      pozos_mapa: {
+        Row: {
+          centro_latitud: number
+          centro_longitud: number
+          id: string
+          nombre: string
+          zoom_inicial: number
+        }
+        Insert: {
+          centro_latitud: number
+          centro_longitud: number
+          id?: string
+          nombre: string
+          zoom_inicial: number
+        }
+        Update: {
+          centro_latitud?: number
+          centro_longitud?: number
+          id?: string
+          nombre?: string
+          zoom_inicial?: number
+        }
+        Relationships: []
+      }
       usuarios: {
         Row: {
           email: string
