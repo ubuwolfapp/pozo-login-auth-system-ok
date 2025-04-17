@@ -9,7 +9,6 @@ import ForgotPasswordLink from '@/components/ForgotPasswordLink';
 import { authService } from '@/services/authService';
 import { toast } from '@/components/ui/use-toast';
 
-// Imagen de fondo con torres de petróleo
 const loginBackground = {
   backgroundImage: 'url("/assets/oil-rig-background.png")',
   backgroundSize: 'cover',
@@ -22,7 +21,6 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Función para validar el email
   const validateEmail = (email: string): boolean => {
@@ -33,45 +31,43 @@ const Login: React.FC = () => {
   // Función para manejar el inicio de sesión
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     // Validar el email
     if (!validateEmail(email)) {
-      setError('Por favor, ingrese un email válido');
+      toast({
+        title: "Error",
+        description: "Por favor, ingrese un email válido",
+        variant: "destructive"
+      });
       return;
     }
 
     // Validar la contraseña (mínimo 6 caracteres)
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
       setLoading(true);
-      const response = await authService.login({ email, password });
-      
-      // Guardar el token en localStorage
-      authService.saveToken(response.token);
+      await authService.login({ email, password });
       
       // Mostrar mensaje de éxito
       toast({
-        title: 'Inicio de sesión exitoso',
-        description: 'Bienvenido al sistema de Monitoreo de Pozos',
+        title: "Inicio de sesión exitoso",
+        description: "Bienvenido al sistema de Monitoreo de Pozos",
       });
       
       // Redireccionar al dashboard
       navigate('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de inicio de sesión');
-    } finally {
+      // El manejo de errores ya está en el servicio
       setLoading(false);
     }
-  };
-
-  // Función para manejar el clic en "Olvidaste tu contraseña"
-  const handleForgotPassword = () => {
-    navigate('/forgot-password');
   };
 
   return (
@@ -95,7 +91,7 @@ const Login: React.FC = () => {
           <Logo />
         </div>
         
-        {/* Gráfico estilizado (similar al de la imagen) */}
+        {/* Gráfico estilizado */}
         <div className="mb-10 px-8">
           <svg width="100%" height="80" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
             <line x1="0" y1="60" x2="300" y2="60" stroke="#3D8BFF" strokeWidth="1" strokeOpacity="0.3" />
@@ -108,13 +104,6 @@ const Login: React.FC = () => {
         
         {/* Formulario de login */}
         <form onSubmit={handleLogin} className="space-y-4">
-          {/* Mensaje de error */}
-          {error && (
-            <div className="bg-red-500 bg-opacity-20 text-white rounded p-3 text-sm">
-              {error}
-            </div>
-          )}
-          
           {/* Campo de usuario (email) */}
           <div className="space-y-2">
             <label className="block text-white text-lg">Usuario</label>
@@ -141,36 +130,9 @@ const Login: React.FC = () => {
           
           {/* Enlace para recuperar contraseña */}
           <div className="pt-2">
-            <ForgotPasswordLink onClick={handleForgotPassword} />
+            <ForgotPasswordLink onClick={() => navigate('/forgot-password')} />
           </div>
         </form>
-      </div>
-      
-      {/* Barra de navegación inferior simulada */}
-      <div className="absolute bottom-0 left-0 right-0 flex justify-around py-4 bg-pozo-dark bg-opacity-70">
-        <div className="text-white opacity-50">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" />
-            <line x1="8" y1="7" x2="16" y2="7" stroke="white" strokeWidth="2" />
-            <line x1="8" y1="12" x2="16" y2="12" stroke="white" strokeWidth="2" />
-            <line x1="8" y1="17" x2="16" y2="17" stroke="white" strokeWidth="2" />
-          </svg>
-        </div>
-        <div className="text-white opacity-50">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" />
-            <line x1="7" y1="7" x2="17" y2="7" stroke="white" strokeWidth="2" />
-            <line x1="7" y1="12" x2="17" y2="12" stroke="white" strokeWidth="2" />
-            <line x1="7" y1="17" x2="17" y2="17" stroke="white" strokeWidth="2" />
-          </svg>
-        </div>
-        <div className="text-white opacity-50">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
-            <path d="M12 8V16" stroke="white" strokeWidth="2" />
-            <path d="M8 12H16" stroke="white" strokeWidth="2" />
-          </svg>
-        </div>
       </div>
     </div>
   );

@@ -1,26 +1,32 @@
 
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 interface LoginButtonProps {
-  onClick?: () => void;
   loading?: boolean;
   className?: string;
 }
 
 const LoginButton: React.FC<LoginButtonProps> = ({ 
-  onClick, 
   loading = false, 
   className = ""
 }) => {
   return (
-    <button
+    <Button
       type="submit"
-      onClick={onClick}
       disabled={loading}
       className={`w-full bg-pozo-orange hover:bg-opacity-90 text-white font-medium py-3 px-4 rounded-md transition-colors ${className}`}
     >
-      {loading ? "Cargando..." : "Iniciar Sesión"}
-    </button>
+      {loading ? (
+        <>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Cargando...
+        </>
+      ) : (
+        "Iniciar Sesión"
+      )}
+    </Button>
   );
 };
 
