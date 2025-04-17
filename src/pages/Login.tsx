@@ -1,0 +1,179 @@
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Logo from '@/components/Logo';
+import EmailInput from '@/components/EmailInput';
+import PasswordInput from '@/components/PasswordInput';
+import LoginButton from '@/components/LoginButton';
+import ForgotPasswordLink from '@/components/ForgotPasswordLink';
+import { authService } from '@/services/authService';
+import { toast } from '@/components/ui/use-toast';
+
+// Imagen de fondo con torres de petróleo
+const loginBackground = {
+  backgroundImage: 'url("/assets/oil-rig-background.png")',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+};
+
+const Login: React.FC = () => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Función para validar el email
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  // Función para manejar el inicio de sesión
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Validar el email
+    if (!validateEmail(email)) {
+      setError('Por favor, ingrese un email válido');
+      return;
+    }
+
+    // Validar la contraseña (mínimo 6 caracteres)
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await authService.login({ email, password });
+      
+      // Guardar el token en localStorage
+      authService.saveToken(response.token);
+      
+      // Mostrar mensaje de éxito
+      toast({
+        title: 'Inicio de sesión exitoso',
+        description: 'Bienvenido al sistema de Monitoreo de Pozos',
+      });
+      
+      // Redireccionar al dashboard
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error de inicio de sesión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Función para manejar el clic en "Olvidaste tu contraseña"
+  const handleForgotPassword = () => {
+    navigate('/forgot-password');
+  };
+
+  return (
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center font-roboto"
+      style={{
+        background: 'linear-gradient(to bottom, #1C2526, #2E3A59)',
+        position: 'relative',
+      }}
+    >
+      {/* Fondo con silueta de pozo */}
+      <div 
+        className="absolute inset-0 opacity-20 z-0"
+        style={loginBackground}
+      ></div>
+      
+      {/* Contenedor de la pantalla de login */}
+      <div className="w-full max-w-md px-6 z-10">
+        {/* Logo y título */}
+        <div className="mb-12">
+          <Logo />
+        </div>
+        
+        {/* Gráfico estilizado (similar al de la imagen) */}
+        <div className="mb-10 px-8">
+          <svg width="100%" height="80" viewBox="0 0 300 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="60" x2="300" y2="60" stroke="#3D8BFF" strokeWidth="1" strokeOpacity="0.3" />
+            <text x="0" y="75" fill="#FFFFFF" fontSize="12">0</text>
+            <text x="0" y="15" fill="#FFFFFF" fontSize="12">1</text>
+            <path d="M0,40 C25,30 50,50 75,45 C100,40 125,20 150,25 C175,30 200,50 225,35 C250,20 275,40 300,30" 
+                  stroke="#3D8BFF" strokeWidth="2" fill="none" />
+          </svg>
+        </div>
+        
+        {/* Formulario de login */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          {/* Mensaje de error */}
+          {error && (
+            <div className="bg-red-500 bg-opacity-20 text-white rounded p-3 text-sm">
+              {error}
+            </div>
+          )}
+          
+          {/* Campo de usuario (email) */}
+          <div className="space-y-2">
+            <label className="block text-white text-lg">Usuario</label>
+            <EmailInput 
+              value={email}
+              onChange={setEmail}
+              placeholder="juan.perez@empresa.com"
+            />
+          </div>
+          
+          {/* Campo de contraseña */}
+          <div className="space-y-2">
+            <label className="block text-white text-lg">Contraseña</label>
+            <PasswordInput 
+              value={password}
+              onChange={setPassword}
+            />
+          </div>
+          
+          {/* Botón de inicio de sesión */}
+          <div className="pt-4">
+            <LoginButton loading={loading} />
+          </div>
+          
+          {/* Enlace para recuperar contraseña */}
+          <div className="pt-2">
+            <ForgotPasswordLink onClick={handleForgotPassword} />
+          </div>
+        </form>
+      </div>
+      
+      {/* Barra de navegación inferior simulada */}
+      <div className="absolute bottom-0 left-0 right-0 flex justify-around py-4 bg-pozo-dark bg-opacity-70">
+        <div className="text-white opacity-50">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" />
+            <line x1="8" y1="7" x2="16" y2="7" stroke="white" strokeWidth="2" />
+            <line x1="8" y1="12" x2="16" y2="12" stroke="white" strokeWidth="2" />
+            <line x1="8" y1="17" x2="16" y2="17" stroke="white" strokeWidth="2" />
+          </svg>
+        </div>
+        <div className="text-white opacity-50">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="white" strokeWidth="2" />
+            <line x1="7" y1="7" x2="17" y2="7" stroke="white" strokeWidth="2" />
+            <line x1="7" y1="12" x2="17" y2="12" stroke="white" strokeWidth="2" />
+            <line x1="7" y1="17" x2="17" y2="17" stroke="white" strokeWidth="2" />
+          </svg>
+        </div>
+        <div className="text-white opacity-50">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="9" stroke="white" strokeWidth="2" />
+            <path d="M12 8V16" stroke="white" strokeWidth="2" />
+            <path d="M8 12H16" stroke="white" strokeWidth="2" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Login;

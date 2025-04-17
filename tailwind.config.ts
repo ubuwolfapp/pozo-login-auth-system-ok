@@ -18,7 +18,14 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'roboto': ['Roboto', 'sans-serif'],
+			},
 			colors: {
+				'pozo-dark': '#1C2526',
+				'pozo-blue': '#2E3A59',
+				'pozo-orange': '#FF6200',
+				'pozo-gray': '#CCCCCC',
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

@@ -1,73 +1,110 @@
-# Welcome to your Lovable project
+# Monitoreo de Pozos - Sistema de Login
 
-## Project info
+Sistema de autenticación para la aplicación "Monitoreo de Pozos" que incluye una interfaz de login con validación de usuarios contra una base de datos PostgreSQL.
 
-**URL**: https://lovable.dev/projects/1c4a859f-2aa1-4a7a-bb03-6f58543e2115
+![Pantalla de Login de Monitoreo de Pozos](public/lovable-uploads/ddc8c695-fc9d-4fa6-a365-bf5f7258bddb.png)
 
-## How can I edit this code?
+## Características
 
-There are several ways of editing your application.
+- **Interfaz de usuario:**
+  - Diseño moderno con gradiente de fondo azul petróleo (#1C2526 a #2E3A59)
+  - Formulario de login con validación
+  - Opción para mostrar/ocultar contraseña
+  - Enlace para recuperación de contraseña
+  - Diseño responsivo
 
-**Use Lovable**
+- **Autenticación:**
+  - Validación de credenciales contra base de datos
+  - Tokens JWT
+  - Contraseñas encriptadas con bcrypt
+  - Protección de rutas
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1c4a859f-2aa1-4a7a-bb03-6f58543e2115) and start prompting.
+- **Tecnologías:**
+  - Frontend: React, TypeScript, Tailwind CSS
+  - Backend: Node.js, Express
+  - Base de datos: PostgreSQL
 
-Changes made via Lovable will be committed automatically to this repo.
+## Estructura del proyecto
 
-**Use your preferred IDE**
+El proyecto está organizado en dos partes principales:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend (carpeta raíz)**: Implementación React de la interfaz de usuario
+- **Backend (carpeta /backend)**: API RESTful con autenticación y conexión a PostgreSQL
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Instalación y ejecución
 
-Follow these steps:
+### Frontend
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+# Instalar dependencias
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Iniciar el servidor de desarrollo
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Backend
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+# Navegar a la carpeta backend
+cd backend
 
-**Use GitHub Codespaces**
+# Instalar dependencias
+npm install
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Configurar la base de datos
+psql -U postgres -f database/schema.sql
 
-## What technologies are used for this project?
+# Iniciar el servidor
+npm start
+```
 
-This project is built with:
+Consulte el archivo `backend/README.md` para obtener instrucciones más detalladas sobre la configuración del backend.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Credenciales de prueba
 
-## How can I deploy this project?
+- Email: juan.perez@empresa.com
+- Contraseña: contraseña123
 
-Simply open [Lovable](https://lovable.dev/projects/1c4a859f-2aa1-4a7a-bb03-6f58543e2115) and click on Share -> Publish.
+## Variables de entorno
 
-## Can I connect a custom domain to my Lovable project?
+### Backend
 
-Yes, you can!
+Cree un archivo `.env` en la carpeta `backend` con las siguientes variables:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```
+PORT=3001
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=pozos_db
+DB_PASSWORD=su_contraseña
+DB_PORT=5432
+JWT_SECRET=clave_secreta_para_produccion
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Rutas de la aplicación
+
+- `/`: Pantalla de login
+- `/forgot-password`: Formulario de recuperación de contraseña
+- `/dashboard`: Panel principal (protegido, requiere autenticación)
+
+## Endpoints de la API
+
+- `POST /api/login`: Autenticación de usuario
+- `POST /api/forgot-password`: Solicitud de recuperación de contraseña
+
+## Seguridad
+
+- Contraseñas encriptadas con bcrypt
+- Autenticación mediante tokens JWT
+- Validaciones contra ataques de inyección SQL
+- Mensajes de error genéricos para evitar la enumeración de usuarios
+
+## Notas para desarrollo
+
+Este proyecto fue desarrollado inicialmente como una demostración de interfaz. Para un entorno de producción, considere:
+
+1. Implementar un sistema completo de recuperación de contraseñas
+2. Usar HTTPS para todas las comunicaciones
+3. Agregar rate limiting para prevenir ataques de fuerza bruta
+4. Implementar autenticación de dos factores
