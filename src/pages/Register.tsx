@@ -5,6 +5,7 @@ import { authService } from '@/services/authService';
 import EmailInput from '@/components/EmailInput';
 import PasswordInput from '@/components/PasswordInput';
 import { Input } from '@/components/ui/input';
+import { toast } from '@/components/ui/use-toast';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ const Register = () => {
     setLoading(true);
     try {
       await authService.signup(formData);
+      toast({
+        title: "Registro exitoso",
+        description: "Usuario registrado correctamente",
+      });
       navigate('/dashboard');
     } catch (error) {
       // Error handling is already in authService
