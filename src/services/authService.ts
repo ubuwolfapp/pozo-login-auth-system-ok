@@ -63,5 +63,26 @@ export const authService = {
   // Método para cerrar sesión
   async logout(): Promise<void> {
     await supabase.auth.signOut();
+  },
+
+  // Método para recuperar contraseña
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password',
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al enviar el correo';
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+      throw error;
+    }
   }
 };

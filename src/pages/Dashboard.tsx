@@ -2,13 +2,26 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
+import { toast } from '@/components/ui/use-toast';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    authService.removeToken();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente"
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
