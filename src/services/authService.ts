@@ -10,7 +10,7 @@ export interface LoginCredentials {
 
 export interface LoginResponse {
   user: {
-    id: number;
+    id: string;
     email: string;
     nombre: string;
     rol: string;
@@ -19,31 +19,38 @@ export interface LoginResponse {
 
 // Servicio de autenticación
 export const authService = {
-  // Método para iniciar sesión
+  // Método para iniciar sesión usando autenticación de Supabase
   async login({ email, password }: LoginCredentials): Promise<LoginResponse> {
     try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('id, email, nombre, rol')
-        .eq('email', email)
-        .eq('password', password)
-        .single();
+      // Usar signInWithPassword para autenticación segura
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      if (error || !data) {
+      if (signInError || !authData.user) {
         throw new Error('Usuario o contraseña incorrectos');
       }
 
-      // Set the session in Supabase
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Obtener datos adicionales del usuario desde la tabla usuarios
+      const { data: userData, error: userError } = await supabase
+        .from('usuarios')
+        .select('nombre, rol')
+        .eq('email', email)
+        .single();
 
-      if (signInError) {
-        throw new Error('Error al iniciar sesión');
+      if (userError || !userData) {
+        throw new Error('Error al obtener datos del usuario');
       }
 
-      return { user: data };
+      return {
+        user: {
+          id: authData.user.id,
+          email: authData.user.email || '',
+          nombre: userData.nombre,
+          rol: userData.rol
+        }
+      };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error de conexión';
       toast({
