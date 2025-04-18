@@ -11,6 +11,7 @@ export interface Well {
   temperatura: number;
   flujo: number;
   nivel: number;
+  nivel_porcentaje: number;
   produccion_diaria: number;
   estado: string;
   ultima_actualizacion: string;
