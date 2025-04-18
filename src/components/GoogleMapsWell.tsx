@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MapLoading from './maps/MapLoading';
@@ -36,10 +36,14 @@ interface GoogleMapsWellProps {
 
 // Componente para actualizar la vista del mapa cuando cambian las coordenadas
 const ChangeView = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
-  const map = useMap();
+  const map = L.Map.instance;
+  
   useEffect(() => {
-    map.setView(center, zoom);
+    if (map) {
+      map.setView(center, zoom);
+    }
   }, [center, zoom, map]);
+  
   return null;
 };
 
@@ -66,14 +70,14 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   // Determinar la posición del centro del mapa
   const getMapCenter = () => {
     if (wells.length === 0) {
-      return [19.4326, -99.1332]; // Default a Ciudad de México si no hay pozos
+      return [19.4326, -99.1332] as [number, number]; // Default a Ciudad de México si no hay pozos
     }
     
     // Calcular el promedio de todas las coordenadas
     const avgLat = wells.reduce((sum, well) => sum + well.latitud, 0) / wells.length;
     const avgLng = wells.reduce((sum, well) => sum + well.longitud, 0) / wells.length;
     
-    return [avgLat, avgLng];
+    return [avgLat, avgLng] as [number, number];
   };
 
   useEffect(() => {
@@ -90,6 +94,8 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
 
   // Para debug - verifica que tengamos datos
   console.log("Renderizando mapa con pozos:", wells);
+  
+  const center = getMapCenter();
 
   return (
     <div className="relative w-full h-full">
@@ -97,11 +103,10 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
         <MapEmptyState />
       ) : (
         <MapContainer 
-          center={getMapCenter() as [number, number]} 
+          center={center} 
           zoom={10} 
           style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
         >
-          <ChangeView center={getMapCenter() as [number, number]} zoom={10} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
