@@ -8,7 +8,6 @@ import { Alert } from '@/types/alerts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface AlertListProps {
@@ -58,12 +57,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
         await onAlertResolved(selectedAlert.id, resolutionText);
       }
       
-      toast({
-        title: "Alerta resuelta",
-        description: "La alerta ha sido marcada como resuelta",
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      // Close the dialog after successful resolution
       setSelectedAlert(null);
       setResolutionText("");
     } catch (error) {
@@ -102,10 +96,15 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
               <div className="flex gap-3">
                 {getAlertIcon(alert.tipo)}
                 <div>
-                  <p className={`font-medium mb-1 ${alert.resuelto ? 'text-white' : 'text-white'}`}>{alert.mensaje}</p>
-                  <p className={`text-sm ${alert.resuelto ? 'text-white' : 'text-gray-300'}`}>
+                  <p className="font-medium mb-1 text-white">{alert.mensaje}</p>
+                  <p className="text-sm text-white">
                     {format(new Date(alert.created_at), 'dd/MM/yyyy HH:mm')}
                   </p>
+                  {alert.resuelto && alert.fecha_resolucion && (
+                    <p className="text-sm text-white mt-1">
+                      Resuelto: {format(new Date(alert.fecha_resolucion), 'dd/MM/yyyy HH:mm')}
+                    </p>
+                  )}
                 </div>
               </div>
               

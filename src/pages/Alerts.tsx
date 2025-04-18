@@ -8,11 +8,15 @@ import AlertsNavigation from '@/components/alerts/AlertsNavigation';
 import { Alert, AlertType } from '@/types/alerts';
 import { supabase } from '@/integrations/supabase/client';
 import { wellService } from '@/services/wellService';
+import { useToast } from '@/hooks/use-toast';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
-  const [resolvedAlerts, setResolvedAlerts] = useState<string[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQuery({
+    queryKey: ['queryClient'],
+  }).queryClient;
 
   // First fetch all wells to ensure we have valid well data
   const { data: wells } = useQuery({
@@ -46,23 +50,22 @@ const Alerts = () => {
             pozo: {
               id: alert.pozo?.id || '',
               nombre: alert.pozo?.nombre || ''
-            },
-            // Make sure to handle resuelto properly
-            resuelto: alert.resuelto || resolvedAlerts.includes(alert.id)
+            }
           };
         }) as Alert[];
       } else {
         console.log('No database alerts found, checking if wells exist to create simulated alerts');
         
-        // If no database alerts but we have wells, create simulated alerts using real well data
+        // If no database alerts but we have wells, create simulated alerts and save them to the database
         if (wells && wells.length > 0) {
+          // Create simulated alerts using real well data
           const simulatedAlerts: Alert[] = [
             {
               id: '1',
               tipo: 'critica',
               mensaje: `Presión alta en ${wells[0].nombre}: 8500 psi`,
               created_at: '2025-04-16T14:30:00Z',
-              resuelto: resolvedAlerts.includes('1'),
+              resuelto: false,
               pozo: { 
                 id: wells[0].id, 
                 nombre: wells[0].nombre 
@@ -75,15 +78,53 @@ const Alerts = () => {
               tipo: 'advertencia',
               mensaje: `Temperatura moderada en ${wells.length > 1 ? wells[1].nombre : wells[0].nombre}`,
               created_at: '2025-04-16T03:15:00Z',
-              resuelto: resolvedAlerts.includes('2'),
+              resuelto: false,
               pozo: { 
                 id: wells.length > 1 ? wells[1].id : wells[0].id, 
                 nombre: wells.length > 1 ? wells[1].nombre : wells[0].nombre 
               }
             }
           ];
-          console.log('Created simulated alerts with real well data:', simulatedAlerts);
-          return simulatedAlerts;
+
+          // Insert simulated alerts into the database
+          for (const alert of simulatedAlerts) {
+            console.log('Inserting simulated alert into database:', alert);
+            const { error } = await supabase
+              .from('alertas')
+              .insert({
+                mensaje: alert.mensaje,
+                tipo: alert.tipo,
+                pozo_id: alert.pozo.id,
+                valor: alert.valor || null,
+                unidad: alert.unidad || null,
+                resuelto: false
+              });
+
+            if (error) {
+              console.error('Error inserting simulated alert:', error);
+            }
+          }
+
+          // Fetch the newly inserted alerts from the database
+          const { data: newAlerts, error: fetchError } = await supabase
+            .from('alertas')
+            .select('*, pozo:pozo_id (id, nombre)')
+            .order('created_at', { ascending: false });
+
+          if (fetchError) {
+            console.error('Error fetching newly inserted alerts:', fetchError);
+          } else if (newAlerts && newAlerts.length > 0) {
+            console.log('New database alerts fetched:', newAlerts.length);
+            return newAlerts.map(alert => {
+              return {
+                ...alert,
+                pozo: {
+                  id: alert.pozo?.id || '',
+                  nombre: alert.pozo?.nombre || ''
+                }
+              };
+            }) as Alert[];
+          }
         }
         
         console.log('No wells found, returning empty alerts array');
@@ -95,8 +136,8 @@ const Alerts = () => {
     }
   };
 
-  const { data: alerts, isLoading, refetch } = useQuery({
-    queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
+  const { data: alerts, isLoading } = useQuery({
+    queryKey: ['alerts', activeFilter, selectedWellId],
     queryFn: async () => {
       const allAlerts = await fetchAlerts();
       
@@ -162,29 +203,37 @@ const Alerts = () => {
     console.log('Alert resolved callback:', alertId, 'Resolution:', resolutionText);
     
     try {
-      // Real database updates for Supabase alerts
-      if (alertId.length > 10) { // This is likely a UUID from the database
-        console.log('Updating database alert:', alertId);
-        const { error } = await supabase
-          .from('alertas')
-          .update({ 
-            resuelto: true,
-            resolucion: resolutionText,
-            fecha_resolucion: new Date().toISOString()
-          })
-          .eq('id', alertId);
+      const fecha_resolucion = new Date().toISOString();
+      const updateData = { 
+        resuelto: true,
+        resolucion: resolutionText,
+        fecha_resolucion
+      };
+      
+      console.log('Updating alert in database:', alertId, 'with data:', updateData);
+      
+      const { error } = await supabase
+        .from('alertas')
+        .update(updateData)
+        .eq('id', alertId);
           
-        if (error) throw error;
+      if (error) {
+        console.error('Error updating alert in database:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar la resolución de la alerta",
+          variant: "destructive"
+        });
+        throw error;
       }
       
-      // Also track locally for simulated alerts and UI updates
-      setResolvedAlerts(prev => {
-        if (prev.includes(alertId)) return prev;
-        return [...prev, alertId];
+      toast({
+        title: "Alerta resuelta",
+        description: "La alerta ha sido marcada como resuelta",
       });
       
       // Force refetch to update UI with latest data from database
-      refetch();
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
       
     } catch (error) {
       console.error('Error resolving alert:', error);
