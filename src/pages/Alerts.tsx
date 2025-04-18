@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,14 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from 'recharts';
+import PressureChart from '@/components/PressureChart';
 
 interface Alert {
   id: string;
@@ -31,19 +23,6 @@ interface Alert {
   };
 }
 
-// Datos ficticios para el gráfico
-const chartData = [
-  { hora: '01:00', presion: 7.5 },
-  { hora: '02:30', presion: 8.0 },
-  { hora: '04:00', presion: 9.0 },
-  { hora: '05:30', presion: 10.0 },
-  { hora: '07:00', presion: 8.5 },
-  { hora: '08:30', presion: 7.0 },
-  { hora: '10:00', presion: 9.0 },
-  { hora: '11:30', presion: 8.0 },
-  { hora: '13:00', presion: 7.5 },
-];
-
 type FilterType = 'todas' | 'criticas' | 'resueltas';
 
 const Alerts = () => {
@@ -51,7 +30,7 @@ const Alerts = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: alerts, isLoading } = useQuery({
+  const { data: alerts, isLoading: alertsLoading } = useQuery({
     queryKey: ['alerts', activeFilter],
     queryFn: async () => {
       let query = supabase
@@ -67,11 +46,24 @@ const Alerts = () => {
         query = query.eq('resuelto', true);
       }
       
-      // Always sort by date, most recent first
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
       return data as Alert[];
+    }
+  });
+
+  const { data: pressureData, isLoading: pressureLoading } = useQuery({
+    queryKey: ['pressure-history'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('presion_historial')
+        .select('*')
+        .order('fecha', { ascending: true })
+        .limit(24);
+
+      if (error) throw error;
+      return data;
     }
   });
 
@@ -89,7 +81,6 @@ const Alerts = () => {
         description: "La alerta ha sido marcada como resuelta",
       });
       
-      // Refetch alerts to update the UI
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
     } catch (error) {
       toast({
@@ -134,13 +125,12 @@ const Alerts = () => {
     });
   };
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen bg-[#1C2526] text-white">Cargando alertas...</div>;
+  if (alertsLoading || pressureLoading) {
+    return <div className="flex justify-center items-center h-screen bg-[#1C2526] text-white">Cargando...</div>;
   }
 
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
-      {/* Header */}
       <div className="flex items-center justify-between p-4 bg-[#1C2526]">
         <button onClick={() => navigate('/dashboard')} className="text-white">
           <ArrowLeft className="h-6 w-6" />
@@ -151,7 +141,6 @@ const Alerts = () => {
         </button>
       </div>
       
-      {/* Filter Tabs */}
       <div className="flex justify-between px-4 mb-4">
         <button
           onClick={() => handleFilterClick('todas')}
@@ -173,35 +162,10 @@ const Alerts = () => {
         </button>
       </div>
       
-      {/* Chart */}
       <div className="mx-4 mb-4 bg-[#1C2526] rounded-lg p-4 border border-gray-700">
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={chartData}>
-            <CartesianGrid stroke="#333" />
-            <XAxis 
-              dataKey="hora"
-              tick={{ fill: 'white', fontSize: 10 }}
-              axisLine={{ stroke: '#555' }}
-            />
-            <YAxis 
-              domain={[0, 10]}
-              tick={{ fill: 'white', fontSize: 10 }}
-              axisLine={{ stroke: '#555' }}
-              ticks={[0, 2, 4, 6, 8, 10]}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="presion" 
-              stroke="#00A1D6" 
-              strokeWidth={2}
-              dot={{ fill: '#00A1D6', r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <PressureChart data={pressureData || []} />
       </div>
       
-      {/* Alerts List */}
       <div className="px-4 pb-24 space-y-4">
         {alerts?.length === 0 ? (
           <div className="text-center py-8">No hay alertas que mostrar</div>
@@ -243,7 +207,6 @@ const Alerts = () => {
         )}
       </div>
       
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-[#1C2526] px-6 py-4">
         <div className="flex justify-between items-center max-w-md mx-auto">
           <Home 

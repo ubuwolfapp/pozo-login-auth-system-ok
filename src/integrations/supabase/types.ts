@@ -53,29 +53,41 @@ export type Database = {
       pozos: {
         Row: {
           estado: string
+          flujo: number
           id: string
           latitud: number
           longitud: number
+          nivel: number
           nombre: string
+          presion: number
           produccion_diaria: number
+          temperatura: number
           ultima_actualizacion: string | null
         }
         Insert: {
           estado: string
+          flujo?: number
           id?: string
           latitud: number
           longitud: number
+          nivel?: number
           nombre: string
+          presion?: number
           produccion_diaria: number
+          temperatura?: number
           ultima_actualizacion?: string | null
         }
         Update: {
           estado?: string
+          flujo?: number
           id?: string
           latitud?: number
           longitud?: number
+          nivel?: number
           nombre?: string
+          presion?: number
           produccion_diaria?: number
+          temperatura?: number
           ultima_actualizacion?: string | null
         }
         Relationships: []
@@ -103,6 +115,35 @@ export type Database = {
           zoom_inicial?: number
         }
         Relationships: []
+      }
+      presion_historial: {
+        Row: {
+          fecha: string
+          id: number
+          pozo_id: string
+          valor: number
+        }
+        Insert: {
+          fecha?: string
+          id?: number
+          pozo_id: string
+          valor: number
+        }
+        Update: {
+          fecha?: string
+          id?: number
+          pozo_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presion_historial_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usuarios: {
         Row: {
