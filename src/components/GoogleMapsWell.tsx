@@ -35,15 +35,15 @@ interface GoogleMapsWellProps {
 }
 
 // Componente para actualizar la vista del mapa cuando cambian las coordenadas
-const ChangeView = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
+function SetViewOnChange({ coords }: { coords: [number, number] }) {
   const map = useMap();
   
   useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
+    map.setView(coords, 10);
+  }, [coords, map]);
   
   return null;
-};
+}
 
 const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   const { isLoaded, error } = useGoogleMaps();
@@ -66,16 +66,16 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   };
 
   // Determinar la posición del centro del mapa
-  const getMapCenter = () => {
+  const getMapCenter = (): [number, number] => {
     if (wells.length === 0) {
-      return [19.4326, -99.1332] as [number, number]; // Default a Ciudad de México si no hay pozos
+      return [19.4326, -99.1332]; // Default a Ciudad de México si no hay pozos
     }
     
     // Calcular el promedio de todas las coordenadas
     const avgLat = wells.reduce((sum, well) => sum + well.latitud, 0) / wells.length;
     const avgLng = wells.reduce((sum, well) => sum + well.longitud, 0) / wells.length;
     
-    return [avgLat, avgLng] as [number, number];
+    return [avgLat, avgLng];
   };
 
   useEffect(() => {
@@ -105,7 +105,7 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
           zoom={10} 
           style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
         >
-          <ChangeView center={center} zoom={10} />
+          <SetViewOnChange coords={center} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
