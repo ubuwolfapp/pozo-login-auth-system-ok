@@ -1,11 +1,10 @@
+import React, { useRef, useState, useEffect } from 'react';
+import { useGoogleMaps } from '@/hooks/useGoogleMaps';
+import ApiKeyDialog from './maps/ApiKeyDialog';
+import MapError from './maps/MapError';
+import MapLoading from './maps/MapLoading';
+import MapEmptyState from './maps/MapEmptyState';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertTriangle } from 'lucide-react';
-
-// Define the Well interface
 interface Well {
   id: string;
   nombre: string;
@@ -25,69 +24,17 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('google_maps_api_key') || '');
   const [showKeyDialog, setShowKeyDialog] = useState<boolean>(false);
-  const [mapError, setMapError] = useState<string | null>(null);
-  const [scriptLoaded, setScriptLoaded] = useState<boolean>(false);
   const [tempApiKey, setTempApiKey] = useState<string>('');
   
-  // Load Google Maps script
-  useEffect(() => {
-    const loadGoogleMapsScript = () => {
-      if (!apiKey) {
-        setShowKeyDialog(true);
-        return;
-      }
-
-      // Check if script is already loaded
-      if (window.google && window.google.maps) {
-        setScriptLoaded(true);
-        return;
-      }
-
-      try {
-        // Remove any existing Google Maps scripts to prevent conflicts
-        const existingScripts = document.querySelectorAll('script[src*="maps.googleapis.com"]');
-        existingScripts.forEach(script => script.remove());
-        
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=googleMapsInitialized`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = () => {
-          setMapError('Error al cargar el script de Google Maps. Verifique su API key.');
-          setShowKeyDialog(true);
-        };
-        
-        // Define the callback function
-        window.googleMapsInitialized = () => {
-          setScriptLoaded(true);
-          setMapError(null);
-        };
-        
-        document.head.appendChild(script);
-      } catch (error) {
-        console.error('Error loading Google Maps script:', error);
-        setMapError('Error al cargar el script de Google Maps');
-        setShowKeyDialog(true);
-      }
-    };
-    
-    loadGoogleMapsScript();
-    
-    return () => {
-      // Clean up the global callback when component unmounts
-      if (window.googleMapsInitialized) {
-        delete window.googleMapsInitialized;
-      }
-    };
-  }, [apiKey]);
+  const { isLoaded, error } = useGoogleMaps(apiKey);
   
   // Initialize map when script is loaded
   useEffect(() => {
-    if (!scriptLoaded || !mapRef.current) return;
+    if (!isLoaded || !mapRef.current) return;
     
     try {
       const mapOptions: google.maps.MapOptions = {
-        center: { lat: 19.4326, lng: -99.1332 }, // Default center (Mexico City)
+        center: { lat: 19.4326, lng: -99.1332 },
         zoom: 10,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         styles: [
@@ -122,7 +69,7 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
           {
             featureType: "road",
             elementType: "geometry.stroke",
-            stylers: [{ color: "#212a37" }],
+            stylers: [{ color: "#212835" }],
           },
           {
             featureType: "road",
@@ -176,9 +123,8 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
       setMap(newMap);
     } catch (error) {
       console.error('Error initializing Google Maps:', error);
-      setMapError('Error al inicializar el mapa de Google');
     }
-  }, [scriptLoaded]);
+  }, [isLoaded]);
   
   // Add markers when wells data or map changes
   useEffect(() => {
@@ -192,7 +138,6 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
     
     wells.forEach((well) => {
       try {
-        // Determine icon color based on well state
         const iconColor = well.estado === 'activo' ? '#10B981' : 
                          well.estado === 'advertencia' ? '#F59E0B' : '#EF4444';
         
@@ -209,7 +154,6 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
 
         const position = { lat: well.latitud, lng: well.longitud };
         
-        // Add marker to map
         const marker = new google.maps.Marker({
           position,
           map,
@@ -217,7 +161,6 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
           icon: svgMarker,
         });
         
-        // Create info window content
         const contentString = `
           <div style="color: white; padding: 10px; background: #2E3A59; border-radius: 8px; min-width: 200px;">
             <h3 style="margin-top: 0; font-weight: bold;">${well.nombre}</h3>
@@ -244,11 +187,8 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
     
     setMarkers(newMarkers);
     
-    // Adjust map to fit all markers
     if (newMarkers.length > 0) {
       map.fitBounds(bounds);
-      
-      // If we only have one marker, zoom out a bit
       if (newMarkers.length === 1) {
         map.setZoom(12);
       }
@@ -262,107 +202,29 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
       setShowKeyDialog(false);
     }
   };
-  
-  // Add CSS for Google Maps info windows
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .gm-style-iw {
-        background-color: #2E3A59 !important;
-        border-radius: 8px !important;
-        padding: 0 !important;
-      }
-      .gm-style-iw-d {
-        overflow: hidden !important;
-      }
-      .gm-style-iw-t::after {
-        background: #2E3A59 !important;
-      }
-      .gm-ui-hover-effect {
-        background-color: rgba(255,255,255,0.4) !important;
-        border-radius: 50% !important;
-        margin-top: 6px !important;
-        margin-right: 6px !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
 
-  // Declare the global googleMapsInitialized function
-  declare global {
-    interface Window {
-      googleMapsInitialized: () => void;
-    }
-  }
-  
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="absolute inset-0 rounded-lg overflow-hidden"></div>
       
-      {!scriptLoaded && !mapError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
-            <p>Cargando mapa...</p>
-          </div>
-        </div>
+      {!isLoaded && !error && <MapLoading />}
+      
+      {error && (
+        <MapError 
+          error={error} 
+          onConfigureApiKey={() => setShowKeyDialog(true)} 
+        />
       )}
       
-      {mapError && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
-          <div className="text-center text-white p-4 max-w-md mx-auto">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-3" />
-            <p className="text-lg font-medium mb-2">Error en el mapa</p>
-            <p className="text-sm mb-4">{mapError}</p>
-            <Button 
-              variant="outline" 
-              className="w-full bg-pozo-orange hover:bg-orange-600 text-white"
-              onClick={() => setShowKeyDialog(true)}
-            >
-              Configurar API Key de Google Maps
-            </Button>
-          </div>
-        </div>
-      )}
+      {!error && wells.length === 0 && <MapEmptyState />}
       
-      {!mapError && wells.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="text-center text-white p-4 max-w-md mx-auto">
-            <p className="mb-4">No hay pozos para mostrar en el mapa</p>
-          </div>
-        </div>
-      )}
-      
-      <Dialog open={showKeyDialog} onOpenChange={setShowKeyDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Configurar Google Maps API Key</DialogTitle>
-            <DialogDescription>
-              Introduce tu API Key de Google Maps para visualizar los mapas correctamente.
-              Puedes obtener una en <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank" rel="noopener noreferrer" className="text-pozo-orange hover:underline">Google Cloud Platform</a>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="Introduce tu API Key de Google Maps..."
-              value={tempApiKey}
-              onChange={(e) => setTempApiKey(e.target.value)}
-            />
-            <div className="flex justify-end">
-              <Button 
-                className="bg-pozo-orange hover:bg-orange-600 text-white"
-                onClick={handleSaveApiKey}
-                disabled={!tempApiKey}
-              >
-                Guardar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ApiKeyDialog
+        open={showKeyDialog}
+        onOpenChange={setShowKeyDialog}
+        tempApiKey={tempApiKey}
+        onApiKeyChange={setTempApiKey}
+        onSave={handleSaveApiKey}
+      />
     </div>
   );
 };
