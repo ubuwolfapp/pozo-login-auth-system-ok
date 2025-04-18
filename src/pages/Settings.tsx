@@ -13,7 +13,7 @@ const Settings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: settings } = useQuery({
+  const { data: settings, isLoading } = useQuery({
     queryKey: ['userSettings'],
     queryFn: settingsService.getUserSettings
   });
@@ -39,6 +39,10 @@ const Settings = () => {
       umbral_presion: numValue
     });
   };
+
+  if (isLoading) {
+    return <div className="min-h-screen bg-slate-900 text-white p-6">Cargando...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
@@ -135,22 +139,6 @@ const Settings = () => {
               </div>
             </div>
           </div>
-
-          {/* Gestión de Usuarios Section */}
-          <div className="bg-slate-800 rounded-lg p-4">
-            <h2 className="flex items-center gap-2 mb-4">
-              <UserPlus className="h-5 w-5 text-gray-400" />
-              Gestión de Usuarios
-            </h2>
-            <Button className="w-full bg-orange-600 hover:bg-orange-700">
-              Agregar Usuario
-            </Button>
-          </div>
-
-          {/* Save Changes Button */}
-          <Button className="w-full bg-orange-600 hover:bg-orange-700 mt-6">
-            Guardar Cambios
-          </Button>
         </div>
       </div>
       <NavigationBar />
