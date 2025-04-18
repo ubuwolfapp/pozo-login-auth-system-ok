@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import NavigationBar from '@/components/NavigationBar';
-import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, UserPlus } from 'lucide-react';
+import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
@@ -44,6 +44,19 @@ const Settings = () => {
     return <div className="min-h-screen bg-slate-900 text-white p-6">Cargando...</div>;
   }
 
+  // Default values in case settings is null
+  const defaultSettings = {
+    notificaciones_activas: true,
+    push_activo: true,
+    correo_activo: true,
+    sms_activo: true,
+    umbral_presion: 8000,
+    idioma: 'español'
+  };
+  
+  // Use either the fetched settings or default values
+  const currentSettings = settings || defaultSettings;
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
@@ -67,7 +80,7 @@ const Settings = () => {
                 <span>Notificaciones</span>
               </div>
               <Switch
-                checked={settings?.notificaciones_activas}
+                checked={currentSettings.notificaciones_activas}
                 onCheckedChange={() => handleSwitchChange('notificaciones_activas')}
               />
             </div>
@@ -78,7 +91,7 @@ const Settings = () => {
                 <span>Push</span>
               </div>
               <Switch
-                checked={settings?.push_activo}
+                checked={currentSettings.push_activo}
                 onCheckedChange={() => handleSwitchChange('push_activo')}
               />
             </div>
@@ -89,7 +102,7 @@ const Settings = () => {
                 <span>Correo</span>
               </div>
               <Switch
-                checked={settings?.correo_activo}
+                checked={currentSettings.correo_activo}
                 onCheckedChange={() => handleSwitchChange('correo_activo')}
               />
             </div>
@@ -100,7 +113,7 @@ const Settings = () => {
                 <span>SMS</span>
               </div>
               <Switch
-                checked={settings?.sms_activo}
+                checked={currentSettings.sms_activo}
                 onCheckedChange={() => handleSwitchChange('sms_activo')}
               />
             </div>
@@ -117,7 +130,7 @@ const Settings = () => {
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
-                  value={settings?.umbral_presion || 8000}
+                  value={currentSettings.umbral_presion || 8000}
                   onChange={(e) => handlePressureThresholdChange(e.target.value)}
                   className="w-24 bg-slate-700 border-slate-600"
                 />
