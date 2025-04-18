@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      alertas: {
+        Row: {
+          created_at: string
+          id: string
+          mensaje: string
+          pozo_id: string
+          resuelto: boolean
+          tipo: string
+          unidad: string | null
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mensaje: string
+          pozo_id: string
+          resuelto?: boolean
+          tipo: string
+          unidad?: string | null
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mensaje?: string
+          pozo_id?: string
+          resuelto?: boolean
+          tipo?: string
+          unidad?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pozos: {
         Row: {
           estado: string

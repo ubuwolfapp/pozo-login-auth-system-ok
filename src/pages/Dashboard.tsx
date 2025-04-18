@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -74,12 +73,10 @@ const Dashboard: React.FC = () => {
       <div className="px-4 py-6 pb-24">
         <h1 className="text-2xl font-bold mb-6">Monitoreo de Pozos</h1>
         
-        {/* Mapa */}
         <div className="mb-6 bg-[#2E3A59] rounded-lg overflow-hidden h-[300px]">
           <WellMap />
         </div>
         
-        {/* Lista de pozos */}
         <div className="space-y-3">
           {isLoading ? (
             <div className="text-center py-4">Cargando información de pozos...</div>
@@ -112,7 +109,6 @@ const Dashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Botón de generar reporte */}
         <Button
           onClick={handleGenerateReport}
           className="w-full bg-pozo-orange hover:bg-orange-600 text-white py-3 rounded-lg mt-6 font-medium text-lg"
@@ -120,11 +116,13 @@ const Dashboard: React.FC = () => {
           Generar Reporte
         </Button>
 
-        {/* Barra de navegación inferior */}
         <nav className="fixed bottom-0 left-0 right-0 bg-[#2E3A59] px-6 py-4">
           <div className="flex justify-between items-center max-w-md mx-auto">
             <Home className="text-pozo-orange h-6 w-6" />
-            <Bell className="text-gray-400 h-6 w-6" />
+            <Bell 
+              className="text-gray-400 h-6 w-6 cursor-pointer hover:text-pozo-orange transition-colors" 
+              onClick={() => navigate('/alerts')}
+            />
             <BarChart3 className="text-gray-400 h-6 w-6" />
             <FileText className="text-gray-400 h-6 w-6" />
             <Settings className="text-gray-400 h-6 w-6" />

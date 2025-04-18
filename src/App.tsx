@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
+import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 import { authService } from "./services/authService";
 
@@ -37,6 +38,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/alerts" 
+            element={
+              <ProtectedRoute>
+                <Alerts />
               </ProtectedRoute>
             } 
           />
