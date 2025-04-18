@@ -11,6 +11,7 @@ import Reports from "./pages/Reports";
 import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 import Tasks from "./pages/Tasks";
+import Settings from "./pages/Settings";
 import { authService } from "./services/authService";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } 
           />
