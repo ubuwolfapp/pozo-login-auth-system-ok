@@ -12,6 +12,7 @@ export type Database = {
       alertas: {
         Row: {
           created_at: string
+          fecha_resolucion: string | null
           id: string
           mensaje: string
           pozo_id: string
@@ -22,6 +23,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          fecha_resolucion?: string | null
           id?: string
           mensaje: string
           pozo_id: string
@@ -32,6 +34,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          fecha_resolucion?: string | null
           id?: string
           mensaje?: string
           pozo_id?: string

@@ -15,13 +15,11 @@ const Alerts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // First fetch all wells to ensure we have valid well data
   const { data: wells } = useQuery({
     queryKey: ['wells'],
     queryFn: wellService.getWells
   });
 
-  // Fetch real database alerts
   const fetchAlerts = async () => {
     try {
       console.log('Fetching alerts from database');
@@ -40,7 +38,6 @@ const Alerts = () => {
       if (dbAlerts && dbAlerts.length > 0) {
         console.log('Database alerts fetched:', dbAlerts.length);
         
-        // Transform the data to match our Alert type
         return dbAlerts.map(alert => {
           return {
             ...alert,
@@ -53,9 +50,7 @@ const Alerts = () => {
       } else {
         console.log('No database alerts found, checking if wells exist to create simulated alerts');
         
-        // If no database alerts but we have wells, create simulated alerts and save them to the database
         if (wells && wells.length > 0) {
-          // Create simulated alerts using real well data
           const simulatedAlerts: Alert[] = [
             {
               id: '1',
@@ -83,7 +78,6 @@ const Alerts = () => {
             }
           ];
 
-          // Insert simulated alerts into the database
           for (const alert of simulatedAlerts) {
             console.log('Inserting simulated alert into database:', alert);
             const { error } = await supabase
@@ -102,7 +96,6 @@ const Alerts = () => {
             }
           }
 
-          // Fetch the newly inserted alerts from the database
           const { data: newAlerts, error: fetchError } = await supabase
             .from('alertas')
             .select('*, pozo:pozo_id (id, nombre)')
@@ -138,7 +131,6 @@ const Alerts = () => {
     queryFn: async () => {
       const allAlerts = await fetchAlerts();
       
-      // Filter alerts based on activeFilter and selectedWellId
       let filteredAlerts = allAlerts;
       
       if (selectedWellId) {
@@ -155,11 +147,10 @@ const Alerts = () => {
       }
       return filteredAlerts;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds
-    enabled: !!wells, // Only run this query when wells are loaded
+    refetchInterval: 30000,
+    enabled: !!wells,
   });
 
-  // Fetch real pressure history data if available
   const { data: pressureData } = useQuery({
     queryKey: ['pressure-history', selectedWellId],
     queryFn: async () => {
@@ -182,7 +173,6 @@ const Alerts = () => {
         }
       }
       
-      // Fallback to simulated data
       const data = [];
       const now = new Date();
       for (let i = 0; i < 24; i++) {
@@ -229,7 +219,6 @@ const Alerts = () => {
         description: "La alerta ha sido marcada como resuelta",
       });
       
-      // Force refetch to update UI with latest data from database
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       
     } catch (error) {
