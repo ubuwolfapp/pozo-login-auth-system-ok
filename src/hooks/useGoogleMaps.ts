@@ -6,5 +6,10 @@ export const useGoogleMaps = () => {
   const [isLoaded, setIsLoaded] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Simulate a loaded state
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
   return { isLoaded, error };
 };

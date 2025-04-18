@@ -1,25 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MapLoading from './maps/MapLoading';
 import MapEmptyState from './maps/MapEmptyState';
 import MapError from './maps/MapError';
-
-// Fix for Leaflet icons
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
 
 interface Well {
   id: string;
@@ -38,38 +23,8 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   const { isLoaded, error } = useGoogleMaps();
   const [mapError, setMapError] = useState<string | null>(null);
 
-  // Create custom icons based on well status
-  const getWellIcon = (estado: string) => {
-    const iconColor = 
-      estado === 'activo' ? '#10B981' : 
-      estado === 'advertencia' ? '#F59E0B' : '#EF4444';
-    
-    return L.divIcon({
-      className: 'custom-div-icon',
-      html: `
-        <div style="background-color: ${iconColor}; width: 12px; height: 12px; 
-        border-radius: 50%; border: 2px solid white;"></div>`,
-      iconSize: [16, 16],
-      iconAnchor: [8, 8],
-    });
-  };
-
-  // Determine map center position
-  const getMapCenter = (): [number, number] => {
-    if (wells.length === 0) {
-      return [19.4326, -99.1332]; // Default to Mexico City if no wells
-    }
-    
-    // Calculate the average of all coordinates
-    const avgLat = wells.reduce((sum, well) => sum + well.latitud, 0) / wells.length;
-    const avgLng = wells.reduce((sum, well) => sum + well.longitud, 0) / wells.length;
-    
-    return [avgLat, avgLng];
-  };
-
-  useEffect(() => {
-    console.log("Wells available for display:", wells);
-  }, [wells]);
+  // For debug - verify we have data
+  console.log("Wells available for display:", wells);
 
   if (!isLoaded) {
     return <MapLoading />;
@@ -79,43 +34,37 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
     return <MapError error={mapError} onRetry={() => setMapError(null)} />;
   }
 
-  // For debug - verify we have data
-  console.log("Rendering map with wells:", wells);
-  
-  const center = getMapCenter();
-
   return (
     <div className="relative w-full h-full">
       {wells.length === 0 ? (
         <MapEmptyState />
       ) : (
-        <div style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}>
-          <MapContainer 
-            center={center} 
-            zoom={10} 
-            style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {wells.map((well) => (
-              <Marker 
-                key={well.id} 
-                position={[well.latitud, well.longitud]}
-                icon={getWellIcon(well.estado)}
-              >
-                <Popup>
-                  <div className="bg-[#2E3A59] text-white p-2 rounded-md">
-                    <h3 className="font-bold">{well.nombre}</h3>
-                    <p><strong>Estado:</strong> {well.estado}</p>
-                    <p><strong>Producción diaria:</strong> {well.produccion_diaria} bbls</p>
-                    <p><strong>Coordenadas:</strong> {well.latitud.toFixed(4)}, {well.longitud.toFixed(4)}</p>
+        <div className="w-full h-full rounded-lg bg-[#2A3441] p-4 flex items-center justify-center">
+          <div className="text-center p-4">
+            <p className="text-white mb-4">Mapa temporalmente en mantenimiento</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {wells.map((well) => (
+                <div 
+                  key={well.id}
+                  className="bg-[#1E2835] p-4 rounded-md"
+                >
+                  <h3 className="font-bold text-white mb-2">{well.nombre}</h3>
+                  <div className="flex items-center mb-1">
+                    <span className={`w-3 h-3 rounded-full mr-2 ${
+                      well.estado === 'activo' ? 'bg-green-500' : 
+                      well.estado === 'advertencia' ? 'bg-yellow-500' : 
+                      'bg-red-500'
+                    }`}></span>
+                    <p className="text-gray-300 text-sm">Estado: {well.estado}</p>
                   </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+                  <p className="text-gray-300 text-sm">Producción: {well.produccion_diaria} bbls</p>
+                  <p className="text-gray-300 text-sm">
+                    Ubicación: {well.latitud.toFixed(4)}, {well.longitud.toFixed(4)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
