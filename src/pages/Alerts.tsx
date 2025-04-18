@@ -7,98 +7,95 @@ import AlertFilters from '@/components/alerts/AlertFilters';
 import AlertsNavigation from '@/components/alerts/AlertsNavigation';
 import { Alert, AlertType } from '@/types/alerts';
 import { supabase } from '@/integrations/supabase/client';
+import { wellService } from '@/services/wellService';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
   const [resolvedAlerts, setResolvedAlerts] = useState<string[]>([]);
 
-  // Simulated alerts that match the design
-  const simulatedAlerts: Alert[] = [
-    {
-      id: '1',
-      tipo: 'critica',
-      mensaje: 'Presión alta en Pozo #7: 8500 psi',
-      created_at: '2025-04-16T14:30:00Z',
-      resuelto: resolvedAlerts.includes('1'),
-      pozo: { 
-        id: '1', 
-        nombre: 'Pozo #7' 
-      },
-      valor: 8500,
-      unidad: 'psi'
-    },
-    {
-      id: '2',
-      tipo: 'advertencia',
-      mensaje: 'Temperatura moderada en Pozo 33',
-      created_at: '2025-04-16T03:15:00Z',
-      resuelto: resolvedAlerts.includes('2'),
-      pozo: { 
-        id: '2', 
-        nombre: 'Pozo 33' 
-      }
-    },
-    {
-      id: '3',
-      tipo: 'advertencia',
-      mensaje: 'Nivel bajo en Pozo 12',
-      created_at: '2025-04-15T18:20:00Z',
-      resuelto: resolvedAlerts.includes('3'),
-      pozo: { 
-        id: '3', 
-        nombre: 'Pozo 12' 
-      }
-    },
-    {
-      id: '4',
-      tipo: 'critica',
-      mensaje: 'Falla de sensor en Pozo 44',
-      created_at: '2025-04-15T10:45:00Z',
-      resuelto: resolvedAlerts.includes('4'),
-      pozo: { 
-        id: '4', 
-        nombre: 'Pozo 44' 
-      }
-    }
-  ];
+  // First fetch all wells to ensure we have valid well data
+  const { data: wells } = useQuery({
+    queryKey: ['wells'],
+    queryFn: wellService.getWells
+  });
 
-  // Fetch real database alerts if available
+  // Fetch real database alerts
   const fetchAlerts = async () => {
     try {
-      const { data: dbAlerts, error } = await supabase
+      console.log('Fetching alerts from database');
+      let query = supabase
         .from('alertas')
         .select('*, pozo:pozo_id (id, nombre)')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      const { data: dbAlerts, error } = await query;
       
-      if (dbAlerts && dbAlerts.length > 0) {
-        return dbAlerts.map(alert => ({
-          ...alert,
-          pozo: {
-            id: alert.pozo?.id || '',
-            nombre: alert.pozo?.nombre || ''
-          }
-        })) as Alert[];
+      if (error) {
+        console.error('Error fetching alerts from database:', error);
+        throw error;
       }
       
-      // Return simulated alerts if no database alerts
-      return simulatedAlerts.map(alert => ({
-        ...alert,
-        resuelto: resolvedAlerts.includes(alert.id)
-      }));
+      if (dbAlerts && dbAlerts.length > 0) {
+        console.log('Database alerts fetched:', dbAlerts.length);
+        
+        // Transform the data to match our Alert type
+        return dbAlerts.map(alert => {
+          return {
+            ...alert,
+            pozo: {
+              id: alert.pozo?.id || '',
+              nombre: alert.pozo?.nombre || ''
+            },
+            // Make sure to handle resuelto properly
+            resuelto: alert.resuelto || resolvedAlerts.includes(alert.id)
+          };
+        }) as Alert[];
+      } else {
+        console.log('No database alerts found, checking if wells exist to create simulated alerts');
+        
+        // If no database alerts but we have wells, create simulated alerts using real well data
+        if (wells && wells.length > 0) {
+          const simulatedAlerts: Alert[] = [
+            {
+              id: '1',
+              tipo: 'critica',
+              mensaje: `Presión alta en ${wells[0].nombre}: 8500 psi`,
+              created_at: '2025-04-16T14:30:00Z',
+              resuelto: resolvedAlerts.includes('1'),
+              pozo: { 
+                id: wells[0].id, 
+                nombre: wells[0].nombre 
+              },
+              valor: 8500,
+              unidad: 'psi'
+            },
+            {
+              id: '2',
+              tipo: 'advertencia',
+              mensaje: `Temperatura moderada en ${wells.length > 1 ? wells[1].nombre : wells[0].nombre}`,
+              created_at: '2025-04-16T03:15:00Z',
+              resuelto: resolvedAlerts.includes('2'),
+              pozo: { 
+                id: wells.length > 1 ? wells[1].id : wells[0].id, 
+                nombre: wells.length > 1 ? wells[1].nombre : wells[0].nombre 
+              }
+            }
+          ];
+          console.log('Created simulated alerts with real well data:', simulatedAlerts);
+          return simulatedAlerts;
+        }
+        
+        console.log('No wells found, returning empty alerts array');
+        return [];
+      }
     } catch (error) {
-      console.error('Error fetching alerts:', error);
-      // Fallback to simulated alerts on error
-      return simulatedAlerts.map(alert => ({
-        ...alert,
-        resuelto: resolvedAlerts.includes(alert.id)
-      }));
+      console.error('Error in fetchAlerts:', error);
+      return [];
     }
   };
 
-  const { data: alerts, isLoading } = useQuery({
+  const { data: alerts, isLoading, refetch } = useQuery({
     queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
     queryFn: async () => {
       const allAlerts = await fetchAlerts();
@@ -107,6 +104,7 @@ const Alerts = () => {
       let filteredAlerts = allAlerts;
       
       if (selectedWellId) {
+        console.log('Filtering alerts by well ID:', selectedWellId);
         filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
       }
 
@@ -120,12 +118,33 @@ const Alerts = () => {
       return filteredAlerts;
     },
     refetchInterval: 30000, // Refetch every 30 seconds
+    enabled: !!wells, // Only run this query when wells are loaded
   });
 
+  // Fetch real pressure history data if available
   const { data: pressureData } = useQuery({
-    queryKey: ['pressure-history'],
+    queryKey: ['pressure-history', selectedWellId],
     queryFn: async () => {
-      // Simulate 24 hours of pressure data
+      if (selectedWellId) {
+        try {
+          const { data, error } = await supabase
+            .from('presion_historial')
+            .select('fecha, valor')
+            .eq('pozo_id', selectedWellId)
+            .order('fecha', { ascending: true })
+            .limit(24);
+            
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            return data;
+          }
+        } catch (error) {
+          console.error('Error fetching pressure history:', error);
+        }
+      }
+      
+      // Fallback to simulated data
       const data = [];
       const now = new Date();
       for (let i = 0; i < 24; i++) {
@@ -139,26 +158,37 @@ const Alerts = () => {
     }
   });
 
-  // Updated handleAlertResolved to properly mark alerts as resolved
-  React.useEffect(() => {
-    // Listen for custom events to mark alerts as resolved
-    const handleAlertResolved = (event: CustomEvent) => {
-      const { alertId } = event.detail;
-      setResolvedAlerts(prev => [...prev, alertId]);
-    };
-
-    window.addEventListener('alertResolved' as any, handleAlertResolved as EventListener);
-    return () => {
-      window.removeEventListener('alertResolved' as any, handleAlertResolved as EventListener);
-    };
-  }, []);
-
-  const handleAlertResolved = (alertId: string) => {
-    console.log('Alert resolved callback:', alertId);
-    setResolvedAlerts(prev => {
-      if (prev.includes(alertId)) return prev;
-      return [...prev, alertId];
-    });
+  const handleAlertResolved = async (alertId: string, resolutionText: string) => {
+    console.log('Alert resolved callback:', alertId, 'Resolution:', resolutionText);
+    
+    try {
+      // Real database updates for Supabase alerts
+      if (alertId.length > 10) { // This is likely a UUID from the database
+        console.log('Updating database alert:', alertId);
+        const { error } = await supabase
+          .from('alertas')
+          .update({ 
+            resuelto: true,
+            resolucion: resolutionText,
+            fecha_resolucion: new Date().toISOString()
+          })
+          .eq('id', alertId);
+          
+        if (error) throw error;
+      }
+      
+      // Also track locally for simulated alerts and UI updates
+      setResolvedAlerts(prev => {
+        if (prev.includes(alertId)) return prev;
+        return [...prev, alertId];
+      });
+      
+      // Force refetch to update UI with latest data from database
+      refetch();
+      
+    } catch (error) {
+      console.error('Error resolving alert:', error);
+    }
   };
 
   return (
@@ -171,6 +201,7 @@ const Alerts = () => {
           onFilterChange={setActiveFilter}
           selectedWellId={selectedWellId}
           onWellChange={setSelectedWellId}
+          wells={wells || []}
         />
         
         <div className="mx-4 mb-6 bg-[#1C2526] rounded-lg p-4 border border-gray-700">

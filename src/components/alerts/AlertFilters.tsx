@@ -6,23 +6,18 @@ import { AlertType } from '@/types/alerts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Well } from '@/services/wellService';
 
 interface AlertFiltersProps {
   activeFilter: AlertType;
   onFilterChange: (filter: AlertType) => void;
   selectedWellId: string | null;
   onWellChange: (wellId: string) => void;
+  wells?: Well[];
 }
 
-const AlertFilters = ({ activeFilter, onFilterChange, selectedWellId, onWellChange }: AlertFiltersProps) => {
+const AlertFilters = ({ activeFilter, onFilterChange, selectedWellId, onWellChange, wells = [] }: AlertFiltersProps) => {
   const [showWebcam, setShowWebcam] = React.useState(false);
-
-  const simulatedWells = [
-    { id: '1', nombre: 'Pozo #7' },
-    { id: '2', nombre: 'Pozo #12' },
-    { id: '3', nombre: 'Pozo #33' },
-    { id: '4', nombre: 'Pozo #44' }
-  ];
 
   const handleFilterButtonClick = () => {
     toast({
@@ -39,11 +34,17 @@ const AlertFilters = ({ activeFilter, onFilterChange, selectedWellId, onWellChan
             <SelectValue placeholder="Seleccionar pozo" />
           </SelectTrigger>
           <SelectContent className="bg-[#2E3A59] text-white border-gray-700">
-            {simulatedWells.map((well) => (
-              <SelectItem key={well.id} value={well.id} className="hover:bg-[#3A4B6B]">
-                {well.nombre}
+            {wells.length > 0 ? (
+              wells.map((well) => (
+                <SelectItem key={well.id} value={well.id} className="hover:bg-[#3A4B6B]">
+                  {well.nombre}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="loading" disabled>
+                Cargando pozos...
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
 

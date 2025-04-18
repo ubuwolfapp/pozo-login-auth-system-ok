@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 interface AlertListProps {
   alerts: Alert[] | undefined;
   isLoading: boolean;
-  onAlertResolved?: (alertId: string) => void;
+  onAlertResolved?: (alertId: string, resolutionText: string) => void;
 }
 
 const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
@@ -51,65 +51,19 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
     try {
       setIsSubmitting(true);
       
-      if (!selectedAlert.id.startsWith('http')) {
-        const event = new CustomEvent('alertResolved', {
-          detail: { alertId: selectedAlert.id }
-        });
-        window.dispatchEvent(event);
-        
-        if (onAlertResolved) {
-          onAlertResolved(selectedAlert.id);
-        }
-        
-        toast({
-          title: "Alerta resuelta",
-          description: "La alerta ha sido marcada como resuelta",
-        });
-        
-        queryClient.invalidateQueries({ queryKey: ['alerts'] });
-        setSelectedAlert(null);
-        setResolutionText("");
-        setIsSubmitting(false);
-        return;
+      console.log("Resolving alert:", selectedAlert.id, "Resolution text:", resolutionText);
+      
+      // Call the parent component's callback to handle resolution
+      if (onAlertResolved) {
+        await onAlertResolved(selectedAlert.id, resolutionText);
       }
-      
-      console.log("Updating alert in Supabase:", selectedAlert.id);
-      
-      const updateData = { 
-        resuelto: true,
-        resolucion: resolutionText,
-        fecha_resolucion: new Date().toISOString()
-      };
-      
-      console.log("Update data:", updateData);
-      
-      const { data, error } = await supabase
-        .from('alertas')
-        .update(updateData)
-        .eq('id', selectedAlert.id)
-        .select();
-      
-      if (error) {
-        console.error("Supabase error:", error);
-        throw error;
-      }
-      
-      console.log("Supabase update response:", data);
       
       toast({
         title: "Alerta resuelta",
         description: "La alerta ha sido marcada como resuelta",
       });
       
-      // Ensure we call the callback for UI updates
-      if (onAlertResolved) {
-        onAlertResolved(selectedAlert.id);
-      }
-      
-      // Force a full refetch of alerts to ensure the UI is updated
-      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      queryClient.refetchQueries({ queryKey: ['alerts'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['alerts'] });
       setSelectedAlert(null);
       setResolutionText("");
     } catch (error) {
@@ -142,14 +96,14 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
         {alerts?.map((alert) => (
           <Card 
             key={alert.id}
-            className={`${getAlertBackground(alert.tipo, alert.resuelto)} text-white border-none p-4`}
+            className={`${getAlertBackground(alert.tipo, alert.resuelto)} border-none p-4`}
           >
             <div className="flex items-start justify-between">
               <div className="flex gap-3">
                 {getAlertIcon(alert.tipo)}
                 <div>
-                  <p className="font-medium mb-1">{alert.mensaje}</p>
-                  <p className="text-sm text-gray-300">
+                  <p className={`font-medium mb-1 ${alert.resuelto ? 'text-white' : 'text-white'}`}>{alert.mensaje}</p>
+                  <p className={`text-sm ${alert.resuelto ? 'text-white' : 'text-gray-300'}`}>
                     {format(new Date(alert.created_at), 'dd/MM/yyyy HH:mm')}
                   </p>
                 </div>

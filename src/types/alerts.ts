@@ -10,6 +10,7 @@ export interface Alert {
   created_at: string;
   resuelto: boolean;
   resolucion?: string;
+  fecha_resolucion?: string;
   pozo: {
     id: string;
     nombre: string;
