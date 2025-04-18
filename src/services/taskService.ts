@@ -22,7 +22,20 @@ export const taskService = {
         .order('fecha_limite');
 
       if (error) throw error;
-      return data;
+      
+      // Validate and transform the estado field to ensure it matches our type
+      return data?.map(task => {
+        // Ensure estado is one of our valid types
+        let validEstado: Task['estado'] = 'pendiente';
+        if (task.estado === 'pendiente' || task.estado === 'en_progreso' || task.estado === 'resuelta') {
+          validEstado = task.estado as Task['estado'];
+        }
+        
+        return {
+          ...task,
+          estado: validEstado
+        } as Task;
+      }) || [];
     } catch (error) {
       console.error('Error fetching tasks:', error);
       toast({
