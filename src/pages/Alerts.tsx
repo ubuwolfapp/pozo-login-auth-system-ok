@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +21,7 @@ const Alerts = () => {
           pozo:pozos(nombre)
         `);
       
-      if (activeFilter === 'criticas') {
+      if (activeFilter === 'critica') {
         query = query.eq('tipo', 'critica');
       } else if (activeFilter === 'advertencia') {
         query = query.eq('tipo', 'advertencia');
@@ -53,7 +54,7 @@ const Alerts = () => {
       
       <AlertFilters 
         activeFilter={activeFilter}
-        onFilterChange={setActiveFilter as (filter: AlertType) => void}
+        onFilterChange={setActiveFilter}
       />
       
       <div className="mx-4 mb-4 bg-[#1C2526] rounded-lg p-4 border border-gray-700">

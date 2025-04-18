@@ -27,8 +27,8 @@ const AlertFilters = ({ activeFilter, onFilterChange }: AlertFiltersProps) => {
           Todas
         </button>
         <button
-          onClick={() => onFilterChange('criticas')}
-          className={`flex-1 py-2 ${activeFilter === 'criticas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+          onClick={() => onFilterChange('critica')}
+          className={`flex-1 py-2 ${activeFilter === 'critica' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
         >
           Críticas
         </button>

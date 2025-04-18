@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@/services/authService';
@@ -28,10 +29,19 @@ const Dashboard: React.FC = () => {
         .from('pozos')
         .select('*');
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching wells:", error);
+        throw error;
+      }
+      console.log("Wells data:", data);
       return data as Well[];
     }
   });
+
+  // Agregar logs para verificar lo que está pasando con los datos
+  React.useEffect(() => {
+    console.log("Current wells data:", wells);
+  }, [wells]);
 
   const handleLogout = async () => {
     try {
@@ -80,8 +90,8 @@ const Dashboard: React.FC = () => {
         <div className="space-y-3">
           {isLoading ? (
             <div className="text-center py-4">Cargando información de pozos...</div>
-          ) : (
-            wells?.map((well) => (
+          ) : wells && wells.length > 0 ? (
+            wells.map((well) => (
               <Card 
                 key={well.id} 
                 className="bg-[#2E3A59] border-none p-4 rounded-lg flex items-center justify-between"
@@ -106,6 +116,8 @@ const Dashboard: React.FC = () => {
                 </div>
               </Card>
             ))
+          ) : (
+            <div className="text-center py-4">No hay datos de pozos disponibles</div>
           )}
         </div>
 
