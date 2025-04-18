@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
 import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
@@ -14,9 +13,7 @@ const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQuery({
-    queryKey: ['queryClient'],
-  }).queryClient;
+  const queryClient = useQueryClient();
 
   // First fetch all wells to ensure we have valid well data
   const { data: wells } = useQuery({
