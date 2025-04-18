@@ -2,12 +2,11 @@
 import React from 'react';
 import { Filter } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-
-type FilterType = 'todas' | 'criticas' | 'resueltas';
+import { AlertType } from '@/types/alerts';
 
 interface AlertFiltersProps {
-  activeFilter: FilterType;
-  onFilterChange: (filter: FilterType) => void;
+  activeFilter: AlertType;
+  onFilterChange: (filter: AlertType) => void;
 }
 
 const AlertFilters = ({ activeFilter, onFilterChange }: AlertFiltersProps) => {
@@ -34,10 +33,10 @@ const AlertFilters = ({ activeFilter, onFilterChange }: AlertFiltersProps) => {
           Críticas
         </button>
         <button
-          onClick={() => onFilterChange('resueltas')}
-          className={`flex-1 py-2 rounded-r-lg ${activeFilter === 'resueltas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+          onClick={() => onFilterChange('advertencia')}
+          className={`flex-1 py-2 rounded-r-lg ${activeFilter === 'advertencia' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
         >
-          Resueltas
+          Advertencia
         </button>
       </div>
       <button onClick={handleFilterButtonClick} className="absolute right-4 top-4 text-white">

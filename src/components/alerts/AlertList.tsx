@@ -7,14 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-
-interface Alert {
-  id: string;
-  tipo: 'critica' | 'advertencia';
-  mensaje: string;
-  created_at: string;
-  resuelto: boolean;
-}
+import { Alert } from '@/types/alerts';
 
 interface AlertListProps {
   alerts: Alert[] | undefined;

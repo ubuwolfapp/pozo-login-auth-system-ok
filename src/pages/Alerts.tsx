@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,11 +5,10 @@ import PressureChart from '@/components/PressureChart';
 import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
 import AlertsNavigation from '@/components/alerts/AlertsNavigation';
-
-type FilterType = 'todas' | 'criticas' | 'resueltas';
+import { Alert, AlertFromDatabase, AlertType } from '@/types/alerts';
 
 const Alerts = () => {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('todas');
+  const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
 
   const { data: alerts, isLoading: alertsLoading } = useQuery({
     queryKey: ['alerts', activeFilter],
@@ -24,14 +22,14 @@ const Alerts = () => {
       
       if (activeFilter === 'criticas') {
         query = query.eq('tipo', 'critica');
-      } else if (activeFilter === 'resueltas') {
-        query = query.eq('resuelto', true);
+      } else if (activeFilter === 'advertencia') {
+        query = query.eq('tipo', 'advertencia');
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as AlertFromDatabase[];
     }
   });
 
@@ -55,7 +53,7 @@ const Alerts = () => {
       
       <AlertFilters 
         activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+        onFilterChange={setActiveFilter as (filter: AlertType) => void}
       />
       
       <div className="mx-4 mb-4 bg-[#1C2526] rounded-lg p-4 border border-gray-700">
@@ -63,7 +61,10 @@ const Alerts = () => {
       </div>
       
       <div className="px-4 pb-24">
-        <AlertList alerts={alerts} isLoading={alertsLoading} />
+        <AlertList 
+          alerts={alerts as Alert[] | undefined} 
+          isLoading={alertsLoading} 
+        />
       </div>
     </div>
   );
