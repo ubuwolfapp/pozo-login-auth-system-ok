@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Well } from '@/services/wellService';
-import { OilIcon } from 'lucide-react';
+import { Oil } from 'lucide-react';  // Changed from OilIcon to Oil
 
 interface WellMapProps {
   wells: Well[];
@@ -23,7 +23,7 @@ const WellMap: React.FC<WellMapProps> = ({ wells, onSelectWell }) => {
             onClick={() => onSelectWell(well)}
           >
             <div className="relative group">
-              <OilIcon
+              <Oil
                 className={`h-6 w-6 ${
                   well.estado === 'advertencia' ? 'text-red-500' : 'text-green-500'
                 }`}
