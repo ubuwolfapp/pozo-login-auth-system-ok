@@ -1,3 +1,4 @@
+
 import { Database } from '@/integrations/supabase/types';
 
 export type AlertType = 'todas' | 'critica' | 'advertencia' | 'resueltas';
