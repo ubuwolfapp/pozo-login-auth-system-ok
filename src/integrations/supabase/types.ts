@@ -16,6 +16,7 @@ export type Database = {
           id: string
           mensaje: string
           pozo_id: string
+          resolucion: string | null
           resuelto: boolean
           tipo: string
           unidad: string | null
@@ -27,6 +28,7 @@ export type Database = {
           id?: string
           mensaje: string
           pozo_id: string
+          resolucion?: string | null
           resuelto?: boolean
           tipo: string
           unidad?: string | null
@@ -38,6 +40,7 @@ export type Database = {
           id?: string
           mensaje?: string
           pozo_id?: string
+          resolucion?: string | null
           resuelto?: boolean
           tipo?: string
           unidad?: string | null

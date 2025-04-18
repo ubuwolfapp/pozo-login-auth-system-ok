@@ -219,10 +219,15 @@ const Alerts = () => {
         description: "La alerta ha sido marcada como resuelta",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
       
     } catch (error) {
       console.error('Error resolving alert:', error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al resolver la alerta",
+        variant: "destructive"
+      });
     }
   };
 
