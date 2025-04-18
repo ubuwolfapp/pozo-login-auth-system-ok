@@ -12,6 +12,7 @@ import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
+import WellDetails from "./pages/WellDetails";
 import { authService } from "./services/authService";
 
 const queryClient = new QueryClient();
@@ -71,6 +72,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wells/:id" 
+            element={
+              <ProtectedRoute>
+                <WellDetails />
               </ProtectedRoute>
             } 
           />
