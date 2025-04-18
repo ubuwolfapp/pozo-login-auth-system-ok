@@ -6,7 +6,7 @@ import { toast } from '@/components/ui/use-toast';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from "@/components/ui/skeleton";
-import WellMap from '@/components/WellMap';
+import GoogleMapsWell from '@/components/GoogleMapsWell';
 import WellCard from '@/components/WellCard';
 import NavigationBar from '@/components/NavigationBar';
 
@@ -43,6 +43,79 @@ const Dashboard: React.FC = () => {
     }
   });
 
+  const handleInitializeTestData = async () => {
+    try {
+      // Crear pozos de ejemplo si no existen
+      const { data: wellsData, error: wellsError } = await supabase
+        .from('pozos')
+        .select('*');
+        
+      if (!wellsData || wellsData.length === 0) {
+        const exampleWells = [
+          {
+            nombre: 'Pozo Alpha',
+            latitud: 19.4326,
+            longitud: -99.1332,
+            estado: 'activo',
+            produccion_diaria: 1250,
+            temperatura: 85,
+            presion: 2100,
+            flujo: 450,
+            nivel: 75
+          },
+          {
+            nombre: 'Pozo Beta',
+            latitud: 19.4526,
+            longitud: -99.1532,
+            estado: 'advertencia',
+            produccion_diaria: 980,
+            temperatura: 92,
+            presion: 1950,
+            flujo: 380,
+            nivel: 65
+          },
+          {
+            nombre: 'Pozo Gamma',
+            latitud: 19.4126,
+            longitud: -99.1132,
+            estado: 'fuera_de_servicio',
+            produccion_diaria: 0,
+            temperatura: 65,
+            presion: 850,
+            flujo: 0,
+            nivel: 20
+          }
+        ];
+        
+        for (const well of exampleWells) {
+          await supabase
+            .from('pozos')
+            .insert([well]);
+        }
+        
+        toast({
+          title: "Datos de pozos inicializados",
+          description: "Se han creado pozos de ejemplo correctamente"
+        });
+        
+        // Recargar datos
+        refetch();
+      } else {
+        toast({
+          title: "Datos existentes",
+          description: "Ya existen pozos en la base de datos"
+        });
+      }
+    } catch (e) {
+      console.error("Error al inicializar datos de prueba:", e);
+      toast({
+        title: "Error",
+        description: "No se pudieron crear los datos de prueba",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleGenerateReport = () => {
     toast({
       title: "Generando reporte",
@@ -73,7 +146,7 @@ const Dashboard: React.FC = () => {
         <h1 className="text-2xl font-bold mb-6">Monitoreo de Pozos</h1>
         
         <div className="mb-6 bg-[#2E3A59] rounded-lg overflow-hidden h-[300px]">
-          <WellMap />
+          <GoogleMapsWell wells={wells || []} />
         </div>
         
         <h2 className="text-xl font-semibold mb-3">Estado de los Pozos</h2>
@@ -96,17 +169,26 @@ const Dashboard: React.FC = () => {
           ) : (
             <div className="text-center py-4 bg-[#2E3A59] rounded-lg p-4">
               <p className="mb-2">No hay datos de pozos disponibles</p>
-              <p className="text-sm text-gray-400">Asegúrate de que existan datos en la tabla de pozos</p>
+              <p className="text-sm text-gray-400 mb-4">Para visualizar el mapa, necesitas añadir datos de pozos</p>
+              <Button 
+                variant="outline" 
+                className="bg-pozo-orange hover:bg-orange-600 text-white"
+                onClick={handleInitializeTestData}
+              >
+                Inicializar datos de prueba
+              </Button>
             </div>
           )}
         </div>
 
-        <Button
-          onClick={handleGenerateReport}
-          className="w-full bg-pozo-orange hover:bg-orange-600 text-white py-3 rounded-lg mt-6 font-medium text-lg"
-        >
-          Generar Reporte
-        </Button>
+        {wells && wells.length > 0 && (
+          <Button
+            onClick={handleGenerateReport}
+            className="w-full bg-pozo-orange hover:bg-orange-600 text-white py-3 rounded-lg mt-6 font-medium text-lg"
+          >
+            Generar Reporte
+          </Button>
+        )}
 
         <NavigationBar />
       </div>
