@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -24,7 +23,11 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const getAlertBackground = (tipo: string) => {
+  const getAlertBackground = (tipo: string, resuelto?: boolean) => {
+    if (resuelto) {
+      return 'bg-[#BDE0FE]/80';
+    }
+    
     switch (tipo) {
       case 'critica':
         return 'bg-[#8B0000]/80';
@@ -118,10 +121,10 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
   return (
     <>
       <div className="space-y-4">
-        {alerts.map((alert) => (
+        {alerts?.map((alert) => (
           <Card 
             key={alert.id}
-            className={`${getAlertBackground(alert.tipo)} text-white border-none p-4`}
+            className={`${getAlertBackground(alert.tipo, alert.resuelto)} text-white border-none p-4`}
           >
             <div className="flex items-start justify-between">
               <div className="flex gap-3">
