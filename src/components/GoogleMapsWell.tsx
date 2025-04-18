@@ -1,11 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGoogleMaps } from '@/hooks/useGoogleMaps';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import MapLoading from './maps/MapLoading';
 import MapEmptyState from './maps/MapEmptyState';
+import MapError from './maps/MapError';
 
 // Fix para los iconos de Leaflet
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -33,8 +34,18 @@ interface GoogleMapsWellProps {
   wells: Well[];
 }
 
+// Componente para actualizar la vista del mapa cuando cambian las coordenadas
+const ChangeView = ({ center, zoom }: { center: [number, number]; zoom: number }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [center, zoom, map]);
+  return null;
+};
+
 const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
   const { isLoaded, error } = useGoogleMaps();
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Crear iconos personalizados según el estado del pozo
   const getWellIcon = (estado: string) => {
@@ -65,9 +76,20 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
     return [avgLat, avgLng];
   };
 
+  useEffect(() => {
+    console.log("Pozos disponibles para mostrar:", wells);
+  }, [wells]);
+
   if (!isLoaded) {
     return <MapLoading />;
   }
+
+  if (mapError) {
+    return <MapError error={mapError} onRetry={() => setMapError(null)} />;
+  }
+
+  // Para debug - verifica que tengamos datos
+  console.log("Renderizando mapa con pozos:", wells);
 
   return (
     <div className="relative w-full h-full">
@@ -79,6 +101,7 @@ const GoogleMapsWell: React.FC<GoogleMapsWellProps> = ({ wells }) => {
           zoom={10} 
           style={{ width: '100%', height: '100%', borderRadius: '0.5rem' }}
         >
+          <ChangeView center={getMapCenter() as [number, number]} zoom={10} />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

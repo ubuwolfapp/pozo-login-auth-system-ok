@@ -20,11 +20,12 @@ interface Well {
 }
 
 const Dashboard: React.FC = () => {
-  // Obtener datos de pozos
+  // Obtener datos de pozos con refetchOnMount para asegurar datos actualizados
   const { data: wells, isLoading, error, refetch } = useQuery({
     queryKey: ['wells'],
     queryFn: async () => {
       try {
+        console.log("Intentando obtener datos de pozos...");
         const { data, error } = await supabase
           .from('pozos')
           .select('*');
@@ -40,77 +41,73 @@ const Dashboard: React.FC = () => {
         console.error("Error en consulta de pozos:", e);
         throw e;
       }
-    }
+    },
+    refetchOnMount: true
   });
 
   const handleInitializeTestData = async () => {
     try {
-      // Crear pozos de ejemplo si no existen
-      const { data: wellsData, error: wellsError } = await supabase
-        .from('pozos')
-        .select('*');
-        
-      if (!wellsData || wellsData.length === 0) {
-        const exampleWells = [
-          {
-            nombre: 'Pozo Alpha',
-            latitud: 19.4326,
-            longitud: -99.1332,
-            estado: 'activo',
-            produccion_diaria: 1250,
-            temperatura: 85,
-            presion: 2100,
-            flujo: 450,
-            nivel: 75
-          },
-          {
-            nombre: 'Pozo Beta',
-            latitud: 19.4526,
-            longitud: -99.1532,
-            estado: 'advertencia',
-            produccion_diaria: 980,
-            temperatura: 92,
-            presion: 1950,
-            flujo: 380,
-            nivel: 65
-          },
-          {
-            nombre: 'Pozo Gamma',
-            latitud: 19.4126,
-            longitud: -99.1132,
-            estado: 'fuera_de_servicio',
-            produccion_diaria: 0,
-            temperatura: 65,
-            presion: 850,
-            flujo: 0,
-            nivel: 20
-          }
-        ];
-        
-        for (const well of exampleWells) {
-          await supabase
-            .from('pozos')
-            .insert([well]);
+      console.log("Inicializando datos de prueba...");
+      // Crear pozos de ejemplo
+      const exampleWells = [
+        {
+          nombre: 'Pozo Alpha',
+          latitud: 19.4326,
+          longitud: -99.1332,
+          estado: 'activo',
+          produccion_diaria: 1250,
+          temperatura: 85,
+          presion: 2100,
+          flujo: 450,
+          nivel: 75
+        },
+        {
+          nombre: 'Pozo Beta',
+          latitud: 19.4526,
+          longitud: -99.1532,
+          estado: 'advertencia',
+          produccion_diaria: 980,
+          temperatura: 92,
+          presion: 1950,
+          flujo: 380,
+          nivel: 65
+        },
+        {
+          nombre: 'Pozo Gamma',
+          latitud: 19.4126,
+          longitud: -99.1132,
+          estado: 'fuera_de_servicio',
+          produccion_diaria: 0,
+          temperatura: 65,
+          presion: 850,
+          flujo: 0,
+          nivel: 20
         }
+      ];
+      
+      // Intentar insertar cada pozo individualmente y mostrar resultados
+      for (const well of exampleWells) {
+        const { data, error } = await supabase
+          .from('pozos')
+          .insert([well]);
         
-        toast({
-          title: "Datos de pozos inicializados",
-          description: "Se han creado pozos de ejemplo correctamente"
-        });
-        
-        // Recargar datos
-        refetch();
-      } else {
-        toast({
-          title: "Datos existentes",
-          description: "Ya existen pozos en la base de datos"
-        });
+        if (error) {
+          console.error("Error al insertar pozo:", error);
+        }
       }
+      
+      toast({
+        title: "Datos de pozos inicializados",
+        description: "Se han creado pozos de ejemplo correctamente"
+      });
+      
+      // Recargar datos
+      refetch();
     } catch (e) {
       console.error("Error al inicializar datos de prueba:", e);
       toast({
         title: "Error",
-        description: "No se pudieron crear los datos de prueba",
+        description: "No se pudieron crear los datos de prueba: " + (e as Error).message,
         variant: "destructive"
       });
     }
@@ -139,6 +136,9 @@ const Dashboard: React.FC = () => {
       </div>
     );
   }
+
+  // Debug: mostrar los datos disponibles
+  console.log("Estado actual de datos de pozos:", { wells, isLoading, error });
 
   return (
     <div className="min-h-screen bg-[#1C2526] text-white">
