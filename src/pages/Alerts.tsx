@@ -10,6 +10,7 @@ import { Alert, AlertType } from '@/types/alerts';
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
+  const [resolvedAlerts, setResolvedAlerts] = useState<string[]>([]);
 
   // Simulated alerts that match the design
   const simulatedAlerts: Alert[] = [
@@ -18,7 +19,7 @@ const Alerts = () => {
       tipo: 'critica',
       mensaje: 'Presión alta en Pozo #7: 8500 psi',
       created_at: '2025-04-16T14:30:00Z',
-      resuelto: false,
+      resuelto: resolvedAlerts.includes('1'),
       pozo: { 
         id: '1', 
         nombre: 'Pozo #7' 
@@ -31,7 +32,7 @@ const Alerts = () => {
       tipo: 'advertencia',
       mensaje: 'Temperatura moderada en Pozo 33',
       created_at: '2025-04-16T03:15:00Z',
-      resuelto: false,
+      resuelto: resolvedAlerts.includes('2'),
       pozo: { 
         id: '2', 
         nombre: 'Pozo 33' 
@@ -42,7 +43,7 @@ const Alerts = () => {
       tipo: 'advertencia',
       mensaje: 'Nivel bajo en Pozo 12',
       created_at: '2025-04-15T18:20:00Z',
-      resuelto: false,
+      resuelto: resolvedAlerts.includes('3'),
       pozo: { 
         id: '3', 
         nombre: 'Pozo 12' 
@@ -53,7 +54,7 @@ const Alerts = () => {
       tipo: 'critica',
       mensaje: 'Falla de sensor en Pozo 44',
       created_at: '2025-04-15T10:45:00Z',
-      resuelto: false,
+      resuelto: resolvedAlerts.includes('4'),
       pozo: { 
         id: '4', 
         nombre: 'Pozo 44' 
@@ -62,7 +63,7 @@ const Alerts = () => {
   ];
 
   const { data: alerts } = useQuery({
-    queryKey: ['alerts', activeFilter, selectedWellId],
+    queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
     queryFn: async () => {
       // Filter alerts based on activeFilter and selectedWellId
       let filteredAlerts = simulatedAlerts;
@@ -76,7 +77,7 @@ const Alerts = () => {
       } else if (activeFilter === 'advertencia') {
         return filteredAlerts.filter(alert => alert.tipo === 'advertencia');
       } else if (activeFilter === 'resueltas') {
-        return filteredAlerts.filter(alert => alert.resuelto);
+        return filteredAlerts.filter(alert => resolvedAlerts.includes(alert.id));
       }
       return filteredAlerts;
     }
@@ -98,6 +99,20 @@ const Alerts = () => {
       return data;
     }
   });
+
+  // Add event handlers for resolving alerts
+  React.useEffect(() => {
+    // Listen for custom events to mark alerts as resolved
+    const handleAlertResolved = (event: CustomEvent) => {
+      const { alertId } = event.detail;
+      setResolvedAlerts(prev => [...prev, alertId]);
+    };
+
+    window.addEventListener('alertResolved' as any, handleAlertResolved as EventListener);
+    return () => {
+      window.removeEventListener('alertResolved' as any, handleAlertResolved as EventListener);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
