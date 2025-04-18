@@ -44,7 +44,9 @@ const WellDetails = () => {
           <PhotoUpload 
             wellId={well.id} 
             onUploadComplete={() => {
-              queryClient.invalidateQueries(['wellPhotos', well.id]);
+              queryClient.invalidateQueries({
+                queryKey: ['wellPhotos', well.id]
+              });
             }}
           />
         </header>
