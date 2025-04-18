@@ -1,9 +1,11 @@
-
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertTriangle } from 'lucide-react';
+
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZGV2ZWxvcG1lbnRzaGFyZWQiLCJhIjoiY2xza3cydWd6MHFoZDJxcnhpMXczaXpiMSJ9.SqQK9x_FiQ6BFqmxJKLXig';
 
 interface Well {
   id: string;
@@ -20,47 +22,43 @@ interface MapConfig {
   zoom_inicial: number;
 }
 
+const DEFAULT_MAP_CONFIG: MapConfig = {
+  centro_latitud: 19.4326,
+  centro_longitud: -99.1332,
+  zoom_inicial: 5
+};
+
 const WellMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const [mapError, setMapError] = useState<string | null>(null);
 
-  // Consulta de configuración del mapa
-  const { data: mapConfig } = useQuery({
+  const { data: mapConfig, isLoading: isLoadingConfig } = useQuery({
     queryKey: ['mapConfig'],
     queryFn: async () => {
       try {
         const { data, error } = await supabase
           .from('pozos_mapa')
           .select('*')
+          .limit(1)
           .single();
         
         if (error) {
           console.error("Error cargando configuración del mapa:", error);
-          // Valor predeterminado en caso de error
-          return {
-            centro_latitud: 19.4326,
-            centro_longitud: -99.1332,
-            zoom_inicial: 5
-          } as MapConfig;
+          return DEFAULT_MAP_CONFIG;
         }
         
         console.log("Configuración del mapa cargada:", data);
         return data as MapConfig;
       } catch (e) {
         console.error("Excepción al cargar configuración del mapa:", e);
-        // Valor predeterminado en caso de error
-        return {
-          centro_latitud: 19.4326,
-          centro_longitud: -99.1332,
-          zoom_inicial: 5
-        } as MapConfig;
+        return DEFAULT_MAP_CONFIG;
       }
     }
   });
 
-  // Consulta de datos de pozos
-  const { data: wells } = useQuery({
+  const { data: wells, isLoading: isLoadingWells } = useQuery({
     queryKey: ['wells'],
     queryFn: async () => {
       try {
@@ -82,27 +80,32 @@ const WellMap: React.FC = () => {
     }
   });
 
-  // Inicializar el mapa cuando la configuración está disponible
   useEffect(() => {
     if (!mapContainer.current || !mapConfig) return;
     
     console.log("Inicializando mapa con configuración:", mapConfig);
 
-    // Token de Mapbox
-    mapboxgl.accessToken = 'pk.eyJ1IjoibG92YWJsZSIsImEiOiJjbHM3Y3c5YnIwbG5nMmptbG1rdWt1dTh2In0.Y4RZAA6EwQtlQcU_6JMwtg';
-    
-    // Crear instancia del mapa
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
-      center: [mapConfig.centro_longitud, mapConfig.centro_latitud],
-      zoom: mapConfig.zoom_inicial
-    });
+    try {
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [mapConfig.centro_longitud, mapConfig.centro_latitud],
+        zoom: mapConfig.zoom_inicial
+      });
 
-    // Agregar controles de navegación
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.on('error', (e) => {
+        console.error("Error en el mapa:", e);
+        setMapError("Error al cargar el mapa. Verifica la conexión y el token de Mapbox.");
+      });
 
-    // Limpiar al desmontar
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    } catch (e) {
+      console.error("Error al inicializar el mapa:", e);
+      setMapError("No se pudo inicializar el mapa. Verifica la configuración.");
+    }
+
     return () => {
       if (map.current) {
         map.current.remove();
@@ -110,58 +113,49 @@ const WellMap: React.FC = () => {
     };
   }, [mapConfig]);
 
-  // Agregar marcadores cuando los datos de pozos estén disponibles
   useEffect(() => {
     if (!map.current || !wells || wells.length === 0) return;
     
     console.log("Agregando marcadores de pozos al mapa:", wells.length);
     
-    // Limpiar marcadores anteriores
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Crear marcadores para cada pozo
     wells.forEach(well => {
-      // Elemento HTML para el marcador personalizado
-      const el = document.createElement('div');
-      el.className = 'well-marker relative';
-      
-      // Personalización del marcador
-      el.innerHTML = `
-        <div class="flex flex-col items-center">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="#F97316">
-            <path d="M12 2L8 6h3v6l-2 3v7h6v-7l-2-3V6h3L12 2z" />
-            <path d="M5 10h2v2H5zM17 10h2v2h-2zM5 14h2v2H5zM17 14h2v2h-2z" />
-          </svg>
-          <div class="text-white font-bold text-xs text-center whitespace-nowrap text-shadow">${well.nombre}</div>
-        </div>
-      `;
-
-      // Color según el estado del pozo
-      const statusColor = well.estado === 'activo' ? '#10B981' : 
-                          well.estado === 'advertencia' ? '#F59E0B' : '#EF4444';
-      
-      // Agregar indicador de estado si no está activo
-      if (well.estado !== 'activo') {
-        const statusIndicator = document.createElement('div');
-        statusIndicator.style.position = 'absolute';
-        statusIndicator.style.top = '5px';
-        statusIndicator.style.right = '-5px';
-        statusIndicator.style.width = '12px';
-        statusIndicator.style.height = '12px';
-        statusIndicator.style.backgroundColor = statusColor;
-        statusIndicator.style.borderRadius = '50%';
-        statusIndicator.style.border = '2px solid #1C2526';
-        el.appendChild(statusIndicator);
-      }
-
-      // Crear y añadir el marcador
       try {
+        const el = document.createElement('div');
+        el.className = 'well-marker relative';
+        
+        el.innerHTML = `
+          <div class="flex flex-col items-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="#F97316">
+              <path d="M12 2L8 6h3v6l-2 3v7h6v-7l-2-3V6h3L12 2z" />
+              <path d="M5 10h2v2H5zM17 10h2v2h-2zM5 14h2v2H5zM17 14h2v2h-2z" />
+            </svg>
+            <div class="text-white font-bold text-xs text-center whitespace-nowrap text-shadow">${well.nombre}</div>
+          </div>
+        `;
+
+        const statusColor = well.estado === 'activo' ? '#10B981' : 
+                            well.estado === 'advertencia' ? '#F59E0B' : '#EF4444';
+        
+        if (well.estado !== 'activo') {
+          const statusIndicator = document.createElement('div');
+          statusIndicator.style.position = 'absolute';
+          statusIndicator.style.top = '5px';
+          statusIndicator.style.right = '-5px';
+          statusIndicator.style.width = '12px';
+          statusIndicator.style.height = '12px';
+          statusIndicator.style.backgroundColor = statusColor;
+          statusIndicator.style.borderRadius = '50%';
+          statusIndicator.style.border = '2px solid #1C2526';
+          el.appendChild(statusIndicator);
+        }
+
         const marker = new mapboxgl.Marker(el)
           .setLngLat([well.longitud, well.latitud])
           .addTo(map.current!);
           
-        // Guardar referencia para limpieza posterior
         markersRef.current.push(marker);
       } catch (e) {
         console.error("Error al crear marcador:", e);
@@ -169,7 +163,6 @@ const WellMap: React.FC = () => {
     });
   }, [wells, map.current]);
 
-  // Agregar estilos CSS para el texto del marcador
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -183,16 +176,35 @@ const WellMap: React.FC = () => {
     };
   }, []);
 
+  const isLoading = isLoadingConfig || isLoadingWells;
+
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden bg-slate-800">
       <div ref={mapContainer} className="absolute inset-0" />
       
-      {/* Overlay para indicar carga o falta de datos */}
-      {!wells && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
           <div className="text-center text-white">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
             <p>Cargando mapa...</p>
+          </div>
+        </div>
+      )}
+
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+          <div className="text-center text-white p-4">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-3" />
+            <p className="text-lg font-medium mb-2">Error en el mapa</p>
+            <p className="text-sm">{mapError}</p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && wells && wells.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="text-center text-white p-4">
+            <p>No hay pozos para mostrar en el mapa</p>
           </div>
         </div>
       )}
