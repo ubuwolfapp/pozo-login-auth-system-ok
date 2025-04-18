@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export interface Task {
   id: string;
@@ -64,7 +64,49 @@ export const taskService = {
         description: "No se pudo crear la tarea",
         variant: "destructive"
       });
+      throw error;
+    }
+  },
+  
+  async updateTaskStatus(taskId: string, newStatus: Task['estado']) {
+    try {
+      const { data, error } = await supabase
+        .from('tareas')
+        .update({ estado: newStatus })
+        .eq('id', taskId)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error updating task status:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado de la tarea",
+        variant: "destructive"
+      });
       return null;
+    }
+  },
+  
+  async deleteTask(taskId: string) {
+    try {
+      const { error } = await supabase
+        .from('tareas')
+        .delete()
+        .eq('id', taskId);
+        
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la tarea",
+        variant: "destructive"
+      });
+      return false;
     }
   }
 };
