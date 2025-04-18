@@ -50,15 +50,12 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
     try {
       setIsSubmitting(true);
       
-      // For demo purposes with our simulated data
       if (!selectedAlert.id.startsWith('http')) {
-        // Dispatch custom event for simulated alerts
         const event = new CustomEvent('alertResolved', {
           detail: { alertId: selectedAlert.id }
         });
         window.dispatchEvent(event);
         
-        // Call the onAlertResolved callback if provided
         if (onAlertResolved) {
           onAlertResolved(selectedAlert.id);
         }
@@ -75,12 +72,12 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
         return;
       }
       
-      // For real database interaction
       const { error } = await supabase
         .from('alertas')
         .update({ 
           resuelto: true,
-          resolucion: resolutionText 
+          resolucion: resolutionText,
+          fecha_resolucion: new Date().toISOString()
         })
         .eq('id', selectedAlert.id);
       
@@ -146,7 +143,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
                   Resolver
                 </Button>
               ) : (
-                <span className="text-green-500 flex items-center">
+                <span className="text-white flex items-center">
                   <Check className="h-4 w-4 mr-1" />
                   Resuelta
                 </span>
