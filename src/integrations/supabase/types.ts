@@ -50,6 +50,109 @@ export type Database = {
           },
         ]
       }
+      camaras_pozos: {
+        Row: {
+          descripcion: string | null
+          id: string
+          nombre: string
+          pozo_id: string | null
+          url_stream: string
+        }
+        Insert: {
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          pozo_id?: string | null
+          url_stream: string
+        }
+        Update: {
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          pozo_id?: string | null
+          url_stream?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camaras_pozos_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracion_usuario: {
+        Row: {
+          correo_activo: boolean | null
+          created_at: string | null
+          id: string
+          idioma: string | null
+          notificaciones_activas: boolean | null
+          push_activo: boolean | null
+          sms_activo: boolean | null
+          umbral_presion: number | null
+          usuario_id: string | null
+        }
+        Insert: {
+          correo_activo?: boolean | null
+          created_at?: string | null
+          id?: string
+          idioma?: string | null
+          notificaciones_activas?: boolean | null
+          push_activo?: boolean | null
+          sms_activo?: boolean | null
+          umbral_presion?: number | null
+          usuario_id?: string | null
+        }
+        Update: {
+          correo_activo?: boolean | null
+          created_at?: string | null
+          id?: string
+          idioma?: string | null
+          notificaciones_activas?: boolean | null
+          push_activo?: boolean | null
+          sms_activo?: boolean | null
+          umbral_presion?: number | null
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      fotos_pozos: {
+        Row: {
+          created_at: string | null
+          descripcion: string | null
+          id: string
+          pozo_id: string | null
+          url: string
+          usuario: string
+        }
+        Insert: {
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          pozo_id?: string | null
+          url: string
+          usuario: string
+        }
+        Update: {
+          created_at?: string | null
+          descripcion?: string | null
+          id?: string
+          pozo_id?: string | null
+          url?: string
+          usuario?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fotos_pozos_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pozos: {
         Row: {
           estado: string
@@ -58,6 +161,7 @@ export type Database = {
           latitud: number
           longitud: number
           nivel: number
+          nivel_porcentaje: number | null
           nombre: string
           presion: number
           produccion_diaria: number
@@ -71,6 +175,7 @@ export type Database = {
           latitud: number
           longitud: number
           nivel?: number
+          nivel_porcentaje?: number | null
           nombre: string
           presion?: number
           produccion_diaria: number
@@ -84,6 +189,7 @@ export type Database = {
           latitud?: number
           longitud?: number
           nivel?: number
+          nivel_porcentaje?: number | null
           nombre?: string
           presion?: number
           produccion_diaria?: number
@@ -138,6 +244,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "presion_historial_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas: {
+        Row: {
+          asignado_a: string
+          created_at: string | null
+          es_critica: boolean | null
+          estado: string
+          fecha_limite: string
+          id: string
+          pozo_id: string | null
+          titulo: string
+        }
+        Insert: {
+          asignado_a: string
+          created_at?: string | null
+          es_critica?: boolean | null
+          estado: string
+          fecha_limite: string
+          id?: string
+          pozo_id?: string | null
+          titulo: string
+        }
+        Update: {
+          asignado_a?: string
+          created_at?: string | null
+          es_critica?: boolean | null
+          estado?: string
+          fecha_limite?: string
+          id?: string
+          pozo_id?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_pozo_id_fkey"
             columns: ["pozo_id"]
             isOneToOne: false
             referencedRelation: "pozos"

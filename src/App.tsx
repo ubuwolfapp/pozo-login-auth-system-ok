@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,11 +10,11 @@ import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import Alerts from "./pages/Alerts";
 import NotFound from "./pages/NotFound";
+import Tasks from "./pages/Tasks";
 import { authService } from "./services/authService";
 
 const queryClient = new QueryClient();
 
-// Componente para proteger rutas
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = authService.isAuthenticated();
   if (!isAuthenticated) {
@@ -39,6 +38,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tasks" 
+            element={
+              <ProtectedRoute>
+                <Tasks />
               </ProtectedRoute>
             } 
           />
