@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 
 interface MapErrorProps {
   error: string;
-  onConfigureApiKey: () => void;
+  onRetry: () => void;
 }
 
-const MapError: React.FC<MapErrorProps> = ({ error, onConfigureApiKey }) => {
+const MapError: React.FC<MapErrorProps> = ({ error, onRetry }) => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
       <div className="text-center text-white p-4 max-w-md mx-auto">
@@ -18,9 +18,9 @@ const MapError: React.FC<MapErrorProps> = ({ error, onConfigureApiKey }) => {
         <Button 
           variant="outline" 
           className="w-full bg-pozo-orange hover:bg-orange-600 text-white"
-          onClick={onConfigureApiKey}
+          onClick={onRetry}
         >
-          Configurar API Key de Google Maps
+          Reintentar
         </Button>
       </div>
     </div>
