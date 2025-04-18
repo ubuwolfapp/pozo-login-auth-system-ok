@@ -1,0 +1,50 @@
+
+import React from 'react';
+import { Filter } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+
+type FilterType = 'todas' | 'criticas' | 'resueltas';
+
+interface AlertFiltersProps {
+  activeFilter: FilterType;
+  onFilterChange: (filter: FilterType) => void;
+}
+
+const AlertFilters = ({ activeFilter, onFilterChange }: AlertFiltersProps) => {
+  const handleFilterButtonClick = () => {
+    toast({
+      title: "Filtro",
+      description: "Función de filtro no implementada",
+    });
+  };
+
+  return (
+    <>
+      <div className="flex justify-between px-4 mb-4">
+        <button
+          onClick={() => onFilterChange('todas')}
+          className={`flex-1 py-2 rounded-l-lg ${activeFilter === 'todas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+        >
+          Todas
+        </button>
+        <button
+          onClick={() => onFilterChange('criticas')}
+          className={`flex-1 py-2 ${activeFilter === 'criticas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+        >
+          Críticas
+        </button>
+        <button
+          onClick={() => onFilterChange('resueltas')}
+          className={`flex-1 py-2 rounded-r-lg ${activeFilter === 'resueltas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+        >
+          Resueltas
+        </button>
+      </div>
+      <button onClick={handleFilterButtonClick} className="absolute right-4 top-4 text-white">
+        <Filter className="h-6 w-6" />
+      </button>
+    </>
+  );
+};
+
+export default AlertFilters;
