@@ -1,7 +1,6 @@
-
 import { Database } from '@/integrations/supabase/types';
 
-export type AlertType = 'todas' | 'critica' | 'advertencia';
+export type AlertType = 'todas' | 'critica' | 'advertencia' | 'resueltas';
 
 export interface Alert {
   id: string;
@@ -9,6 +8,7 @@ export interface Alert {
   mensaje: string;
   created_at: string;
   resuelto: boolean;
+  resolucion?: string;
   pozo: {
     nombre: string;
   };

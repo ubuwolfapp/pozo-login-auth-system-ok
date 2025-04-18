@@ -25,6 +25,8 @@ const Alerts = () => {
         query = query.eq('tipo', 'critica');
       } else if (activeFilter === 'advertencia') {
         query = query.eq('tipo', 'advertencia');
+      } else if (activeFilter === 'resueltas') {
+        query = query.eq('resuelto', true);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });

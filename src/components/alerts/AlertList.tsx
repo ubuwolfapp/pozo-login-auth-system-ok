@@ -4,10 +4,12 @@ import { AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { Alert } from '@/types/alerts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
-import { Alert } from '@/types/alerts';
 
 interface AlertListProps {
   alerts: Alert[] | undefined;
@@ -15,14 +17,39 @@ interface AlertListProps {
 }
 
 const AlertList = ({ alerts, isLoading }: AlertListProps) => {
+  const [selectedAlert, setSelectedAlert] = React.useState<Alert | null>(null);
+  const [resolutionText, setResolutionText] = React.useState("");
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const markAsResolved = async (alertId: string) => {
+  const getAlertBackground = (tipo: string) => {
+    switch (tipo) {
+      case 'critica':
+        return 'bg-[#8B0000]/80';
+      case 'advertencia':
+        return 'bg-[#2F4F4F]/80';
+      default:
+        return 'bg-[#2E3A59]/80';
+    }
+  };
+
+  const getAlertIcon = (tipo: string) => {
+    return (
+      <AlertTriangle className={`h-6 w-6 ${tipo === 'critica' ? 'text-red-500' : 'text-yellow-500'}`} />
+    );
+  };
+
+  const handleResolveClick = async () => {
+    if (!selectedAlert) return;
+    
     try {
       const { error } = await supabase
         .from('alertas')
-        .update({ resuelto: true })
-        .eq('id', alertId);
+        .update({ 
+          resuelto: true,
+          resolucion: resolutionText 
+        })
+        .eq('id', selectedAlert.id);
       
       if (error) throw error;
       
@@ -32,6 +59,8 @@ const AlertList = ({ alerts, isLoading }: AlertListProps) => {
       });
       
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      setSelectedAlert(null);
+      setResolutionText("");
     } catch (error) {
       toast({
         title: "Error",
@@ -39,28 +68,6 @@ const AlertList = ({ alerts, isLoading }: AlertListProps) => {
         variant: "destructive",
       });
       console.error("Error resolving alert:", error);
-    }
-  };
-
-  const getAlertIcon = (tipo: string) => {
-    switch (tipo) {
-      case 'critica':
-        return <AlertTriangle className="h-6 w-6 text-red-500" />;
-      case 'advertencia':
-        return <AlertTriangle className="h-6 w-6 text-yellow-500" />;
-      default:
-        return <AlertTriangle className="h-6 w-6" />;
-    }
-  };
-
-  const getAlertBackground = (tipo: string) => {
-    switch (tipo) {
-      case 'critica':
-        return 'bg-[#8B0000]';
-      case 'advertencia':
-        return 'bg-[#2F4F4F]';
-      default:
-        return 'bg-[#2E3A59]';
     }
   };
 
@@ -73,42 +80,76 @@ const AlertList = ({ alerts, isLoading }: AlertListProps) => {
   }
 
   return (
-    <div className="space-y-4">
-      {alerts.map((alert) => (
-        <Card 
-          key={alert.id}
-          className={`border-none p-4 text-white ${getAlertBackground(alert.tipo)}`}
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex gap-3">
-              {getAlertIcon(alert.tipo)}
-              <div>
-                <p className="font-medium mb-1">{alert.mensaje}</p>
-                <p className="text-sm text-gray-300">
-                  {format(new Date(alert.created_at), 'dd/MM/yyyy HH:mm')}
-                </p>
+    <>
+      <div className="space-y-4">
+        {alerts.map((alert) => (
+          <Card 
+            key={alert.id}
+            className={`${getAlertBackground(alert.tipo)} text-white border-none p-4`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex gap-3">
+                {getAlertIcon(alert.tipo)}
+                <div>
+                  <p className="font-medium mb-1">{alert.mensaje}</p>
+                  <p className="text-sm text-gray-300">
+                    {format(new Date(alert.created_at), 'dd/MM/yyyy HH:mm')}
+                  </p>
+                </div>
               </div>
+              
+              {!alert.resuelto ? (
+                <Button
+                  onClick={() => setSelectedAlert(alert)}
+                  variant="secondary"
+                  className="bg-[#2F4F4F] hover:bg-[#3A5A5A] text-white"
+                >
+                  Resolver
+                </Button>
+              ) : (
+                <span className="text-green-500 flex items-center">
+                  <Check className="h-4 w-4 mr-1" />
+                  Resuelta
+                </span>
+              )}
             </div>
-            
-            {!alert.resuelto && (
-              <Button
-                onClick={() => markAsResolved(alert.id)}
-                className="bg-[#2F4F4F] hover:bg-[#3A5A5A] text-white"
-              >
-                Resolver
-              </Button>
-            )}
-            
-            {alert.resuelto && (
-              <span className="text-green-500 flex items-center">
-                <Check className="h-4 w-4 mr-1" />
-                Resuelta
-              </span>
-            )}
+          </Card>
+        ))}
+      </div>
+
+      <Dialog open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
+        <DialogContent className="bg-[#1C2526] text-white border-gray-700">
+          <DialogHeader>
+            <DialogTitle>Resolver Alerta</DialogTitle>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Textarea
+              placeholder="Escriba aquí la resolución..."
+              value={resolutionText}
+              onChange={(e) => setResolutionText(e.target.value)}
+              className="bg-[#2E3A59] border-gray-700 text-white placeholder:text-gray-400"
+            />
           </div>
-        </Card>
-      ))}
-    </div>
+
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setSelectedAlert(null)}
+              className="bg-gray-600 hover:bg-gray-700 text-white"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleResolveClick}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
