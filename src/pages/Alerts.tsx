@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,46 +5,77 @@ import PressureChart from '@/components/PressureChart';
 import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
 import AlertsNavigation from '@/components/alerts/AlertsNavigation';
-import { Alert, AlertFromDatabase, AlertType } from '@/types/alerts';
+import { Alert, AlertType } from '@/types/alerts';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
 
-  const { data: alerts, isLoading: alertsLoading } = useQuery({
+  // Simulated alerts that match the design
+  const simulatedAlerts: Alert[] = [
+    {
+      id: '1',
+      tipo: 'critica',
+      mensaje: 'Presión alta en Pozo #7: 8500 psi',
+      created_at: '2025-04-16T14:30:00Z',
+      resuelto: false,
+      pozo: { nombre: 'Pozo #7' },
+      valor: 8500,
+      unidad: 'psi'
+    },
+    {
+      id: '2',
+      tipo: 'advertencia',
+      mensaje: 'Temperatura moderada en Pozo 33',
+      created_at: '2025-04-16T03:15:00Z',
+      resuelto: false,
+      pozo: { nombre: 'Pozo 33' }
+    },
+    {
+      id: '3',
+      tipo: 'advertencia',
+      mensaje: 'Nivel bajo en Pozo 12',
+      created_at: '2025-04-15T18:20:00Z',
+      resuelto: false,
+      pozo: { nombre: 'Pozo 12' }
+    },
+    {
+      id: '4',
+      tipo: 'critica',
+      mensaje: 'Falla de sensor en Pozo 44',
+      created_at: '2025-04-15T10:45:00Z',
+      resuelto: false,
+      pozo: { nombre: 'Pozo 44' }
+    }
+  ];
+
+  const { data: alerts } = useQuery({
     queryKey: ['alerts', activeFilter],
     queryFn: async () => {
-      let query = supabase
-        .from('alertas')
-        .select(`
-          *,
-          pozo:pozos(nombre)
-        `);
-      
+      // Filter alerts based on activeFilter
       if (activeFilter === 'critica') {
-        query = query.eq('tipo', 'critica');
+        return simulatedAlerts.filter(alert => alert.tipo === 'critica');
       } else if (activeFilter === 'advertencia') {
-        query = query.eq('tipo', 'advertencia');
+        return simulatedAlerts.filter(alert => alert.tipo === 'advertencia');
       } else if (activeFilter === 'resueltas') {
-        query = query.eq('resuelto', true);
+        return simulatedAlerts.filter(alert => alert.resuelto);
       }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as AlertFromDatabase[];
+      return simulatedAlerts;
     }
   });
 
-  const { data: pressureData, isLoading: pressureLoading } = useQuery({
+  const { data: pressureData } = useQuery({
     queryKey: ['pressure-history'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('presion_historial')
-        .select('*')
-        .order('fecha', { ascending: true })
-        .limit(24);
-
-      if (error) throw error;
+      // Simulate 24 hours of pressure data
+      const data = [];
+      const now = new Date();
+      for (let i = 0; i < 24; i++) {
+        const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+        data.push({
+          fecha: date.toISOString(),
+          valor: 7.5 + Math.sin(i / 3) + Math.random() * 0.5
+        });
+      }
       return data;
     }
   });
@@ -67,7 +97,7 @@ const Alerts = () => {
         <div className="px-4 pb-24">
           <AlertList 
             alerts={alerts as Alert[] | undefined} 
-            isLoading={alertsLoading} 
+            isLoading={false} 
           />
         </div>
       </div>
