@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -5,6 +6,7 @@ import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
 import AlertsNavigation from '@/components/alerts/AlertsNavigation';
 import { Alert, AlertType } from '@/types/alerts';
+import { supabase } from '@/integrations/supabase/client';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
@@ -61,14 +63,48 @@ const Alerts = () => {
     }
   ];
 
-  const { data: alerts } = useQuery({
-    queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
-    queryFn: async () => {
-      // Filter alerts based on activeFilter and selectedWellId
-      let filteredAlerts = simulatedAlerts.map(alert => ({
+  // Fetch real database alerts if available
+  const fetchAlerts = async () => {
+    try {
+      const { data: dbAlerts, error } = await supabase
+        .from('alertas')
+        .select('*, pozo:pozo_id (id, nombre)')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      if (dbAlerts && dbAlerts.length > 0) {
+        return dbAlerts.map(alert => ({
+          ...alert,
+          pozo: {
+            id: alert.pozo?.id || '',
+            nombre: alert.pozo?.nombre || ''
+          }
+        })) as Alert[];
+      }
+      
+      // Return simulated alerts if no database alerts
+      return simulatedAlerts.map(alert => ({
         ...alert,
         resuelto: resolvedAlerts.includes(alert.id)
       }));
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      // Fallback to simulated alerts on error
+      return simulatedAlerts.map(alert => ({
+        ...alert,
+        resuelto: resolvedAlerts.includes(alert.id)
+      }));
+    }
+  };
+
+  const { data: alerts, isLoading } = useQuery({
+    queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
+    queryFn: async () => {
+      const allAlerts = await fetchAlerts();
+      
+      // Filter alerts based on activeFilter and selectedWellId
+      let filteredAlerts = allAlerts;
       
       if (selectedWellId) {
         filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
@@ -82,7 +118,8 @@ const Alerts = () => {
         return filteredAlerts.filter(alert => alert.resuelto);
       }
       return filteredAlerts;
-    }
+    },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const { data: pressureData } = useQuery({
@@ -116,6 +153,14 @@ const Alerts = () => {
     };
   }, []);
 
+  const handleAlertResolved = (alertId: string) => {
+    console.log('Alert resolved callback:', alertId);
+    setResolvedAlerts(prev => {
+      if (prev.includes(alertId)) return prev;
+      return [...prev, alertId];
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
@@ -135,10 +180,8 @@ const Alerts = () => {
         <div className="px-4 pb-24">
           <AlertList 
             alerts={alerts as Alert[] | undefined} 
-            isLoading={false} 
-            onAlertResolved={(alertId) => {
-              setResolvedAlerts(prev => [...prev, alertId]);
-            }}
+            isLoading={isLoading} 
+            onAlertResolved={handleAlertResolved}
           />
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -72,23 +73,43 @@ const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
         return;
       }
       
-      const { error } = await supabase
-        .from('alertas')
-        .update({ 
-          resuelto: true,
-          resolucion: resolutionText,
-          fecha_resolucion: new Date().toISOString()
-        })
-        .eq('id', selectedAlert.id);
+      console.log("Updating alert in Supabase:", selectedAlert.id);
       
-      if (error) throw error;
+      const updateData = { 
+        resuelto: true,
+        resolucion: resolutionText,
+        fecha_resolucion: new Date().toISOString()
+      };
+      
+      console.log("Update data:", updateData);
+      
+      const { data, error } = await supabase
+        .from('alertas')
+        .update(updateData)
+        .eq('id', selectedAlert.id)
+        .select();
+      
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+      
+      console.log("Supabase update response:", data);
       
       toast({
         title: "Alerta resuelta",
         description: "La alerta ha sido marcada como resuelta",
       });
       
-      queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      // Ensure we call the callback for UI updates
+      if (onAlertResolved) {
+        onAlertResolved(selectedAlert.id);
+      }
+      
+      // Force a full refetch of alerts to ensure the UI is updated
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.refetchQueries({ queryKey: ['alerts'] });
+      
       setSelectedAlert(null);
       setResolutionText("");
     } catch (error) {
