@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import NavigationBar from '@/components/NavigationBar';
@@ -11,6 +10,7 @@ import PressureChart from '@/components/PressureChart';
 import WellPhotos from '@/components/wells/WellPhotos';
 import WellCameras from '@/components/wells/WellCameras';
 import WellStats from '@/components/wells/WellStats';
+import PhotoUpload from '@/components/wells/PhotoUpload';
 
 const WellDetails = () => {
   const { id } = useParams();
@@ -39,17 +39,15 @@ const WellDetails = () => {
             </Button>
             <h1 className="text-2xl font-bold">Pozo #{well.nombre}</h1>
           </div>
-          <Button 
-            variant="secondary"
-            className="bg-orange-600 hover:bg-orange-700 text-white"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Subir Foto
-          </Button>
+          <PhotoUpload 
+            wellId={well.id} 
+            onUploadComplete={() => {
+              queryClient.invalidateQueries(['wellPhotos', well.id]);
+            }}
+          />
         </header>
 
         <div className="space-y-6">
-          {/* Chart Section */}
           <Card className="bg-slate-800 border-slate-700">
             <div className="p-4">
               <div className="flex justify-between items-center mb-2">
@@ -62,16 +60,12 @@ const WellDetails = () => {
             </div>
           </Card>
 
-          {/* Stats Section */}
           <WellStats well={well} />
 
-          {/* Photos Section */}
           <WellPhotos wellId={well.id} />
 
-          {/* Cameras Section */}
           <WellCameras wellId={well.id} />
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-4">
             <Button 
               variant="outline" 
