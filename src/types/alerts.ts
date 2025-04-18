@@ -11,6 +11,7 @@ export interface Alert {
   resuelto: boolean;
   resolucion?: string;
   pozo: {
+    id: string;
     nombre: string;
   };
   unidad?: string | null;

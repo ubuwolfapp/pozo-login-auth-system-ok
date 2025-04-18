@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import PressureChart from '@/components/PressureChart';
 import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
@@ -9,6 +8,7 @@ import { Alert, AlertType } from '@/types/alerts';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
+  const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
 
   // Simulated alerts that match the design
   const simulatedAlerts: Alert[] = [
@@ -49,17 +49,23 @@ const Alerts = () => {
   ];
 
   const { data: alerts } = useQuery({
-    queryKey: ['alerts', activeFilter],
+    queryKey: ['alerts', activeFilter, selectedWellId],
     queryFn: async () => {
-      // Filter alerts based on activeFilter
-      if (activeFilter === 'critica') {
-        return simulatedAlerts.filter(alert => alert.tipo === 'critica');
-      } else if (activeFilter === 'advertencia') {
-        return simulatedAlerts.filter(alert => alert.tipo === 'advertencia');
-      } else if (activeFilter === 'resueltas') {
-        return simulatedAlerts.filter(alert => alert.resuelto);
+      // Filter alerts based on activeFilter and selectedWellId
+      let filteredAlerts = simulatedAlerts;
+      
+      if (selectedWellId) {
+        filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
       }
-      return simulatedAlerts;
+
+      if (activeFilter === 'critica') {
+        return filteredAlerts.filter(alert => alert.tipo === 'critica');
+      } else if (activeFilter === 'advertencia') {
+        return filteredAlerts.filter(alert => alert.tipo === 'advertencia');
+      } else if (activeFilter === 'resueltas') {
+        return filteredAlerts.filter(alert => alert.resuelto);
+      }
+      return filteredAlerts;
     }
   });
 
@@ -88,6 +94,8 @@ const Alerts = () => {
         <AlertFilters 
           activeFilter={activeFilter}
           onFilterChange={setActiveFilter}
+          selectedWellId={selectedWellId}
+          onWellChange={setSelectedWellId}
         />
         
         <div className="mx-4 mb-6 bg-[#1C2526] rounded-lg p-4 border border-gray-700">
