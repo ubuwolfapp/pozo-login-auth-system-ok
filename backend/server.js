@@ -1,16 +1,16 @@
-
 /**
- * Servidor Express para la API de autenticación
- * de la aplicación "Monitoreo de Pozos"
+ * Servidor Express para la API de la aplicación "Monitoreo de Pozos"
  */
 
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { Pool } = require('pg');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+
+// Importar rutas
+const reportsRoutes = require('./routes/reports');
 
 // Configuración del servidor
 const app = express();
@@ -21,6 +21,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Conexión a la base de datos PostgreSQL
+const { Pool } = require('pg');
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -32,18 +33,8 @@ const pool = new Pool({
 // Clave secreta para JWT
 const JWT_SECRET = process.env.JWT_SECRET || 'clave_secreta_para_jwt_desarrollo';
 
-// Middleware de validación
-const validateLogin = [
-  check('email')
-    .isEmail()
-    .withMessage('Por favor, ingrese un email válido'),
-  check('password')
-    .isLength({ min: 6 })
-    .withMessage('La contraseña debe tener al menos 6 caracteres'),
-];
-
-// Rutas
-app.post('/api/login', validateLogin, async (req, res) => {
+// Rutas de autenticación
+app.post('/api/login', async (req, res) => {
   // Validar entrada
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -123,6 +114,9 @@ app.post('/api/forgot-password', [
   // Por ahora, solo devolvemos una respuesta exitosa
   return res.status(200).json({ message: 'Si existe una cuenta con ese email, recibirá instrucciones para restablecer su contraseña.' });
 });
+
+// Registrar rutas de reportes
+app.use('/api/reportes', reportsRoutes);
 
 // Iniciar el servidor
 app.listen(PORT, () => {
