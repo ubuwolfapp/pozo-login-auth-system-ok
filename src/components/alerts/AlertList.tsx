@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
@@ -7,6 +8,7 @@ import { Alert } from '@/types/alerts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface AlertListProps {
