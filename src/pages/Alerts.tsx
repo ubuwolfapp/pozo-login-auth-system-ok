@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -18,7 +19,10 @@ const Alerts = () => {
       mensaje: 'Presión alta en Pozo #7: 8500 psi',
       created_at: '2025-04-16T14:30:00Z',
       resuelto: false,
-      pozo: { nombre: 'Pozo #7' },
+      pozo: { 
+        id: '1', 
+        nombre: 'Pozo #7' 
+      },
       valor: 8500,
       unidad: 'psi'
     },
@@ -28,7 +32,10 @@ const Alerts = () => {
       mensaje: 'Temperatura moderada en Pozo 33',
       created_at: '2025-04-16T03:15:00Z',
       resuelto: false,
-      pozo: { nombre: 'Pozo 33' }
+      pozo: { 
+        id: '2', 
+        nombre: 'Pozo 33' 
+      }
     },
     {
       id: '3',
@@ -36,7 +43,10 @@ const Alerts = () => {
       mensaje: 'Nivel bajo en Pozo 12',
       created_at: '2025-04-15T18:20:00Z',
       resuelto: false,
-      pozo: { nombre: 'Pozo 12' }
+      pozo: { 
+        id: '3', 
+        nombre: 'Pozo 12' 
+      }
     },
     {
       id: '4',
@@ -44,7 +54,10 @@ const Alerts = () => {
       mensaje: 'Falla de sensor en Pozo 44',
       created_at: '2025-04-15T10:45:00Z',
       resuelto: false,
-      pozo: { nombre: 'Pozo 44' }
+      pozo: { 
+        id: '4', 
+        nombre: 'Pozo 44' 
+      }
     }
   ];
 
