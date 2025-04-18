@@ -19,22 +19,22 @@ const AlertFilters = ({ activeFilter, onFilterChange }: AlertFiltersProps) => {
 
   return (
     <>
-      <div className="flex justify-between px-4 mb-4">
+      <div className="flex justify-between mb-4">
         <button
           onClick={() => onFilterChange('todas')}
-          className={`flex-1 py-2 rounded-l-lg ${activeFilter === 'todas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+          className={`flex-1 py-3 rounded-l-lg ${activeFilter === 'todas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
         >
           Todas
         </button>
         <button
           onClick={() => onFilterChange('critica')}
-          className={`flex-1 py-2 ${activeFilter === 'critica' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+          className={`flex-1 py-3 ${activeFilter === 'critica' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
         >
           Críticas
         </button>
         <button
           onClick={() => onFilterChange('resueltas')}
-          className={`flex-1 py-2 rounded-r-lg ${activeFilter === 'resueltas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
+          className={`flex-1 py-3 rounded-r-lg ${activeFilter === 'resueltas' ? 'bg-[#2E3A59]' : 'bg-[#1C2526]'}`}
         >
           Resueltas
         </button>

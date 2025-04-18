@@ -54,20 +54,22 @@ const Alerts = () => {
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
       
-      <AlertFilters 
-        activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
-      />
-      
-      <div className="mx-4 mb-4 bg-[#1C2526] rounded-lg p-4 border border-gray-700">
-        <PressureChart data={pressureData || []} />
-      </div>
-      
-      <div className="px-4 pb-24">
-        <AlertList 
-          alerts={alerts as Alert[] | undefined} 
-          isLoading={alertsLoading} 
+      <div className="container mx-auto px-0">
+        <AlertFilters 
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
         />
+        
+        <div className="mx-4 mb-6 bg-[#1C2526] rounded-lg p-4 border border-gray-700">
+          <PressureChart data={pressureData || []} />
+        </div>
+        
+        <div className="px-4 pb-24">
+          <AlertList 
+            alerts={alerts as Alert[] | undefined} 
+            isLoading={alertsLoading} 
+          />
+        </div>
       </div>
     </div>
   );

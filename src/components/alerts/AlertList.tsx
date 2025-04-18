@@ -76,7 +76,11 @@ const AlertList = ({ alerts, isLoading }: AlertListProps) => {
   }
 
   if (!alerts?.length) {
-    return <div className="text-center py-8 text-white">No hay alertas que mostrar</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <p className="text-lg font-medium">No hay alertas que mostrar</p>
+      </div>
+    );
   }
 
   return (
