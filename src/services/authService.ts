@@ -61,10 +61,10 @@ export const authService = {
         console.warn("Error de autenticación Supabase (ignorado para testing):", signInError);
       }
 
-      // Retornar datos del usuario
+      // Retornar datos del usuario - conversion explícita a string para el id
       return {
         user: {
-          id: data.id || 'test-id',
+          id: String(data.id), // Ensure id is converted to string
           email: data.email,
           nombre: data.nombre,
           rol: data.rol
