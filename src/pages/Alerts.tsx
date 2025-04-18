@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -66,7 +65,10 @@ const Alerts = () => {
     queryKey: ['alerts', activeFilter, selectedWellId, resolvedAlerts],
     queryFn: async () => {
       // Filter alerts based on activeFilter and selectedWellId
-      let filteredAlerts = simulatedAlerts;
+      let filteredAlerts = simulatedAlerts.map(alert => ({
+        ...alert,
+        resuelto: resolvedAlerts.includes(alert.id)
+      }));
       
       if (selectedWellId) {
         filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
@@ -77,7 +79,7 @@ const Alerts = () => {
       } else if (activeFilter === 'advertencia') {
         return filteredAlerts.filter(alert => alert.tipo === 'advertencia');
       } else if (activeFilter === 'resueltas') {
-        return filteredAlerts.filter(alert => resolvedAlerts.includes(alert.id));
+        return filteredAlerts.filter(alert => alert.resuelto);
       }
       return filteredAlerts;
     }
@@ -100,7 +102,7 @@ const Alerts = () => {
     }
   });
 
-  // Add event handlers for resolving alerts
+  // Updated handleAlertResolved to properly mark alerts as resolved
   React.useEffect(() => {
     // Listen for custom events to mark alerts as resolved
     const handleAlertResolved = (event: CustomEvent) => {
@@ -134,6 +136,9 @@ const Alerts = () => {
           <AlertList 
             alerts={alerts as Alert[] | undefined} 
             isLoading={false} 
+            onAlertResolved={(alertId) => {
+              setResolvedAlerts(prev => [...prev, alertId]);
+            }}
           />
         </div>
       </div>

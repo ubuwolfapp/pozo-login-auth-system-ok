@@ -14,9 +14,10 @@ import { useQueryClient } from '@tanstack/react-query';
 interface AlertListProps {
   alerts: Alert[] | undefined;
   isLoading: boolean;
+  onAlertResolved?: (alertId: string) => void;
 }
 
-const AlertList = ({ alerts, isLoading }: AlertListProps) => {
+const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
   const [selectedAlert, setSelectedAlert] = React.useState<Alert | null>(null);
   const [resolutionText, setResolutionText] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -48,7 +49,17 @@ const AlertList = ({ alerts, isLoading }: AlertListProps) => {
       
       // For demo purposes with our simulated data
       if (!selectedAlert.id.startsWith('http')) {
-        // Simulate a successful update for our demo data
+        // Dispatch custom event for simulated alerts
+        const event = new CustomEvent('alertResolved', {
+          detail: { alertId: selectedAlert.id }
+        });
+        window.dispatchEvent(event);
+        
+        // Call the onAlertResolved callback if provided
+        if (onAlertResolved) {
+          onAlertResolved(selectedAlert.id);
+        }
+        
         toast({
           title: "Alerta resuelta",
           description: "La alerta ha sido marcada como resuelta",
