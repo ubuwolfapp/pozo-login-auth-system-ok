@@ -15,7 +15,7 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
   placeholder = "Contraseña", 
   className = ""
 }) => {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(true); // Default to showing password for testing
 
   const togglePasswordVisibility = () => {
     setShowPassword(prev => !prev);

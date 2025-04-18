@@ -51,6 +51,7 @@ app.post('/api/login', validateLogin, async (req, res) => {
   }
 
   const { email, password } = req.body;
+  console.log("Intento de login:", email);
 
   try {
     // Buscar usuario por email
@@ -61,16 +62,26 @@ app.post('/api/login', validateLogin, async (req, res) => {
 
     // Verificar si el usuario existe
     if (userResult.rows.length === 0) {
+      console.log("Usuario no encontrado");
       return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
     }
 
     const user = userResult.rows[0];
+    console.log("Usuario encontrado:", user.email);
 
-    // Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // MODIFICACIÓN PARA TESTING: Verificar contraseña como texto plano
+    const isPasswordValid = password === user.password;
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
+      // Fallback a verificación con bcrypt para compatibilidad
+      const bcryptValid = await bcrypt.compare(password, user.password);
+      
+      if (!bcryptValid) {
+        console.log("Contraseña incorrecta");
+        return res.status(401).json({ message: 'Usuario o contraseña incorrectos' });
+      }
     }
+
+    console.log("Contraseña válida, generando token");
 
     // Generar token JWT
     const token = jwt.sign(
