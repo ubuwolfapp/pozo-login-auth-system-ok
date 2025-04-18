@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   ExclamationTriangleIcon, 
-  ThermometerHalfIcon, 
+  BeakerIcon,  // Replacing ThermometerHalfIcon with BeakerIcon 
   LanguageIcon, 
   PlusIcon 
 } from '@heroicons/react/24/solid';
@@ -19,7 +19,7 @@ const ParameterSummary: React.FC<ParameterSummaryProps> = ({ parameter, value, s
     if (parameter === 'presion') {
       return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
     } else if (parameter === 'temperatura') {
-      return <ThermometerHalfIcon className="h-5 w-5 text-cyan-400" />;
+      return <BeakerIcon className="h-5 w-5 text-cyan-400" />; // Replaced icon
     } else if (parameter === 'idioma') {
       return <LanguageIcon className="h-5 w-5 text-cyan-400" />;
     }
