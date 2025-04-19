@@ -1,58 +1,57 @@
 
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
+
+interface ChartData {
+  date: string;
+  valor: number;
+}
 
 interface ProductionChartProps {
-  chartData: {
-    date: string;
-    valor: number;
-  }[];
+  chartData: ChartData[];
 }
 
 const ProductionChart = ({ chartData }: ProductionChartProps) => {
   return (
     <div className="bg-[#2A3441] p-4 rounded-lg">
-      <h3 className="mb-4 text-lg">producción diaria</h3>
-      <div className="h-64">
+      <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 5, right: 5, left: 5, bottom: 20 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-            <XAxis 
-              dataKey="date" 
-              tick={{ fill: 'white', fontSize: 10 }}
-              tickFormatter={(value) => value}
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis
+              dataKey="date"
+              stroke="#9CA3AF"
+              tick={{ fill: '#9CA3AF' }}
             />
-            <YAxis 
-              tick={{ fill: 'white', fontSize: 10 }}
-              domain={[0, 4000]}
-              ticks={[0, 1000, 2000, 3000, 4000]}
-              label={{ 
-                value: 'barriles', 
-                angle: -90, 
-                position: 'insideLeft',
-                fill: 'white',
-                fontSize: 12
+            <YAxis
+              stroke="#9CA3AF"
+              tick={{ fill: '#9CA3AF' }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '0.375rem'
               }}
+              itemStyle={{ color: '#E5E7EB' }}
+              labelStyle={{ color: '#E5E7EB' }}
             />
-            <Tooltip 
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <div className="bg-slate-800 border border-slate-700 p-2 rounded">
-                      <p>{`${payload[0].value} barriles`}</p>
-                    </div>
-                  );
-                }
-                return null;
-              }}
+            <Line
+              type="monotone"
+              dataKey="valor"
+              stroke="#00A1D6"
+              strokeWidth={2}
+              dot={{ fill: '#00A1D6', r: 4 }}
             />
-            <Bar dataKey="valor" fill="#FF6200" />
-          </BarChart>
+          </LineChart>
         </ResponsiveContainer>
       </div>
     </div>

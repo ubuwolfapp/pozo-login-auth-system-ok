@@ -5,6 +5,7 @@ import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 import ProductionChart from '@/components/reports/ProductionChart';
 import WellSelector from '@/components/reports/WellSelector';
 import DateSelector from '@/components/reports/DateSelector';
@@ -35,29 +36,61 @@ const Reports: React.FC = () => {
   );
   const [endDate, setEndDate] = useState<Date>(new Date());
 
-  // Datos estáticos para demostración
-  const staticData = {
-    pozo_nombre: "Pozo #1",
-    fechas: [
-      "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04",
-      "2025-04-05", "2025-04-06", "2025-04-07", "2025-04-08",
-      "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-12",
-      "2025-04-13", "2025-04-14", "2025-04-15", "2025-04-16"
-    ],
-    valores: [2000, 2500, 3000, 2000, 3500, 3000, 2500, 4000, 3000, 3500, 2000, 2500, 3000, 3500, 4000, 3000],
-    resumen: [
-      { parametro: "presion", valor: "8500 psi", estado: "Pendiente" },
-      { parametro: "temperatura", valor: "75°C", estado: "En Progreso" },
-      { parametro: "dato3", valor: "Valor 3", estado: "Completado" }
-    ]
-  };
-
   useEffect(() => {
-    setTimeout(() => {
-      setReportData(staticData);
-      setIsLoading(false);
-    }, 500);
-  }, []);
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        if (selectedParameter === 'presion') {
+          const { data: pressureData, error } = await supabase
+            .from('presion_historial')
+            .select('fecha, valor')
+            .order('fecha', { ascending: true });
+
+          if (error) throw error;
+
+          if (pressureData) {
+            setReportData({
+              pozo_nombre: "Pozo #1",
+              fechas: pressureData.map(d => d.fecha),
+              valores: pressureData.map(d => d.valor),
+              resumen: [
+                { parametro: "presion", valor: "8500 psi", estado: "Pendiente" },
+                { parametro: "temperatura", valor: "75°C", estado: "En Progreso" },
+                { parametro: "dato3", valor: "Valor 3", estado: "Completado" }
+              ]
+            });
+          }
+        } else {
+          setReportData({
+            pozo_nombre: "Pozo #1",
+            fechas: [
+              "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04",
+              "2025-04-05", "2025-04-06", "2025-04-07", "2025-04-08",
+              "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-12",
+              "2025-04-13", "2025-04-14", "2025-04-15", "2025-04-16"
+            ],
+            valores: [2000, 2500, 3000, 2000, 3500, 3000, 2500, 4000, 3000, 3500, 2000, 2500, 3000, 3500, 4000, 3000],
+            resumen: [
+              { parametro: "presion", valor: "8500 psi", estado: "Pendiente" },
+              { parametro: "temperatura", valor: "75°C", estado: "En Progreso" },
+              { parametro: "dato3", valor: "Valor 3", estado: "Completado" }
+            ]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedParameter]);
 
   const handleBack = () => {
     navigate(-1);
@@ -99,11 +132,9 @@ const Reports: React.FC = () => {
     });
   };
 
-  // Formatear fechas para mostrar
   const formattedStartDate = format(startDate, "dd/MM/yyyy");
   const formattedEndDate = format(endDate, "dd/MM/yyyy");
 
-  // Formatear datos para el gráfico
   const chartData = reportData?.fechas.map((date, index) => {
     return {
       date: format(parseISO(date), "d MMM", { locale: es }).replace('.', ''),
@@ -111,11 +142,10 @@ const Reports: React.FC = () => {
     };
   }) || [];
 
-  const wellId = "demo-well-1"; // ID de demostración para el pozo
+  const wellId = "demo-well-1";
 
   return (
     <div className="flex flex-col min-h-screen bg-[#1C2526] text-white font-sans pb-20">
-      {/* Header */}
       <header className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-gray-700">
         <button onClick={handleBack} className="p-2">
           <ChevronLeftIcon className="h-6 w-6" />
@@ -124,7 +154,6 @@ const Reports: React.FC = () => {
         <div className="w-10" />
       </header>
 
-      {/* Content */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
           <p>Cargando datos...</p>
@@ -149,7 +178,6 @@ const Reports: React.FC = () => {
           
           <ProductionChart chartData={chartData} />
 
-          {/* Parameter summary */}
           <div className="bg-[#2A3441] p-4 rounded-lg">
             {reportData?.resumen.map((param, index) => (
               <ParameterSummary
@@ -162,7 +190,6 @@ const Reports: React.FC = () => {
             ))}
           </div>
 
-          {/* Fotos y cámaras */}
           <WellPhotos wellId={wellId} />
           <WellCameras wellId={wellId} />
 
@@ -173,7 +200,6 @@ const Reports: React.FC = () => {
         </div>
       )}
 
-      {/* Navigation Bar */}
       <NavigationBar />
     </div>
   );
