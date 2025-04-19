@@ -22,7 +22,14 @@ export const wellService = {
     try {
       const { data, error } = await supabase
         .from('pozos')
-        .select('*')
+        .select(`
+          *,
+          alertas(*),
+          tareas(*),
+          camaras_pozos(*),
+          fotos_pozos(*),
+          presion_historial(*)
+        `)
         .limit(1);  // Asegurarse de que solo devuelva un pozo
 
       if (error) throw error;
@@ -42,7 +49,14 @@ export const wellService = {
     try {
       const { data, error } = await supabase
         .from('pozos')
-        .select('*')
+        .select(`
+          *,
+          alertas(*),
+          tareas(*),
+          camaras_pozos(*),
+          fotos_pozos(*),
+          presion_historial(*)
+        `)
         .eq('id', id)
         .single();
 
