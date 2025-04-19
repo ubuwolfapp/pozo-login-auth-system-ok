@@ -76,3 +76,4 @@ const WellMap: React.FC<WellMapProps> = ({ wells, onSelectWell }) => {
 };
 
 export default WellMap;
+

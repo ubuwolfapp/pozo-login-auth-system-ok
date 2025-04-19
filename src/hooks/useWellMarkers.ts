@@ -60,3 +60,4 @@ export const useWellMarkers = (
     };
   }, [wells, map.current, onSelectWell]);
 };
+

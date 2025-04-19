@@ -24,3 +24,4 @@ export const getStatusTextColor = (estado: string): string => {
       return 'text-gray-500';
   }
 };
+
