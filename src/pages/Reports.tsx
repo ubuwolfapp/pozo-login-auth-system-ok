@@ -1,19 +1,17 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
 import NavigationBar from '@/components/NavigationBar';
-import ProductionChart from '@/components/reports/ProductionChart';
 import WellSelector from '@/components/reports/WellSelector';
 import DateSelector from '@/components/reports/DateSelector';
 import ParameterSelector from '@/components/reports/ParameterSelector';
-import ParameterSummary from '@/components/reports/ParameterSummary';
 import ReportActions from '@/components/reports/ReportActions';
 import WellPhotos from '@/components/wells/WellPhotos';
 import WellCameras from '@/components/wells/WellCameras';
 import ReportHeader from '@/components/reports/ReportHeader';
 import ReportLoading from '@/components/reports/ReportLoading';
+import ReportChart from '@/components/reports/ReportChart';
+import ReportSummary from '@/components/reports/ReportSummary';
 import { useReportData } from '@/hooks/useReportData';
 import { toast } from '@/components/ui/use-toast';
 
@@ -45,13 +43,6 @@ const Reports: React.FC = () => {
     });
   };
 
-  const handleAddStatus = () => {
-    toast({
-      title: "Agregar estado",
-      description: "Aquí se abriría un modal para agregar estado"
-    });
-  };
-
   const handleGeneratePDF = () => {
     toast({
       title: "PDF generado",
@@ -65,13 +56,6 @@ const Reports: React.FC = () => {
       description: "El reporte ha sido enviado por correo correctamente"
     });
   };
-
-  const chartData = reportData?.fechas.map((date, index) => {
-    return {
-      date: format(parseISO(date), "d MMM", { locale: es }).replace('.', ''),
-      valor: reportData.valores[index]
-    };
-  }) || [];
 
   const wellId = "demo-well-1";
 
@@ -99,19 +83,8 @@ const Reports: React.FC = () => {
             selectedParameter={selectedParameter}
           />
           
-          <ProductionChart chartData={chartData} />
-
-          <div className="bg-[#2A3441] p-4 rounded-lg">
-            {reportData?.resumen.map((param, index) => (
-              <ParameterSummary
-                key={index}
-                parameter={param.parametro}
-                value={param.valor}
-                status={param.estado}
-                onAddStatus={param.estado ? undefined : handleAddStatus}
-              />
-            ))}
-          </div>
+          {reportData && <ReportChart reportData={reportData} />}
+          {reportData && <ReportSummary reportData={reportData} />}
 
           <WellPhotos wellId={wellId} />
           <WellCameras wellId={wellId} />
