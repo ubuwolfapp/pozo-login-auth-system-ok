@@ -1,42 +1,39 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    @apply bg-slate-900 text-white;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.btn {
+    @apply bg-pozo-orange text-white font-bold py-2 px-4 rounded;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.btn:hover {
+    @apply bg-orange-700;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.input {
+    @apply shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline;
+}
+
+.label {
+    @apply block text-gray-700 text-sm font-bold mb-2;
 }
 
 .card {
-  padding: 2em;
+    @apply bg-slate-800 rounded-lg shadow-md p-4;
 }
 
-.read-the-docs {
-  color: #888;
+.card-title {
+    @apply text-xl font-bold mb-2;
+}
+
+.card-content {
+    @apply text-gray-300;
+}
+
+.text-shadow {
+  text-shadow: 0px 0px 3px #000, 0px 0px 3px #000;
 }
