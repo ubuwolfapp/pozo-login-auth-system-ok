@@ -330,7 +330,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      crear_pozo_completo: {
+        Args: {
+          p_nombre: string
+          p_latitud: number
+          p_longitud: number
+          p_presion?: number
+          p_temperatura?: number
+          p_flujo?: number
+          p_nivel?: number
+          p_produccion_diaria?: number
+          p_estado?: string
+          p_usuario?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

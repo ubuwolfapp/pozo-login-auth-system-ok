@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -77,6 +76,52 @@ export const wellService = {
         variant: "destructive"
       });
       return [];
+    }
+  },
+
+  async createWell(wellData: {
+    nombre: string;
+    latitud: number;
+    longitud: number;
+    presion?: number;
+    temperatura?: number;
+    flujo?: number;
+    nivel?: number;
+    produccion_diaria?: number;
+    estado?: string;
+  }) {
+    try {
+      const { data, error } = await supabase.rpc(
+        'crear_pozo_completo',
+        {
+          p_nombre: wellData.nombre,
+          p_latitud: wellData.latitud,
+          p_longitud: wellData.longitud,
+          p_presion: wellData.presion,
+          p_temperatura: wellData.temperatura,
+          p_flujo: wellData.flujo,
+          p_nivel: wellData.nivel,
+          p_produccion_diaria: wellData.produccion_diaria,
+          p_estado: wellData.estado
+        }
+      );
+
+      if (error) throw error;
+
+      toast({
+        title: "Pozo creado",
+        description: "El pozo ha sido creado exitosamente con toda su estructura de datos",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Error creating well:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo crear el pozo",
+        variant: "destructive"
+      });
+      throw error;
     }
   }
 };
