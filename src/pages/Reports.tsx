@@ -1,26 +1,16 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ChevronLeftIcon, 
-  CalendarIcon, 
-  ChevronDownIcon, 
-  ChevronRightIcon
-} from '@heroicons/react/24/solid';
-import { Button } from '@/components/ui/button';
+import { ChevronLeftIcon } from '@heroicons/react/24/solid';
 import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import ProductionChart from '@/components/reports/ProductionChart';
+import WellSelector from '@/components/reports/WellSelector';
+import DateSelector from '@/components/reports/DateSelector';
+import ParameterSelector from '@/components/reports/ParameterSelector';
 import ParameterSummary from '@/components/reports/ParameterSummary';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import ReportActions from '@/components/reports/ReportActions';
 
 interface ReportData {
   pozo_nombre: string;
@@ -126,21 +116,7 @@ const Reports: React.FC = () => {
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
         <h1 className="text-xl font-bold">Reportes</h1>
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="p-2">
-              <CalendarIcon className="h-6 w-6 text-cyan-400" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="end" className="w-auto p-0 bg-slate-800 border-slate-700">
-            <Calendar
-              mode="single"
-              selected={endDate}
-              onSelect={(date) => date && setEndDate(date)}
-              className="bg-slate-800 border-slate-700 text-white pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
+        <div className="w-10" /> {/* Spacer for alignment */}
       </header>
 
       {/* Content */}
@@ -150,76 +126,20 @@ const Reports: React.FC = () => {
         </div>
       ) : (
         <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto">
-          {/* Well selector */}
-          <div 
-            onClick={handleWellSelect}
-            className="bg-[#2A3441] p-4 rounded-lg flex justify-between items-center cursor-pointer"
-          >
-            <span>{reportData?.pozo_nombre || "Seleccionar pozo"}</span>
-            <ChevronDownIcon className="h-5 w-5" />
-          </div>
-
-          {/* Date range */}
-          <div className="bg-[#2A3441] p-4 rounded-lg">
-            <span>{formattedStartDate} - {formattedEndDate}</span>
-          </div>
-
-          {/* Parameter selector */}
-          <div 
-            onClick={handleParameterSelect}
-            className="bg-[#2A3441] p-4 rounded-lg flex justify-between items-center cursor-pointer"
-          >
-            <span>Parámetros</span>
-            <div className="flex items-center">
-              <span className="mr-2">Producción</span>
-              <ChevronRightIcon className="h-5 w-5" />
-            </div>
-          </div>
-
-          {/* Chart */}
-          <div className="bg-[#2A3441] p-4 rounded-lg">
-            <h3 className="mb-4 text-lg">producción diaria</h3>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 5, right: 5, left: 5, bottom: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                  <XAxis 
-                    dataKey="date" 
-                    tick={{ fill: 'white', fontSize: 10 }}
-                    tickFormatter={(value) => value}
-                  />
-                  <YAxis 
-                    tick={{ fill: 'white', fontSize: 10 }}
-                    domain={[0, 4000]}
-                    ticks={[0, 1000, 2000, 3000, 4000]}
-                    label={{ 
-                      value: 'barriles', 
-                      angle: -90, 
-                      position: 'insideLeft',
-                      fill: 'white',
-                      fontSize: 12
-                    }}
-                  />
-                  <Tooltip 
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-slate-800 border border-slate-700 p-2 rounded">
-                            <p>{`${payload[0].value} barriles`}</p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar dataKey="valor" fill="#FF6200" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <WellSelector 
+            wellName={reportData?.pozo_nombre} 
+            onSelect={handleWellSelect} 
+          />
+          
+          <DateSelector 
+            startDate={startDate}
+            endDate={endDate}
+            onEndDateSelect={(date) => date && setEndDate(date)}
+          />
+          
+          <ParameterSelector onSelect={handleParameterSelect} />
+          
+          <ProductionChart chartData={chartData} />
 
           {/* Parameter summary */}
           <div className="bg-[#2A3441] p-4 rounded-lg">
@@ -234,21 +154,10 @@ const Reports: React.FC = () => {
             ))}
           </div>
 
-          {/* Buttons */}
-          <div className="grid grid-cols-2 gap-4 pt-2 mb-20">
-            <Button 
-              onClick={handleGeneratePDF}
-              className="bg-[#FF6200] hover:bg-[#FF6200]/80 text-white py-3"
-            >
-              Generar PDF
-            </Button>
-            <Button 
-              onClick={handleSendEmail}
-              className="bg-[#FF6200] hover:bg-[#FF6200]/80 text-white py-3"
-            >
-              Enviar por Correo
-            </Button>
-          </div>
+          <ReportActions 
+            onGeneratePDF={handleGeneratePDF}
+            onSendEmail={handleSendEmail}
+          />
         </div>
       )}
 
