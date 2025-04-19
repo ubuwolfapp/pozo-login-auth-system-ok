@@ -8,7 +8,7 @@ interface MapErrorProps {
   onRetry: () => void;
 }
 
-const MapError: React.FC<MapErrorProps> = ({ error, onRetry }) => {
+const MapError = ({ error, onRetry }: MapErrorProps) => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
       <div className="text-center text-white p-4 max-w-md mx-auto">

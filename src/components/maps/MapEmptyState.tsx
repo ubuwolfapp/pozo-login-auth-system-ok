@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-const MapEmptyState: React.FC = () => {
+const MapEmptyState = () => {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
       <div className="text-center text-white p-4 max-w-md mx-auto">
