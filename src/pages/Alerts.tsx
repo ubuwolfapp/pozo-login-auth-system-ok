@@ -21,109 +21,28 @@ const Alerts = () => {
   });
 
   const fetchAlerts = async () => {
-    try {
-      console.log('Fetching alerts from database');
-      let query = supabase
-        .from('alertas')
-        .select('*, pozo:pozo_id (id, nombre)')
-        .order('created_at', { ascending: false });
-      
-      const { data: dbAlerts, error } = await query;
-      
-      if (error) {
-        console.error('Error fetching alerts from database:', error);
-        throw error;
-      }
-      
-      if (dbAlerts && dbAlerts.length > 0) {
-        console.log('Database alerts fetched:', dbAlerts.length);
-        
-        return dbAlerts.map(alert => {
-          return {
-            ...alert,
-            pozo: {
-              id: alert.pozo?.id || '',
-              nombre: alert.pozo?.nombre || ''
-            }
-          };
-        }) as Alert[];
-      } else {
-        console.log('No database alerts found, checking if wells exist to create simulated alerts');
-        
-        if (wells && wells.length > 0) {
-          const simulatedAlerts: Alert[] = [
-            {
-              id: '1',
-              tipo: 'critica',
-              mensaje: `Presión alta en ${wells[0].nombre}: 8500 psi`,
-              created_at: '2025-04-16T14:30:00Z',
-              resuelto: false,
-              pozo: { 
-                id: wells[0].id, 
-                nombre: wells[0].nombre 
-              },
-              valor: 8500,
-              unidad: 'psi'
-            },
-            {
-              id: '2',
-              tipo: 'advertencia',
-              mensaje: `Temperatura moderada en ${wells.length > 1 ? wells[1].nombre : wells[0].nombre}`,
-              created_at: '2025-04-16T03:15:00Z',
-              resuelto: false,
-              pozo: { 
-                id: wells.length > 1 ? wells[1].id : wells[0].id, 
-                nombre: wells.length > 1 ? wells[1].nombre : wells[0].nombre 
-              }
-            }
-          ];
-
-          for (const alert of simulatedAlerts) {
-            console.log('Inserting simulated alert into database:', alert);
-            const { error } = await supabase
-              .from('alertas')
-              .insert({
-                mensaje: alert.mensaje,
-                tipo: alert.tipo,
-                pozo_id: alert.pozo.id,
-                valor: alert.valor || null,
-                unidad: alert.unidad || null,
-                resuelto: false
-              });
-
-            if (error) {
-              console.error('Error inserting simulated alert:', error);
-            }
-          }
-
-          const { data: newAlerts, error: fetchError } = await supabase
-            .from('alertas')
-            .select('*, pozo:pozo_id (id, nombre)')
-            .order('created_at', { ascending: false });
-
-          if (fetchError) {
-            console.error('Error fetching newly inserted alerts:', fetchError);
-          } else if (newAlerts && newAlerts.length > 0) {
-            console.log('New database alerts fetched:', newAlerts.length);
-            return newAlerts.map(alert => {
-              return {
-                ...alert,
-                pozo: {
-                  id: alert.pozo?.id || '',
-                  nombre: alert.pozo?.nombre || ''
-                }
-              };
-            }) as Alert[];
-          }
-        }
-        
-        console.log('No wells found, returning empty alerts array');
-        return [];
-      }
-    } catch (error) {
-      console.error('Error in fetchAlerts:', error);
-      return [];
+    console.log('Fetching alerts from database');
+    let query = supabase
+      .from('alertas')
+      .select('*, pozo:pozo_id (id, nombre)')
+      .order('created_at', { ascending: false });
+    
+    const { data: dbAlerts, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching alerts from database:', error);
+      throw error;
     }
+    
+    console.log('Database alerts fetched:', dbAlerts?.length || 0);
+    
+    return dbAlerts?.map(alert => ({
+      ...alert,
+      pozo: {
+        id: alert.pozo?.id || '',
+        nombre: alert.pozo?.nombre || ''
+      }
+    })) as Alert[] || [];
   };
 
   const { data: alerts, isLoading } = useQuery({
