@@ -11,6 +11,8 @@ import DateSelector from '@/components/reports/DateSelector';
 import ParameterSelector from '@/components/reports/ParameterSelector';
 import ParameterSummary from '@/components/reports/ParameterSummary';
 import ReportActions from '@/components/reports/ReportActions';
+import WellPhotos from '@/components/wells/WellPhotos';
+import WellCameras from '@/components/wells/WellCameras';
 
 interface ReportData {
   pozo_nombre: string;
@@ -27,6 +29,7 @@ const Reports: React.FC = () => {
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedParameter, setSelectedParameter] = useState('produccion');
   const [startDate, setStartDate] = useState<Date>(
     new Date(new Date().setDate(new Date().getDate() - 15))
   );
@@ -45,12 +48,11 @@ const Reports: React.FC = () => {
     resumen: [
       { parametro: "presion", valor: "8500 psi", estado: "Pendiente" },
       { parametro: "temperatura", valor: "75°C", estado: "En Progreso" },
-      { parametro: "idioma", valor: "Idioma", estado: "" }
+      { parametro: "dato3", valor: "Valor 3", estado: "Completado" }
     ]
   };
 
   useEffect(() => {
-    // Simular carga de datos (en producción, esto haría una petición a la API)
     setTimeout(() => {
       setReportData(staticData);
       setIsLoading(false);
@@ -68,10 +70,11 @@ const Reports: React.FC = () => {
     });
   };
 
-  const handleParameterSelect = () => {
+  const handleParameterSelect = (parameter: string) => {
+    setSelectedParameter(parameter);
     toast({
-      title: "Selección de parámetro",
-      description: "Aquí se abriría el selector de parámetros"
+      title: "Parámetro seleccionado",
+      description: `Se ha seleccionado: ${parameter}`
     });
   };
 
@@ -108,6 +111,8 @@ const Reports: React.FC = () => {
     };
   }) || [];
 
+  const wellId = "demo-well-1"; // ID de demostración para el pozo
+
   return (
     <div className="flex flex-col min-h-screen bg-[#1C2526] text-white font-sans pb-20">
       {/* Header */}
@@ -116,7 +121,7 @@ const Reports: React.FC = () => {
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
         <h1 className="text-xl font-bold">Reportes</h1>
-        <div className="w-10" /> {/* Spacer for alignment */}
+        <div className="w-10" />
       </header>
 
       {/* Content */}
@@ -137,7 +142,10 @@ const Reports: React.FC = () => {
             onEndDateSelect={(date) => date && setEndDate(date)}
           />
           
-          <ParameterSelector onSelect={handleParameterSelect} />
+          <ParameterSelector 
+            onSelect={handleParameterSelect}
+            selectedParameter={selectedParameter}
+          />
           
           <ProductionChart chartData={chartData} />
 
@@ -153,6 +161,10 @@ const Reports: React.FC = () => {
               />
             ))}
           </div>
+
+          {/* Fotos y cámaras */}
+          <WellPhotos wellId={wellId} />
+          <WellCameras wellId={wellId} />
 
           <ReportActions 
             onGeneratePDF={handleGeneratePDF}

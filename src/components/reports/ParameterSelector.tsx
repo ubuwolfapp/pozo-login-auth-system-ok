@@ -1,22 +1,36 @@
 
 import React from 'react';
 import { ChevronRightIcon } from '@heroicons/react/24/solid';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ParameterSelectorProps {
-  onSelect: () => void;
+  onSelect: (parameter: string) => void;
+  selectedParameter?: string;
 }
 
-const ParameterSelector = ({ onSelect }: ParameterSelectorProps) => {
+const ParameterSelector = ({ onSelect, selectedParameter }: ParameterSelectorProps) => {
   return (
-    <div 
-      onClick={onSelect}
-      className="bg-[#2A3441] p-4 rounded-lg flex justify-between items-center cursor-pointer"
-    >
-      <span>Parámetros</span>
-      <div className="flex items-center">
-        <span className="mr-2">Producción</span>
-        <ChevronRightIcon className="h-5 w-5" />
-      </div>
+    <div className="bg-[#2A3441] p-4 rounded-lg space-y-2">
+      <span className="block mb-2">Parámetros</span>
+      <Select value={selectedParameter} onValueChange={onSelect}>
+        <SelectTrigger className="w-full bg-slate-800 border-slate-700 text-white">
+          <SelectValue placeholder="Seleccionar parámetro" />
+        </SelectTrigger>
+        <SelectContent className="bg-slate-800 border-slate-700 text-white">
+          <SelectGroup>
+            <SelectItem value="produccion">Producción</SelectItem>
+            <SelectItem value="presion">Presión</SelectItem>
+            <SelectItem value="dato3">Dato 3</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
     </div>
   );
 };
