@@ -16,7 +16,7 @@ const LoginButton: React.FC<LoginButtonProps> = ({
     <Button
       type="submit"
       disabled={loading}
-      className={`w-full bg-pozo-orange hover:bg-opacity-90 text-white font-medium py-3 px-4 rounded-md transition-colors ${className}`}
+      className={`w-full bg-[#FF6200] hover:bg-[#FF6200]/90 text-white font-medium py-3 px-4 rounded-md transition-colors ${className}`}
     >
       {loading ? (
         <>

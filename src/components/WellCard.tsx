@@ -61,7 +61,7 @@ const WellCard: React.FC<WellCardProps> = ({ nombre, produccion_diaria, estado }
             </div>
           </div>
           <div className="text-right">
-            <span className="text-pozo-orange font-semibold">
+            <span className="text-[#FF6200] font-semibold">
               {produccion_diaria} bbl/día
             </span>
             <div className="text-xs text-gray-400 mt-1">

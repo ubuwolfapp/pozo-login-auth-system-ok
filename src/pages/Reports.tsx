@@ -7,21 +7,20 @@ import {
   ChevronDownIcon, 
   ChevronRightIcon
 } from '@heroicons/react/24/solid';
-import { 
-  HomeIcon, 
-  BellIcon, 
-  ChartBarIcon, 
-  ListBulletIcon, 
-  Cog6ToothIcon 
-} from '@heroicons/react/24/solid';
-import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import ParameterSummary from '@/components/reports/ParameterSummary';
-import { authService } from '@/services/authService';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface ReportData {
   pozo_nombre: string;
@@ -38,6 +37,10 @@ const Reports: React.FC = () => {
   const navigate = useNavigate();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [startDate, setStartDate] = useState<Date>(
+    new Date(new Date().setDate(new Date().getDate() - 15))
+  );
+  const [endDate, setEndDate] = useState<Date>(new Date());
 
   // Datos estáticos para demostración
   const staticData = {
@@ -66,13 +69,6 @@ const Reports: React.FC = () => {
 
   const handleBack = () => {
     navigate(-1);
-  };
-
-  const handleCalendarClick = () => {
-    toast({
-      title: "Selección de fechas",
-      description: "Aquí se abriría el selector de fechas"
-    });
   };
 
   const handleWellSelect = () => {
@@ -110,6 +106,10 @@ const Reports: React.FC = () => {
     });
   };
 
+  // Formatear fechas para mostrar
+  const formattedStartDate = format(startDate, "dd/MM/yyyy");
+  const formattedEndDate = format(endDate, "dd/MM/yyyy");
+
   // Formatear datos para el gráfico
   const chartData = reportData?.fechas.map((date, index) => {
     return {
@@ -119,16 +119,28 @@ const Reports: React.FC = () => {
   }) || [];
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#1C2526] text-white font-sans">
+    <div className="flex flex-col min-h-screen bg-[#1C2526] text-white font-sans pb-20">
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-12 pb-4 border-b border-gray-700">
         <button onClick={handleBack} className="p-2">
           <ChevronLeftIcon className="h-6 w-6" />
         </button>
         <h1 className="text-xl font-bold">Reportes</h1>
-        <button onClick={handleCalendarClick} className="p-2">
-          <CalendarIcon className="h-6 w-6 text-cyan-400" />
-        </button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="p-2">
+              <CalendarIcon className="h-6 w-6 text-cyan-400" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-auto p-0 bg-slate-800 border-slate-700">
+            <Calendar
+              mode="single"
+              selected={endDate}
+              onSelect={(date) => date && setEndDate(date)}
+              className="bg-slate-800 border-slate-700 text-white pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
       </header>
 
       {/* Content */}
@@ -149,7 +161,7 @@ const Reports: React.FC = () => {
 
           {/* Date range */}
           <div className="bg-[#2A3441] p-4 rounded-lg">
-            <span>01/04/2025 - 16/04/2025</span>
+            <span>{formattedStartDate} - {formattedEndDate}</span>
           </div>
 
           {/* Parameter selector */}
@@ -191,6 +203,18 @@ const Reports: React.FC = () => {
                       fontSize: 12
                     }}
                   />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-slate-800 border border-slate-700 p-2 rounded">
+                            <p>{`${payload[0].value} barriles`}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
                   <Bar dataKey="valor" fill="#FF6200" />
                 </BarChart>
               </ResponsiveContainer>
@@ -211,7 +235,7 @@ const Reports: React.FC = () => {
           </div>
 
           {/* Buttons */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-2 gap-4 pt-2 mb-20">
             <Button 
               onClick={handleGeneratePDF}
               className="bg-[#FF6200] hover:bg-[#FF6200]/80 text-white py-3"

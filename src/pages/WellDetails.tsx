@@ -16,13 +16,28 @@ const WellDetails = () => {
   const { id } = useParams();
   const queryClient = useQueryClient();
 
-  const { data: well } = useQuery({
+  const { data: well, isLoading } = useQuery({
     queryKey: ['well', id],
     queryFn: () => wellService.getWellById(id!),
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-pozo-orange"></div>
+      </div>
+    );
+  }
+
   if (!well) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-900 text-white">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">No se encontró el pozo</h2>
+          <p>El pozo que estás buscando no existe o no tienes permisos para verlo.</p>
+        </div>
+      </div>
+    );
   }
 
   const handlePhotoUpload = () => {
@@ -41,7 +56,7 @@ const WellDetails = () => {
         />
 
         <div className="space-y-6">
-          <WellPressureChart />
+          <WellPressureChart wellId={well.id} />
           <WellStats well={well} />
           <WellPhotos wellId={well.id} />
           <WellCameras wellId={well.id} />
