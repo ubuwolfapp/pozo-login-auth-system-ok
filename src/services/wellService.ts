@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -22,10 +23,10 @@ export const wellService = {
       const { data, error } = await supabase
         .from('pozos')
         .select('*')
-        .order('nombre');
+        .limit(1);  // Asegurarse de que solo devuelva un pozo
 
       if (error) throw error;
-      return data;
+      return data || [];
     } catch (error) {
       console.error('Error fetching wells:', error);
       toast({
@@ -58,27 +59,6 @@ export const wellService = {
     }
   },
 
-  async getWellAlerts(wellId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('alertas')
-        .select('*')
-        .eq('pozo_id', wellId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error fetching alerts:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las alertas",
-        variant: "destructive"
-      });
-      return [];
-    }
-  },
-
   async createWell(wellData: {
     nombre: string;
     latitud: number;
@@ -91,6 +71,9 @@ export const wellService = {
     estado?: string;
   }) {
     try {
+      // Primero eliminamos todos los pozos existentes
+      await supabase.from('pozos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
       const { data, error } = await supabase.rpc(
         'crear_pozo_completo',
         {
@@ -110,7 +93,7 @@ export const wellService = {
 
       toast({
         title: "Pozo creado",
-        description: "El pozo ha sido creado exitosamente con toda su estructura de datos",
+        description: "El pozo ha sido creado exitosamente y es el único en el sistema",
       });
 
       return data;
