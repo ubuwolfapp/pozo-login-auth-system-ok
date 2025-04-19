@@ -44,20 +44,29 @@ export const useWellMarkers = (
           el.appendChild(statusIndicator);
         }
 
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([well.longitud, well.latitud])
-          .addTo(map.current!);
-          
-        el.addEventListener('click', () => onSelectWell(well));
-        markersRef.push(marker);
+        // Only create and add markers if map still exists and is valid
+        if (map.current && !map.current._removed) {
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([well.longitud, well.latitud])
+            .addTo(map.current);
+            
+          el.addEventListener('click', () => onSelectWell(well));
+          markersRef.push(marker);
+        }
       } catch (e) {
         console.error("Error al crear marcador:", e);
       }
     });
 
+    // Safe cleanup for markers
     return () => {
-      markersRef.forEach(marker => marker.remove());
+      markersRef.forEach(marker => {
+        try {
+          marker.remove();
+        } catch (e) {
+          console.error("Error al eliminar marcador:", e);
+        }
+      });
     };
   }, [wells, map.current, onSelectWell]);
 };
-

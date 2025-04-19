@@ -42,9 +42,20 @@ export const useMapbox = (config: {
       setMapError("No se pudo inicializar el mapa. Verifica la configuración.");
     }
 
+    // Safe cleanup function
     return () => {
+      // Only attempt to remove the map if it exists and has not been destroyed
       if (map.current) {
-        map.current.remove();
+        try {
+          // This prevents the error by checking if the map is still valid
+          if (!map.current._removed) {
+            map.current.remove();
+          }
+        } catch (e) {
+          console.error("Error during map cleanup:", e);
+        } finally {
+          map.current = null;
+        }
       }
     };
   }, [config]);

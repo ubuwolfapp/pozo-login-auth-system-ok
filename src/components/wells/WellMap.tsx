@@ -32,6 +32,20 @@ const WellMap: React.FC<WellMapProps> = ({ wells, onSelectWell }) => {
   // Set Mapbox token
   mapboxgl.accessToken = MAPBOX_TOKEN;
 
+  // Initialize the text shadow style once
+  React.useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .text-shadow {
+        text-shadow: 0px 0px 3px #000, 0px 0px 3px #000;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const { mapContainer, map, mapError } = useMapbox({
     centro_latitud: 19.4326,
     centro_longitud: -99.1332,
@@ -46,6 +60,9 @@ const WellMap: React.FC<WellMapProps> = ({ wells, onSelectWell }) => {
       localStorage.setItem('mapbox_token', tempToken);
       setStoredToken(tempToken);
       setShowTokenDialog(false);
+      
+      // Force reload of the page to reinitialize map with new token
+      window.location.reload();
     }
   };
 
@@ -76,4 +93,3 @@ const WellMap: React.FC<WellMapProps> = ({ wells, onSelectWell }) => {
 };
 
 export default WellMap;
-
