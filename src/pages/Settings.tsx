@@ -288,7 +288,7 @@ const Settings = () => {
               <Button
                 onClick={handleSaveGeneralChanges}
                 disabled={updateSettingsMutation.isPending}
-                className="relative"
+                className="relative bg-pozo-orange hover:bg-opacity-90"
               >
                 {updateSettingsMutation.isPending && (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
