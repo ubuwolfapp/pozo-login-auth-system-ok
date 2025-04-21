@@ -43,8 +43,12 @@ async function checkTableExists(tableName: string): Promise<boolean> {
     // Also ensure we're safely accessing the 'exists' property which might be of different types
     if (Array.isArray(data) && data.length > 0) {
       // Handle the case where exists might be represented as boolean, string 'true'/'false', or other formats
-      const existsValue = data[0]?.exists;
-      return existsValue === true || existsValue === 'true' || existsValue === 't';
+      // Fix: Use type checking to safely access 'exists' property
+      const firstRow = data[0];
+      if (typeof firstRow === 'object' && firstRow !== null && 'exists' in firstRow) {
+        const existsValue = firstRow.exists;
+        return existsValue === true || existsValue === 'true' || existsValue === 't';
+      }
     }
     return false;
   } catch (e) {
@@ -184,11 +188,11 @@ async function initializeTestData() {
     
     // 7. Asociar el usuario con el mapa
     console.log("Asociando usuario con mapa...");
-    // Fix: Explicitly convert mapId to number if needed for type compatibility
+    // Fix: Convert mapId to number if needed for type compatibility - using a type assertion
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
-      .eq("id", testUserId);
+      .eq("id", Number(testUserId)); // Fix: Convert testUserId to number
       
     if (userMapError) {
       console.error("Error asociando usuario con mapa:", userMapError);
