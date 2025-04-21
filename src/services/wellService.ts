@@ -218,16 +218,16 @@ export const wellService = {
 
       if (error) throw error;
 
-      // Asignar nuevo pozo al usuario con una aserción para evitar error de tipado de rpc
+      // Assign new well to current user using a different approach
       if (data) {
-        // @ts-expect-error: asignación válida aunque Supabase typegen no lo reconoce aún
-        const { error: assignError } = await supabase.rpc(
-          'assign_well_to_user' as any,
-          {
-            p_usuario_id: userId,
-            p_pozo_id: data
-          }
-        );
+        // Use direct insert to associate the well with the user
+        const { error: assignError } = await supabase
+          .from('pozos_usuarios')
+          .insert({
+            usuario_id: userId,
+            pozo_id: data
+          });
+          
         if (assignError) throw assignError;
       }
 
