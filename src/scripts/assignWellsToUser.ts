@@ -46,4 +46,3 @@ if (require.main === module) {
 
 // Exportar por si quieres importar para test u otro uso
 export { assignWellsToUser };
-
