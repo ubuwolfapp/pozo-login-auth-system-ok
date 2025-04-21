@@ -187,12 +187,12 @@ async function initializeTestData() {
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
-      .eq("id", testUserId);
+      .eq("id", foundUser.id); // Using foundUser.id which is a number, not testUserId which is a UUID
       
     if (userMapError) {
       console.error("Error asociando usuario con mapa:", userMapError);
     } else {
-      console.log(`Usuario ${testUserId} asociado con mapa ${mapId}`);
+      console.log(`Usuario ${foundUser.id} asociado con mapa ${mapId}`);
     }
 
     // 8. Verificar si existe la tabla pozos_usuarios
@@ -233,7 +233,7 @@ async function initializeTestData() {
         const { error: assignError } = await supabase.rpc(
           'assign_well_to_user',
           {
-            p_usuario_id: testUserId,
+            p_usuario_id: testUserId,  // Using UUID from auth system
             p_pozo_id: well.id
           }
         );

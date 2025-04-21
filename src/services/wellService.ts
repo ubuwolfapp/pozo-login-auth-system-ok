@@ -1,4 +1,3 @@
-
 // Updates to avoid direct supabase.from('pozos_usuarios'), use RPC functions instead.
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -243,37 +242,6 @@ export const wellService = {
         variant: "destructive"
       });
       throw error;
-    }
-  },
-  
-  async generatePressureHistory(wellId: string, basePresion: number = 7500) {
-    try {
-      // Delete existing pressure history
-      await supabase
-        .from('presion_historial')
-        .delete()
-        .eq('pozo_id', wellId);
-
-      // Create 24 records for last 24 hours
-      for (let i = 0; i < 24; i++) {
-        const fecha = new Date();
-        fecha.setHours(fecha.getHours() - i);
-
-        // Variance of ±10%
-        const variance = basePresion * 0.1;
-        const randomVariance = Math.random() * variance * 2 - variance;
-        const presionValue = basePresion + randomVariance;
-
-        await supabase
-          .from('presion_historial')
-          .insert({
-            pozo_id: wellId,
-            fecha: fecha.toISOString(),
-            valor: presionValue
-          });
-      }
-    } catch (error) {
-      console.error('Error generating pressure history:', error);
     }
   },
 };
