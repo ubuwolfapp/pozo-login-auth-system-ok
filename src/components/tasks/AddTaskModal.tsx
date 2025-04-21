@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { taskService, Task } from '@/services/taskService';
 import { useQuery } from '@tanstack/react-query';
@@ -28,12 +28,14 @@ interface AddTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  preselectedWell?: string;
 }
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({ 
   open, 
   onOpenChange,
-  onSuccess
+  onSuccess,
+  preselectedWell
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -53,6 +55,17 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     queryFn: wellService.getWells,
     enabled: open // Solo cargar pozos cuando el modal está abierto
   });
+
+  // Si hay un pozo preseleccionado por props y el modal se abre, actualizamos estado
+  useEffect(() => {
+    if (open && preselectedWell) {
+      setSelectedWell(preselectedWell);
+    }
+    // Al cerrar, reseteamos el campo si el modal se cierra por completo
+    if (!open) {
+      setSelectedWell('');
+    }
+  }, [open, preselectedWell]);
 
   const onSubmit = async (formData: { titulo: string; asignado_a: string }) => {
     if (!selectedDate || !selectedWell) {
@@ -84,7 +97,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           description: "Tarea creada correctamente",
         });
         reset();
-        setSelectedWell('');
+        setSelectedWell(preselectedWell || '');
         setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
         setSelectedStatus('pendiente');
         setIsCritical(false);
@@ -221,3 +234,4 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 };
 
 export default AddTaskModal;
+

@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { taskService } from '@/services/taskService';
 import TaskList from '@/components/tasks/TaskList';
 import AddTaskModal from '@/components/tasks/AddTaskModal';
@@ -10,16 +11,32 @@ import { Plus } from 'lucide-react';
 
 const Tasks = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [preselectedWell, setPreselectedWell] = useState<string | undefined>(undefined);
   const queryClient = useQueryClient();
-  
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
 
+  // Detectamos si viene un pozo y openModal en la URL (ej: ?openModal=true&well=123)
+  useEffect(() => {
+    const openModal = searchParams.get('openModal');
+    const wellParam = searchParams.get('well');
+    if (openModal === 'true') {
+      setIsAddModalOpen(true);
+      if (wellParam) setPreselectedWell(wellParam);
+      // Limpiamos los params para que no se reabra modal si usuario refresca
+      searchParams.delete('openModal');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   const handleTaskAdded = () => {
     // Refrescar la lista de tareas después de agregar una nueva
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    setPreselectedWell(undefined);
   };
 
   if (isLoading) {
@@ -49,8 +66,12 @@ const Tasks = () => {
       
       <AddTaskModal 
         open={isAddModalOpen}
-        onOpenChange={setIsAddModalOpen}
+        onOpenChange={(open) => {
+          setIsAddModalOpen(open);
+          if (!open) setPreselectedWell(undefined);
+        }}
         onSuccess={handleTaskAdded}
+        preselectedWell={preselectedWell}
       />
       
       <NavigationBar />

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ const WellActions = ({ wellId }: WellActionsProps) => {
       </Button>
       <Button 
         className="w-full bg-[#FF6200] hover:bg-[#FF6200]/80 text-white"
-        onClick={() => navigate(`/tasks/new?well=${wellId}`)}
+        onClick={() => navigate(`/tasks?openModal=true&well=${wellId}`)}
       >
         Asignar Tarea
       </Button>
