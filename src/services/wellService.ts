@@ -1,4 +1,4 @@
-// Updates to avoid direct supabase.from('pozos_usuarios'), use RPC functions instead.
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -25,29 +25,6 @@ export interface Well {
 export const wellService = {
   async getWells() {
     try {
-      // Get current user ID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const userId = userData.user?.id;
-      if (!userId) {
-        console.log('No user logged in');
-        return [];
-      }
-
-      // Use RPC get_user_wells to get wells assigned to this user
-      const { data: wellIds, error: rpcError } = await supabase.rpc(
-        'get_user_wells',
-        { p_usuario_id: userId }
-      );
-
-      if (rpcError || !wellIds || wellIds.length === 0) {
-        console.log('No wells assigned to this user');
-        return [];
-      }
-
-      const wellIdsFlat = Array.isArray(wellIds) ? wellIds : [];
-
       const { data, error } = await supabase
         .from('pozos')
         .select(`
@@ -58,7 +35,7 @@ export const wellService = {
           fotos_pozos(*),
           presion_historial(*)
         `)
-        .in('id', wellIdsFlat);
+        .limit(1);  // Asegurarse de que solo devuelva un pozo
 
       if (error) throw error;
       return data || [];
@@ -75,27 +52,6 @@ export const wellService = {
 
   async getWellById(id: string) {
     try {
-      // Get current user ID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const userId = userData.user?.id;
-      if (!userId) {
-        console.log('No user logged in');
-        return null;
-      }
-
-      // Use RPC to check if well assigned to user
-      const { data: hasAssignment, error: rpcError } = await supabase.rpc(
-        'check_well_user_assignment',
-        { p_usuario_id: userId, p_pozo_id: id }
-      );
-
-      if (rpcError || !hasAssignment) {
-        console.log('Well is not assigned to this user:', id);
-        return null;
-      }
-
       const { data, error } = await supabase
         .from('pozos')
         .select(`
@@ -110,12 +66,12 @@ export const wellService = {
         .single();
 
       if (error) throw error;
-
-      // If no pressure history, generate it
+      
+      // Si no hay datos de presión histórica, crearlos
       if (!data.presion_historial || data.presion_historial.length === 0) {
         await this.generatePressureHistory(id, data.presion);
-
-        // Reload to get updated history
+        
+        // Recargar los datos para obtener el historial generado
         const refreshResult = await supabase
           .from('pozos')
           .select(`
@@ -128,12 +84,12 @@ export const wellService = {
           `)
           .eq('id', id)
           .single();
-
+          
         if (!refreshResult.error) {
           return refreshResult.data;
         }
       }
-
+      
       return data;
     } catch (error) {
       console.error('Error fetching well:', error);
@@ -145,25 +101,25 @@ export const wellService = {
       return null;
     }
   },
-
+  
   async generatePressureHistory(wellId: string, basePresion: number = 7500) {
     try {
-      // Delete existing pressure history
+      // Eliminar datos históricos existentes
       await supabase
         .from('presion_historial')
         .delete()
         .eq('pozo_id', wellId);
-
-      // Create 24 records for last 24 hours
+      
+      // Crear 24 registros para las últimas 24 horas
       for (let i = 0; i < 24; i++) {
         const fecha = new Date();
         fecha.setHours(fecha.getHours() - i);
-
-        // Variance of ±10%
+        
+        // Variar la presión ligeramente (±10%)
         const variance = basePresion * 0.1;
         const randomVariance = Math.random() * variance * 2 - variance;
         const presionValue = basePresion + randomVariance;
-
+        
         await supabase
           .from('presion_historial')
           .insert({
@@ -189,16 +145,7 @@ export const wellService = {
     estado?: string;
   }) {
     try {
-      // Get current user ID
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const userId = userData.user?.id;
-      if (!userId) {
-        throw new Error('No user logged in');
-      }
-
-      // Delete all existing wells except dummy ID
+      // Primero eliminamos todos los pozos existentes
       await supabase.from('pozos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
       const { data, error } = await supabase.rpc(
@@ -218,23 +165,9 @@ export const wellService = {
 
       if (error) throw error;
 
-      // Assign new well to current user using the RPC function
-      if (data) {
-        // Cast the function name to any to bypass type checking
-        const { error: assignError } = await supabase.rpc(
-          'assign_well_to_user' as any,
-          {
-            p_usuario_id: userId,
-            p_pozo_id: data
-          }
-        );
-          
-        if (assignError) throw assignError;
-      }
-
       toast({
         title: "Pozo creado",
-        description: "El pozo ha sido creado exitosamente y asignado a tu usuario",
+        description: "El pozo ha sido creado exitosamente y es el único en el sistema",
       });
 
       return data;

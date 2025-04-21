@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AlertTriangle, Check, Trash2 } from 'lucide-react';
+import { AlertTriangle, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,10 +14,9 @@ interface AlertListProps {
   alerts: Alert[] | undefined;
   isLoading: boolean;
   onAlertResolved?: (alertId: string, resolutionText: string) => void;
-  onAlertDeleted?: (alertId: string) => void;
 }
 
-const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: AlertListProps) => {
+const AlertList = ({ alerts, isLoading, onAlertResolved }: AlertListProps) => {
   const [selectedAlert, setSelectedAlert] = React.useState<Alert | null>(null);
   const [resolutionText, setResolutionText] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -28,6 +27,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: Alert
     if (resuelto) {
       return 'bg-[#BDE0FE]/80';
     }
+    
     switch (tipo) {
       case 'critica':
         return 'bg-[#8B0000]/80';
@@ -46,13 +46,18 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: Alert
 
   const handleResolveClick = async () => {
     if (!selectedAlert) return;
-
+    
     try {
       setIsSubmitting(true);
+      
       console.log("Resolving alert:", selectedAlert.id, "Resolution text:", resolutionText);
+      
+      // Call the parent component's callback to handle resolution
       if (onAlertResolved) {
         await onAlertResolved(selectedAlert.id, resolutionText);
       }
+      
+      // Close the dialog after successful resolution
       setSelectedAlert(null);
       setResolutionText("");
     } catch (error) {
@@ -102,32 +107,21 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: Alert
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {!alert.resuelto ? (
-                  <>
-                    <Button
-                      onClick={() => setSelectedAlert(alert)}
-                      variant="secondary"
-                      className="bg-[#2F4F4F] hover:bg-[#3A5A5A] text-white"
-                    >
-                      Resolver
-                    </Button>
-                    <Button
-                      onClick={() => onAlertDeleted && onAlertDeleted(alert.id)}
-                      variant="destructive"
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                      title="Borrar alerta"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </>
-                ) : (
-                  <span className="text-white flex items-center">
-                    <Check className="h-4 w-4 mr-1" />
-                    Resuelta
-                  </span>
-                )}
-              </div>
+              
+              {!alert.resuelto ? (
+                <Button
+                  onClick={() => setSelectedAlert(alert)}
+                  variant="secondary"
+                  className="bg-[#2F4F4F] hover:bg-[#3A5A5A] text-white"
+                >
+                  Resolver
+                </Button>
+              ) : (
+                <span className="text-white flex items-center">
+                  <Check className="h-4 w-4 mr-1" />
+                  Resuelta
+                </span>
+              )}
             </div>
           </Card>
         ))}
@@ -138,6 +132,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: Alert
           <DialogHeader>
             <DialogTitle>Resolver Alerta</DialogTitle>
           </DialogHeader>
+          
           <div className="py-4">
             <Textarea
               placeholder="Escriba aquí la resolución..."
@@ -146,6 +141,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onAlertDeleted }: Alert
               className="bg-[#2E3A59] border-gray-700 text-white placeholder:text-gray-400"
             />
           </div>
+
           <DialogFooter>
             <Button
               variant="secondary"

@@ -96,7 +96,6 @@ export type Database = {
           idioma: string | null
           notificaciones_activas: boolean | null
           push_activo: boolean | null
-          simulacion_activa: boolean | null
           sms_activo: boolean | null
           umbral_flujo: number | null
           umbral_presion: number | null
@@ -110,7 +109,6 @@ export type Database = {
           idioma?: string | null
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
-          simulacion_activa?: boolean | null
           sms_activo?: boolean | null
           umbral_flujo?: number | null
           umbral_presion?: number | null
@@ -124,7 +122,6 @@ export type Database = {
           idioma?: string | null
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
-          simulacion_activa?: boolean | null
           sms_activo?: boolean | null
           umbral_flujo?: number | null
           umbral_presion?: number | null
@@ -236,39 +233,6 @@ export type Database = {
           zoom_inicial?: number
         }
         Relationships: []
-      }
-      pozos_mapas_relacion: {
-        Row: {
-          id: string
-          pozo_id: string
-          pozos_mapa_id: string
-        }
-        Insert: {
-          id?: string
-          pozo_id: string
-          pozos_mapa_id: string
-        }
-        Update: {
-          id?: string
-          pozo_id?: string
-          pozos_mapa_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pozos_mapas_relacion_pozo_id_fkey"
-            columns: ["pozo_id"]
-            isOneToOne: false
-            referencedRelation: "pozos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "pozos_mapas_relacion_pozos_mapa_id_fkey"
-            columns: ["pozos_mapa_id"]
-            isOneToOne: false
-            referencedRelation: "pozos_mapa"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       presion_historial: {
         Row: {
@@ -438,7 +402,6 @@ export type Database = {
           id: number
           nombre: string
           password: string
-          pozos_mapa_id: string | null
           rol: string
         }
         Insert: {
@@ -447,7 +410,6 @@ export type Database = {
           id?: number
           nombre: string
           password: string
-          pozos_mapa_id?: string | null
           rol: string
         }
         Update: {
@@ -456,36 +418,15 @@ export type Database = {
           id?: number
           nombre?: string
           password?: string
-          pozos_mapa_id?: string | null
           rol?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "usuarios_pozos_mapa_id_fkey"
-            columns: ["pozos_mapa_id"]
-            isOneToOne: false
-            referencedRelation: "pozos_mapa"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      assign_well_to_map: {
-        Args: { p_pozo_id: string; p_pozos_mapa_id: string }
-        Returns: undefined
-      }
-      assign_well_to_user: {
-        Args: { p_usuario_id: string; p_pozo_id: string }
-        Returns: undefined
-      }
-      check_well_user_assignment: {
-        Args: { p_usuario_id: string; p_pozo_id: string }
-        Returns: boolean
-      }
       comprobar_umbrales_pozo: {
         Args: { p_pozo_id: string; p_usuario_id: string }
         Returns: undefined
@@ -504,14 +445,6 @@ export type Database = {
           p_usuario?: string
         }
         Returns: string
-      }
-      get_map_wells: {
-        Args: { p_pozos_mapa_id: string }
-        Returns: string[]
-      }
-      get_user_wells: {
-        Args: { p_usuario_id: string }
-        Returns: string[]
       }
       simular_valores_pozo: {
         Args: { p_pozo_id: string }
