@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ensureTestUser } from "./ensureTestUser";
 
@@ -48,13 +47,13 @@ async function checkTableExists(tableName: string): Promise<boolean> {
 async function initializeTestData() {
   try {
     console.log("Iniciando proceso de creación de datos de prueba...");
-    
+
     // 1. Make sure we have a test user in both Auth and custom table
     await ensureTestUser();
-    
+
     // 2. Get the test user ID from the custom table
     console.log("Obteniendo ID del usuario de prueba...");
-    let testUserId: string;
+    let testUserId: number;
     {
       const { data: foundUser, error } = await supabase
         .from("usuarios")
@@ -66,12 +65,12 @@ async function initializeTestData() {
         console.error("Usuario prueba@gmail.com no encontrado, no se pueden asignar pozos.");
         return;
       }
-      
-      // Convert ID to string if it's a number
-      testUserId = String(foundUser.id);
+
+      // Usar número ya que usuarios.id es integer
+      testUserId = foundUser.id;
       console.log("Usuario encontrado con ID:", testUserId);
     }
-    
+
     // 3. Eliminar datos existentes (cuidado en entornos de producción)
     console.log("Eliminando datos existentes...");
     await supabase.from("fotos_pozos").delete().neq("id", "0");
@@ -84,17 +83,17 @@ async function initializeTestData() {
     await supabase.from("pozos_mapa").delete().neq("id", "0");
     console.log("Datos existentes eliminados correctamente.");
 
-    // 4. Crear mapa por defecto para OpenStreetMap (nombre explícito)
-    console.log("Creando mapa por defecto...");
+    // 4. Crear mapa centrado en Añelo (Neuquén)
+    console.log("Creando mapa por defecto en Añelo...");
     let mapId: string;
     {
       const { data: mapa, error: mapaError } = await supabase
         .from("pozos_mapa")
         .insert({
-          nombre: "Mapa de prueba OpenStreetMap",
-          centro_latitud: 19.4326,
-          centro_longitud: -99.1332,
-          zoom_inicial: 5,
+          nombre: "Mapa Añelo OpenStreetMap",
+          centro_latitud: -38.6228,
+          centro_longitud: -68.5738,
+          zoom_inicial: 12,
         })
         .select("id")
         .single();
@@ -103,44 +102,44 @@ async function initializeTestData() {
         throw mapaError;
       }
       mapId = mapa.id;
-      console.log("Mapa creado con ID:", mapId);
+      console.log("Mapa Añelo creado con ID:", mapId);
     }
 
-    // 5. Crear pozos de ejemplo
-    console.log("Creando pozos de ejemplo...");
+    // 5. Crear 3 pozos de ejemplo (usando coordenadas alrededor de Añelo)
+    console.log("Creando pozos de ejemplo en Añelo...");
     const exampleWells = [
       {
-        nombre: "Pozo Alpha",
-        latitud: 19.4326,
-        longitud: -99.1332,
+        nombre: "Añelo Norte",
+        latitud: -38.6128,
+        longitud: -68.5680,
         estado: "activo",
-        produccion_diaria: 1250,
-        temperatura: 85,
-        presion: 2100,
-        flujo: 450,
-        nivel: 75,
+        produccion_diaria: 1900,
+        temperatura: 83,
+        presion: 2400,
+        flujo: 510,
+        nivel: 77,
       },
       {
-        nombre: "Pozo Beta",
-        latitud: 19.4526,
-        longitud: -99.1532,
+        nombre: "Añelo Centro",
+        latitud: -38.6225,
+        longitud: -68.5738,
         estado: "advertencia",
-        produccion_diaria: 980,
-        temperatura: 92,
-        presion: 1950,
-        flujo: 380,
-        nivel: 65,
+        produccion_diaria: 1620,
+        temperatura: 91,
+        presion: 1850,
+        flujo: 385,
+        nivel: 62,
       },
       {
-        nombre: "Pozo Gamma",
-        latitud: 19.4126,
-        longitud: -99.1132,
+        nombre: "Añelo Sur",
+        latitud: -38.6320,
+        longitud: -68.5850,
         estado: "fuera_de_servicio",
         produccion_diaria: 0,
-        temperatura: 65,
-        presion: 850,
+        temperatura: 70,
+        presion: 980,
         flujo: 0,
-        nivel: 20,
+        nivel: 19,
       },
     ];
 
@@ -166,86 +165,117 @@ async function initializeTestData() {
         pozo_id: well.id,
         pozos_mapa_id: mapId,
       });
-      
+
       if (relError) {
         console.error(`Error al relacionar pozo ${well.id} con mapa:`, relError);
       } else {
         console.log(`Pozo ${well.nombre} relacionado con mapa ${mapId}`);
       }
     }
-    
-    // 7. Asociar el usuario con el mapa
+
+    // 7. Asociar el usuario con el mapa (usuarios.id es integer)
     console.log("Asociando usuario con mapa...");
-    // Here's the fix - convert testUserId to number before using it in the query
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
-      .eq("id", parseInt(testUserId, 10));
-      
+      .eq("id", testUserId);
+
     if (userMapError) {
       console.error("Error asociando usuario con mapa:", userMapError);
     } else {
       console.log(`Usuario ${testUserId} asociado con mapa ${mapId}`);
     }
 
-    // 8. Verificar si existe la tabla pozos_usuarios
+    // 8. Verificar si existe la tabla pozos_usuarios y crear si falta
     console.log("Verificando si existe la tabla pozos_usuarios...");
-    const tableExists = await checkTableExists('pozos_usuarios');
-    
+    const tableExists = await checkTableExists("pozos_usuarios");
+
     if (!tableExists) {
       console.log("La tabla pozos_usuarios no existe. Creándola...");
-      
-      // Crear tabla directamente con SQL
       await runSQL(`
         CREATE TABLE IF NOT EXISTS public.pozos_usuarios (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          usuario_id UUID NOT NULL,
+          usuario_id INT NOT NULL,
           pozo_id UUID NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
           UNIQUE(usuario_id, pozo_id)
         );
-        
+
         COMMENT ON TABLE public.pozos_usuarios IS 'Tabla de relación entre usuarios y pozos';
-        
-        -- Add indexes for better performance
+
         CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_usuario_id ON public.pozos_usuarios(usuario_id);
         CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_pozo_id ON public.pozos_usuarios(pozo_id);
       `);
-      
       console.log("Tabla pozos_usuarios creada correctamente");
     } else {
       console.log("La tabla pozos_usuarios ya existe");
     }
-    
-    // 9. Asignar TODOS los pozos al usuario de prueba directamente con SQL
-    console.log("Asignando pozos al usuario de prueba...");
+
+    // 9. Asignar TODOS los pozos al usuario de prueba mediante SQL directa
+    console.log("Asignando pozos al usuario de prueba (Añelo)...");
     for (const well of wellList) {
       try {
         console.log(`Asignando pozo ${well.nombre} (${well.id}) al usuario ${testUserId}...`);
-        
-        // Use SQL to insert directly
         await runSQL(`
           INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
-          VALUES ('${testUserId}', '${well.id}')
+          VALUES (${testUserId}, '${well.id}')
           ON CONFLICT (usuario_id, pozo_id) DO NOTHING
         `);
-        
         console.log(`Pozo ${well.nombre} asignado correctamente mediante SQL directa`);
       } catch (err) {
         console.error(`Error al asignar pozo ${well.id}:`, err);
       }
     }
 
-    console.log("Datos de prueba inicializados correctamente.");
-    
+    // Simular algunos datos adicionales para los pozos creados (presion_historial, tareas, alertas, etc.)
+    console.log("Simulando datos adicionales para los pozos...");
+    for (const well of wellList) {
+      // Crear historial de presión de 24 horas (hora a hora) para cada pozo
+      for (let i = 0; i < 24; i++) {
+        const fecha = new Date();
+        fecha.setHours(fecha.getHours() - i);
+        // Simulación: presión base +-10%
+        const pozo = exampleWells.find((x) => x.nombre === well.nombre);
+        const base = pozo?.presion ?? 2000;
+        const variance = base * 0.1;
+        const presion = base + (Math.random() * variance * 2 - variance);
+
+        await supabase.from("presion_historial").insert({
+          pozo_id: well.id,
+          fecha: fecha.toISOString(),
+          valor: presion,
+        });
+      }
+      // Crear alerta simulada
+      await supabase.from("alertas").insert({
+        pozo_id: well.id,
+        mensaje: "Presión alta detectada",
+        tipo: pozo.estado === "fuera_de_servicio" ? "critica" : "advertencia",
+        valor: (pozo.presion ?? 2000) + 250,
+        unidad: "psi",
+        resuelto: false,
+      });
+      // Crear tarea simulada
+      await supabase.from("tareas").insert({
+        titulo: "Verificación de sensores",
+        pozo_id: well.id,
+        asignado_a: "prueba@gmail.com",
+        fecha_limite: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+        es_critica: pozo.estado === "fuera_de_servicio",
+        estado: "pendiente",
+      });
+    }
+
+    console.log("Datos de prueba inicializados correctamente (Añelo, 3 pozos, datos simulados).");
+
     // Verificar asignaciones con SQL
     console.log("Verificando asignaciones de pozos...");
     try {
       const result = await runSQL(`
         SELECT pozo_id FROM public.pozos_usuarios 
-        WHERE usuario_id = '${testUserId}'
+        WHERE usuario_id = ${testUserId}
       `);
-      
+
       const wellsCount = result && Array.isArray(result) ? result.length : 0;
       console.log(`El usuario tiene ${wellsCount} pozos asignados:`, result);
     } catch (e) {
