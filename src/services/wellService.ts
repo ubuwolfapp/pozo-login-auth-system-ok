@@ -219,18 +219,18 @@ export const wellService = {
 
       if (error) throw error;
 
-      // Assign new well to current user
+      // Assign new well to current user using RPC
       if (data) {
-        // Instead of direct insert to pozos_usuarios, call RPC or use supabase.rpc (if exists)
-        // but here we'll insert directly because we don't have an RPC for that
-        // This may cause typing issues, but assuming we can do it:
-        // This insert may cause typing issues at compile time, if so, replace with edge function or RPC
-        await supabase
-          .from('pozos_usuarios')
-          .insert({
-            usuario_id: userId,
-            pozo_id: data
-          });
+        // Use our custom RPC function to assign well to user
+        const { error: assignError } = await supabase.rpc(
+          'assign_well_to_user',
+          {
+            p_usuario_id: userId,
+            p_pozo_id: data
+          }
+        );
+        
+        if (assignError) throw assignError;
       }
 
       toast({
