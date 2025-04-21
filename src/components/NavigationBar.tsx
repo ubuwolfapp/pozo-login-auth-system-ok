@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeIcon, ChartBarIcon, ListBulletIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
@@ -30,7 +29,6 @@ const NavigationIcon: React.FC<NavigationIconProps> = ({ icon, label, isActive, 
   >
     <div className={`transition-colors relative ${isActive ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}>
       {icon}
-      {/* Badge only shows if badgeCount > 0 and passed */}
       {badgeCount && badgeCount > 0 && <BadgeNumber count={badgeCount} />}
     </div>
     <span className={`text-xs mt-1 ${isActive ? 'text-cyan-400' : 'text-gray-400'}`}>
@@ -133,4 +131,3 @@ const NavigationBar: React.FC = () => {
 };
 
 export default NavigationBar;
-
