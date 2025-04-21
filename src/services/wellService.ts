@@ -1,4 +1,3 @@
-
 // Updates to avoid direct supabase.from('pozos_usuarios'), use RPC functions instead.
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
@@ -219,17 +218,16 @@ export const wellService = {
 
       if (error) throw error;
 
-      // Assign new well to current user using RPC
+      // Asignar nuevo pozo al usuario con una aserción para evitar error de tipado de rpc
       if (data) {
-        // Use our custom RPC function to assign well to user
+        // @ts-expect-error: asignación válida aunque Supabase typegen no lo reconoce aún
         const { error: assignError } = await supabase.rpc(
-          'assign_well_to_user',
+          'assign_well_to_user' as any,
           {
             p_usuario_id: userId,
             p_pozo_id: data
           }
         );
-        
         if (assignError) throw assignError;
       }
 

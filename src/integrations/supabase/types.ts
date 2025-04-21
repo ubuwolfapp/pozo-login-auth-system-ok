@@ -430,6 +430,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_well_to_user: {
+        Args: { p_usuario_id: string; p_pozo_id: string }
+        Returns: undefined
+      }
       check_well_user_assignment: {
         Args: { p_usuario_id: string; p_pozo_id: string }
         Returns: boolean
