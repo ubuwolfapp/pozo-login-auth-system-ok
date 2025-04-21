@@ -181,16 +181,15 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 <SelectValue placeholder="Selecciona el usuario" />
               </SelectTrigger>
               <SelectContent>
-                {usuarios.length === 0 && (
-                  <SelectItem value="" disabled>
-                    No hay usuarios
-                  </SelectItem>
+                {usuarios.length === 0 ? (
+                  <SelectItem value="no_users">No hay usuarios disponibles</SelectItem>
+                ) : (
+                  usuarios.map((u) => (
+                    <SelectItem key={u.email} value={u.email}>
+                      {u.nombre} ({u.email})
+                    </SelectItem>
+                  ))
                 )}
-                {usuarios.map((u) => (
-                  <SelectItem key={u.email} value={u.email}>
-                    {u.nombre} ({u.email})
-                  </SelectItem>
-                ))}
               </SelectContent>
             </Select>
           </div>
@@ -240,4 +239,3 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 };
 
 export default AddTaskModal;
-
