@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { AlertCircle, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
 
 interface WellAlertHistoryModalProps {
   wellId: string;
@@ -16,7 +17,7 @@ const WellAlertHistoryModal: React.FC<WellAlertHistoryModalProps> = ({ wellId, o
   const { data: alerts, isLoading } = useQuery({
     queryKey: ['alert-history', wellId],
     queryFn: async () => {
-      const { data, error } = await window.supabase
+      const { data, error } = await supabase
         .from('alertas_historial')
         .select('*')
         .eq('pozo_id', wellId)
