@@ -72,6 +72,7 @@ export const settingsService = {
 
       if (error) throw error;
       
+      // Add simulacion_activa if it doesn't exist
       return {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
