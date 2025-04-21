@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ensureTestUser } from "./ensureTestUser";
 
@@ -144,10 +145,10 @@ async function initializeTestData() {
     ];
 
     let wellList: { id: string; nombre: string }[] = [];
-    for (const w of exampleWells) {
+    for (const wellData of exampleWells) {
       const { data: well, error: wellError } = await supabase
         .from("pozos")
-        .insert(w)
+        .insert(wellData)
         .select("id,nombre")
         .single();
       if (wellError) {
@@ -230,13 +231,19 @@ async function initializeTestData() {
     // Simular algunos datos adicionales para los pozos creados (presion_historial, tareas, alertas, etc.)
     console.log("Simulando datos adicionales para los pozos...");
     for (const well of wellList) {
+      // Get the example well data that corresponds to this well
+      const wellData = exampleWells.find((x) => x.nombre === well.nombre);
+      if (!wellData) {
+        console.warn(`No se encontraron datos de ejemplo para el pozo ${well.nombre}`);
+        continue;
+      }
+
       // Crear historial de presión de 24 horas (hora a hora) para cada pozo
       for (let i = 0; i < 24; i++) {
         const fecha = new Date();
         fecha.setHours(fecha.getHours() - i);
         // Simulación: presión base +-10%
-        const pozo = exampleWells.find((x) => x.nombre === well.nombre);
-        const base = pozo?.presion ?? 2000;
+        const base = wellData.presion || 2000;
         const variance = base * 0.1;
         const presion = base + (Math.random() * variance * 2 - variance);
 
@@ -250,8 +257,8 @@ async function initializeTestData() {
       await supabase.from("alertas").insert({
         pozo_id: well.id,
         mensaje: "Presión alta detectada",
-        tipo: pozo.estado === "fuera_de_servicio" ? "critica" : "advertencia",
-        valor: (pozo.presion ?? 2000) + 250,
+        tipo: wellData.estado === "fuera_de_servicio" ? "critica" : "advertencia",
+        valor: (wellData.presion || 2000) + 250,
         unidad: "psi",
         resuelto: false,
       });
@@ -261,7 +268,7 @@ async function initializeTestData() {
         pozo_id: well.id,
         asignado_a: "prueba@gmail.com",
         fecha_limite: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-        es_critica: pozo.estado === "fuera_de_servicio",
+        es_critica: wellData.estado === "fuera_de_servicio",
         estado: "pendiente",
       });
     }
