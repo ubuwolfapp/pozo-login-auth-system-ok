@@ -47,8 +47,9 @@ export const generateReportPdf = ({
     bodyStyles: { textColor: 50 },
   });
 
-  // Resumen
-  let y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 70;
+  // Recuperar la posición Y final de la tabla para posicionar el resumen
+  // @ts-ignore - lastAutoTable es una propiedad añadida por jspdf-autotable pero no está en los tipos
+  let y = (doc as any).lastAutoTable ? (doc as any).lastAutoTable.finalY + 10 : 70;
   doc.setFontSize(14);
   doc.text("Resumen:", 14, y);
 
