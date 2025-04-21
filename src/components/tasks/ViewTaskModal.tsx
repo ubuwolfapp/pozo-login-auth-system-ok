@@ -33,7 +33,9 @@ const ViewTaskModal: React.FC<ViewTaskModalProps> = ({ open, onOpenChange, task 
           <DialogTitle className="flex items-center gap-2">
             {task.titulo}
             {task.es_critica && (
-              <AlertTriangle className="h-5 w-5 text-red-500" title="Crítica" />
+              <div className="flex items-center" aria-label="Tarea crítica">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+              </div>
             )}
           </DialogTitle>
         </DialogHeader>
