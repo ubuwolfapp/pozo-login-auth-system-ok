@@ -85,7 +85,9 @@ async function assignWellsToUser() {
       WHERE usuario_id = '${userId}'
     `);
     
-    console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
+    // Fix: Check if userWells is an array before accessing length
+    const wellCount = Array.isArray(userWells) ? userWells.length : 0;
+    console.log(`El usuario tiene ${wellCount} pozos asignados:`, userWells);
   } catch (error) {
     console.error('Error ejecutando la asignación:', error);
   }

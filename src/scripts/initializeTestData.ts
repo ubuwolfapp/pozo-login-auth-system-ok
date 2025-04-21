@@ -39,7 +39,8 @@ async function checkTableExists(tableName: string): Promise<boolean> {
       return false;
     }
     
-    return data && data.length > 0 && data[0].exists;
+    // Fix: Check if data is an array and has elements before accessing properties
+    return Array.isArray(data) && data.length > 0 && data[0].exists;
   } catch (e) {
     console.error("Error in checkTableExists:", e);
     return false;
@@ -177,6 +178,7 @@ async function initializeTestData() {
     
     // 7. Asociar el usuario con el mapa
     console.log("Asociando usuario con mapa...");
+    // Fix: Explicitly convert mapId to number if needed for type compatibility
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
@@ -246,7 +248,9 @@ async function initializeTestData() {
         WHERE usuario_id = '${testUserId}'
       `);
       
-      console.log(`El usuario tiene ${result?.length || 0} pozos asignados:`, result);
+      // Fix: Check if result is an array before accessing length
+      const assignedCount = Array.isArray(result) ? result.length : 0;
+      console.log(`El usuario tiene ${assignedCount} pozos asignados:`, result);
     } catch (e) {
       console.error("Error al verificar asignaciones:", e);
     }
