@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertTriangle } from 'lucide-react';
 import ChangeStatusModal from './ChangeStatusModal';
+import ViewTaskModal from './ViewTaskModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +20,8 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [viewTask, setViewTask] = useState<Task | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const getStatusColor = (status: string) => {
@@ -77,11 +80,16 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
+  const handleCardClick = (task: Task) => {
+    setViewTask(task);
+    setIsViewModalOpen(true);
+  };
+
   return (
     <>
       <div className="space-y-4">
         {filteredTasks.map((task) => (
-          <Card key={task.id}>
+          <Card key={task.id} className="cursor-pointer hover:scale-[1.01] transition-transform" onClick={() => handleCardClick(task)}>
             <CardHeader className="p-4">
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg font-semibold">
@@ -102,7 +110,10 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
                 </div>
                 <Badge
                   className={`cursor-pointer ${getStatusColor(task.estado)}`}
-                  onClick={() => handleStatusClick(task)}
+                  onClick={e => {
+                    e.stopPropagation();
+                    handleStatusClick(task);
+                  }}
                 >
                   {task.estado}
                 </Badge>
@@ -122,6 +133,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
         onOpenChange={setIsStatusModalOpen}
         currentStatus={selectedTask?.estado || 'pendiente'}
         onStatusChange={handleStatusChange}
+      />
+
+      <ViewTaskModal
+        open={isViewModalOpen}
+        onOpenChange={setIsViewModalOpen}
+        task={viewTask}
       />
     </>
   );

@@ -58,7 +58,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   // Cargar usuarios al abrir el modal
   useEffect(() => {
     if (open) {
-      userService.getAllUsers().then(setUsuarios);
+      userService.getAllUsers().then(data => {
+        setUsuarios(data || []);
+      });
     }
   }, [open]);
 
@@ -179,6 +181,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 <SelectValue placeholder="Selecciona el usuario" />
               </SelectTrigger>
               <SelectContent>
+                {usuarios.length === 0 && (
+                  <SelectItem value="" disabled>
+                    No hay usuarios
+                  </SelectItem>
+                )}
                 {usuarios.map((u) => (
                   <SelectItem key={u.email} value={u.email}>
                     {u.nombre} ({u.email})
@@ -201,7 +208,6 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <Input
               type="file"
               accept="image/*"
-              {...register('foto')}
               onChange={handleFileChange}
               disabled={isLoading}
             />
