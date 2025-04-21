@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
+// Ajustar tipos
 export interface UserSettings {
   id: string;
   usuario_id: string | null;
@@ -36,7 +37,7 @@ export const settingsService = {
       // Get the current user
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
@@ -46,7 +47,16 @@ export const settingsService = {
         .select('*')
         .eq('usuario_id', userId)
         .maybeSingle();
-      
+
+      // Si faltan campos como umbral_temperatura o umbral_flujo, colocamos default al vuelo (evitar crash)
+      if (settings) {
+        settings = {
+          umbral_temperatura: settings.umbral_temperatura ?? 85,
+          umbral_flujo: settings.umbral_flujo ?? 600,
+          ...settings
+        }
+      }
+
       // If no settings exist, create default settings
       if (!settings) {
         const defaultSettings = {
@@ -60,19 +70,19 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español'
         };
-        
+
         const { data: newSettings, error: insertError } = await supabase
           .from('configuracion_usuario')
           .insert(defaultSettings)
           .select()
           .single();
-        
+
         if (insertError) throw insertError;
         return newSettings;
       }
-      
+
       if (error) throw error;
-      return settings;
+      return settings as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -84,11 +94,12 @@ export const settingsService = {
     }
   },
 
+
   async updateSettings(settings: Partial<UserSettings>) {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
@@ -98,7 +109,7 @@ export const settingsService = {
         .select('id')
         .eq('usuario_id', userId)
         .maybeSingle();
-      
+
       if (checkError) throw checkError;
 
       if (!existingSettings) {
@@ -115,20 +126,20 @@ export const settingsService = {
           idioma: 'español',
           ...settings
         };
-        
+
         const { data, error: insertError } = await supabase
           .from('configuracion_usuario')
           .insert(defaultSettings)
           .select()
           .single();
-        
+
         if (insertError) throw insertError;
-        
+
         toast({
           title: "Éxito",
           description: "Configuración creada correctamente",
         });
-        
+
         return data;
       } else {
         // Update existing settings
@@ -145,7 +156,7 @@ export const settingsService = {
           title: "Éxito",
           description: "Configuración actualizada correctamente",
         });
-        
+
         return data;
       }
     } catch (error) {
@@ -159,11 +170,13 @@ export const settingsService = {
     }
   },
 
+
+  // TRAER TODOS LOS UMBRALES DE POZOS DEL USUARIO
   async getWellsUmbrales() {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
@@ -185,11 +198,13 @@ export const settingsService = {
     }
   },
 
+
+  // OBTENER UMBRAL PARA UN POZO ESPECÍFICO
   async getWellUmbral(pozoId: string) {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
@@ -201,7 +216,7 @@ export const settingsService = {
         .maybeSingle();
 
       if (error) throw error;
-      
+
       // Si no existe configuración específica para este pozo, devolvemos la configuración general
       if (!data) {
         const { data: generalSettings } = await supabase
@@ -209,18 +224,18 @@ export const settingsService = {
           .select('umbral_presion, umbral_temperatura, umbral_flujo')
           .eq('usuario_id', userId)
           .maybeSingle();
-          
+
         if (generalSettings) {
           return {
             pozo_id: pozoId,
             usuario_id: userId,
-            umbral_presion: generalSettings.umbral_presion,
-            umbral_temperatura: generalSettings.umbral_temperatura,
-            umbral_flujo: generalSettings.umbral_flujo
+            umbral_presion: generalSettings.umbral_presion ?? 8000,
+            umbral_temperatura: generalSettings.umbral_temperatura ?? 85,
+            umbral_flujo: generalSettings.umbral_flujo ?? 600
           };
         }
       }
-      
+
       return data;
     } catch (error) {
       console.error('Error fetching well threshold:', error);
@@ -233,6 +248,7 @@ export const settingsService = {
     }
   },
 
+
   async updateWellUmbral(pozoId: string, umbrales: {
     umbral_presion?: number;
     umbral_temperatura?: number;
@@ -241,7 +257,7 @@ export const settingsService = {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
@@ -263,12 +279,12 @@ export const settingsService = {
           .single();
 
         if (error) throw error;
-        
+
         toast({
           title: "Éxito",
           description: "Umbrales del pozo actualizados correctamente",
         });
-        
+
         return data;
       } else {
         // Crear nueva configuración para este pozo
@@ -277,7 +293,7 @@ export const settingsService = {
           usuario_id: userId,
           ...umbrales
         };
-        
+
         const { data, error } = await supabase
           .from('umbrales_pozo')
           .insert(newUmbral)
@@ -285,12 +301,12 @@ export const settingsService = {
           .single();
 
         if (error) throw error;
-        
+
         toast({
           title: "Éxito",
           description: "Umbrales del pozo creados correctamente",
         });
-        
+
         return data;
       }
     } catch (error) {

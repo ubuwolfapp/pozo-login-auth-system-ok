@@ -9,24 +9,24 @@ export const simulationService = {
       const { error } = await supabase.rpc('simular_valores_pozo', {
         p_pozo_id: pozoId
       });
-      
+
       if (error) throw error;
-      
+
       // Obtener el ID del usuario actual
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
-      
+
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
-      
+
       // Comprobar umbrales y generar alertas si es necesario
       const { error: checkError } = await supabase.rpc('comprobar_umbrales_pozo', {
         p_pozo_id: pozoId,
         p_usuario_id: userId
       });
-      
+
       if (checkError) throw checkError;
-      
+
       return true;
     } catch (error) {
       console.error('Error simulating well values:', error);
@@ -38,23 +38,23 @@ export const simulationService = {
       return false;
     }
   },
-  
+
   async simulateAllWells() {
     try {
       // Obtener todos los pozos
       const { data: wells, error: wellsError } = await supabase
         .from('pozos')
         .select('id');
-        
+
       if (wellsError) throw wellsError;
-      
+
       if (!wells || wells.length === 0) return false;
-      
+
       // Simular valores para cada pozo
       for (const well of wells) {
         await this.simulateWellValues(well.id);
       }
-      
+
       return true;
     } catch (error) {
       console.error('Error simulating all wells:', error);

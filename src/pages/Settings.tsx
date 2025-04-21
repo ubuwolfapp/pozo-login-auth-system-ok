@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsService, UserSettings, PozoUmbral } from '@/services/settingsService';
+import { settingsService, UserSettings } from '@/services/settingsService';
 import { wellService } from '@/services/wellService';
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -43,20 +43,29 @@ const Settings = () => {
   // Inicializar estados locales cuando se cargan los datos
   useEffect(() => {
     if (settings) {
-      setLocalSettings(settings);
+      setLocalSettings({
+        ...settings,
+        umbral_temperatura: settings.umbral_temperatura ?? 85,
+        umbral_flujo: settings.umbral_flujo ?? 600
+      });
     }
   }, [settings]);
 
   useEffect(() => {
     if (wellUmbrales) {
-      setLocalWellUmbrales(wellUmbrales);
+      setLocalWellUmbrales({
+        umbral_presion: wellUmbrales.umbral_presion ?? 8000,
+        umbral_temperatura: wellUmbrales.umbral_temperatura ?? 85,
+        umbral_flujo: wellUmbrales.umbral_flujo ?? 600,
+        ...wellUmbrales
+      });
     } else if (selectedWellId && settings) {
-      // Si no hay umbrales específicos para el pozo, usar los valores generales
+      // Si no hay umbrales específicos para el pozo, usar los valores generales (extraemos de settings)
       setLocalWellUmbrales({
         pozo_id: selectedWellId,
-        umbral_presion: settings.umbral_presion,
-        umbral_temperatura: settings.umbral_temperatura,
-        umbral_flujo: settings.umbral_flujo
+        umbral_presion: settings.umbral_presion ?? 8000,
+        umbral_temperatura: settings.umbral_temperatura ?? 85,
+        umbral_flujo: settings.umbral_flujo ?? 600
       });
     }
   }, [wellUmbrales, selectedWellId, settings]);
@@ -70,7 +79,7 @@ const Settings = () => {
   });
 
   const updateWellUmbralMutation = useMutation({
-    mutationFn: (data: { pozoId: string, umbrales: any }) => 
+    mutationFn: (data: { pozoId: string, umbrales: any }) =>
       settingsService.updateWellUmbral(data.pozoId, data.umbrales),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wellUmbrales'] });
@@ -90,7 +99,7 @@ const Settings = () => {
     setLocalSettings(prev => prev ? { ...prev, [field]: numValue } : prev);
   };
 
-  // Manejadores para cambios en umbrales de pozo
+  // Manejadores para cambios en umbrales de pozo individuales
   const handleWellThresholdChange = (field: string, value: string) => {
     if (!localWellUmbrales) return;
     const numValue = parseInt(value);
@@ -137,9 +146,9 @@ const Settings = () => {
     <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
         <header className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            className="mr-2" 
+          <Button
+            variant="ghost"
+            className="mr-2"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="h-6 w-6" />
@@ -212,7 +221,7 @@ const Settings = () => {
                 <CircleAlert className="h-5 w-5 text-gray-400" />
                 Umbrales de Alerta Predeterminados
               </h2>
-              
+
               <div className="flex items-center justify-between">
                 <span className="text-orange-500 flex items-center gap-2">
                   <CircleAlert className="h-4 w-4" />
@@ -278,8 +287,8 @@ const Settings = () => {
             
             {/* Guardar cambios */}
             <div className="mt-6">
-              <Button 
-                onClick={handleSaveGeneralChanges} 
+              <Button
+                onClick={handleSaveGeneralChanges}
                 disabled={updateSettingsMutation.isPending}
                 className="relative"
               >
@@ -322,7 +331,7 @@ const Settings = () => {
                     <CircleAlert className="h-5 w-5 text-gray-400" />
                     Umbrales de Alerta para {wells?.find(w => w.id === selectedWellId)?.nombre}
                   </h2>
-                  
+
                   <div className="flex items-center justify-between">
                     <span className="text-orange-500 flex items-center gap-2">
                       <CircleAlert className="h-4 w-4" />
@@ -371,11 +380,11 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Guardar cambios de pozo */}
                 <div className="mt-6">
-                  <Button 
-                    onClick={handleSaveWellUmbrales} 
+                  <Button
+                    onClick={handleSaveWellUmbrales}
                     disabled={updateWellUmbralMutation.isPending}
                     className="relative"
                   >

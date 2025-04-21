@@ -23,9 +23,9 @@ const Dashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Primero simular nuevos valores para todos los pozos
+        // Simular valores de todos los pozos antes de cargar (y generar alertas si es necesario)
         await simulationService.simulateAllWells();
-        
+
         // Luego cargar los pozos con sus valores actualizados
         const data = await wellService.getWells();
         setWells(data);
@@ -74,41 +74,41 @@ const Dashboard = () => {
 
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
-      </div>;
+      <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
+    </div>;
   }
 
   return <div className="min-h-screen bg-slate-900 text-white pb-20">
-      {/* Top bar with user info and logout */}
-      <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
-        <div className="container mx-auto flex items-center justify-between">
-          <h2 className="text-sm font-medium">
-            Bienvenido, {user?.email}
-          </h2>
-          <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 text-orange-500">
-            <LogOut className="h-4 w-4" />
-            Cerrar Sesión
-          </Button>
-        </div>
+    {/* Top bar with user info and logout */}
+    <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
+      <div className="container mx-auto flex items-center justify-between">
+        <h2 className="text-sm font-medium">
+          Bienvenido, {user?.email}
+        </h2>
+        <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 text-orange-500">
+          <LogOut className="h-4 w-4" />
+          Cerrar Sesión
+        </Button>
       </div>
+    </div>
 
-      <div className="container mx-auto px-4 py-6 mt-16">
-        <header className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Monitoreo de Pozos</h1>
-          <Button onClick={handleGenerateReport} className="bg-pozo-orange hover:bg-opacity-90">
-            Generar Reporte
-          </Button>
-        </header>
+    <div className="container mx-auto px-4 py-6 mt-16">
+      <header className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Monitoreo de Pozos</h1>
+        <Button onClick={handleGenerateReport} className="bg-pozo-orange hover:bg-opacity-90">
+          Generar Reporte
+        </Button>
+      </header>
 
-        <WellMap wells={wells} onSelectWell={handleSelectWell} />
-        
-        <div className="mt-6">
-          <WellList wells={wells} onSelectWell={handleSelectWell} />
-        </div>
+      <WellMap wells={wells} onSelectWell={handleSelectWell} />
+
+      <div className="mt-6">
+        <WellList wells={wells} onSelectWell={handleSelectWell} />
       </div>
+    </div>
 
-      <NavigationBar />
-    </div>;
+    <NavigationBar />
+  </div>;
 };
 
 export default Dashboard;

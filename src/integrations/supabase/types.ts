@@ -97,7 +97,9 @@ export type Database = {
           notificaciones_activas: boolean | null
           push_activo: boolean | null
           sms_activo: boolean | null
+          umbral_flujo: number | null
           umbral_presion: number | null
+          umbral_temperatura: number | null
           usuario_id: string | null
         }
         Insert: {
@@ -108,7 +110,9 @@ export type Database = {
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
           sms_activo?: boolean | null
+          umbral_flujo?: number | null
           umbral_presion?: number | null
+          umbral_temperatura?: number | null
           usuario_id?: string | null
         }
         Update: {
@@ -119,7 +123,9 @@ export type Database = {
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
           sms_activo?: boolean | null
+          umbral_flujo?: number | null
           umbral_presion?: number | null
+          umbral_temperatura?: number | null
           usuario_id?: string | null
         }
         Relationships: []
@@ -348,6 +354,47 @@ export type Database = {
           },
         ]
       }
+      umbrales_pozo: {
+        Row: {
+          created_at: string | null
+          id: string
+          pozo_id: string
+          umbral_flujo: number | null
+          umbral_presion: number | null
+          umbral_temperatura: number | null
+          updated_at: string | null
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pozo_id: string
+          umbral_flujo?: number | null
+          umbral_presion?: number | null
+          umbral_temperatura?: number | null
+          updated_at?: string | null
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pozo_id?: string
+          umbral_flujo?: number | null
+          umbral_presion?: number | null
+          umbral_temperatura?: number | null
+          updated_at?: string | null
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "umbrales_pozo_pozo_id_fkey"
+            columns: ["pozo_id"]
+            isOneToOne: false
+            referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           email: string
@@ -380,6 +427,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      comprobar_umbrales_pozo: {
+        Args: { p_pozo_id: string; p_usuario_id: string }
+        Returns: undefined
+      }
       crear_pozo_completo: {
         Args: {
           p_nombre: string
@@ -394,6 +445,10 @@ export type Database = {
           p_usuario?: string
         }
         Returns: string
+      }
+      simular_valores_pozo: {
+        Args: { p_pozo_id: string }
+        Returns: undefined
       }
     }
     Enums: {
