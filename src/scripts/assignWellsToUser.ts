@@ -17,7 +17,7 @@ async function assignWellsToUser() {
       return;
     }
 
-    const userId = users[0].id;
+    const userId = String(users[0].id); // Convert to string to match the expected type
     const wellsToAssign = [
       '00000000-0000-0000-0000-000000000001', // Suponiendo que este es el ID del Pozo #1
       '00000000-0000-0000-0000-000000000003'  // Suponiendo que este es el ID del Pozo #3

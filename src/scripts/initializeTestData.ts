@@ -31,7 +31,7 @@ async function initializeTestData() {
     }
 
     // 3. Crear usuario de prueba en la DB pública (no solo en auth)
-    let testUserId: number;
+    let testUserId: string;  // <- Changed from number to string
     {
       const { data: foundUser, error } = await supabase
         .from("usuarios")
@@ -51,9 +51,9 @@ async function initializeTestData() {
           .select("id")
           .single();
         if (userError) throw userError;
-        testUserId = newUser.id;
+        testUserId = String(newUser.id);  // <- Convert to string
       } else {
-        testUserId = foundUser.id;
+        testUserId = String(foundUser.id);  // <- Convert to string
       }
     }
 
@@ -123,7 +123,7 @@ async function initializeTestData() {
       ) {
         // Llama función RPC assign_well_to_user
         await supabase.rpc("assign_well_to_user", {
-          p_usuario_id: testUserId,
+          p_usuario_id: testUserId,  // Now testUserId is a string
           p_pozo_id: well.id,
         });
       }
