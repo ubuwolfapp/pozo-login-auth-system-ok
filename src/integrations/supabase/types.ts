@@ -430,6 +430,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_well_user_assignment: {
+        Args: { p_usuario_id: string; p_pozo_id: string }
+        Returns: boolean
+      }
       comprobar_umbrales_pozo: {
         Args: { p_pozo_id: string; p_usuario_id: string }
         Returns: undefined
@@ -448,6 +452,10 @@ export type Database = {
           p_usuario?: string
         }
         Returns: string
+      }
+      get_user_wells: {
+        Args: { p_usuario_id: string }
+        Returns: string[]
       }
       simular_valores_pozo: {
         Args: { p_pozo_id: string }

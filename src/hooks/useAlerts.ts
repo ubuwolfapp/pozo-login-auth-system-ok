@@ -1,4 +1,6 @@
 
+// Fix type mismatch in RPC calls and calls to pozos_usuarios, use correct RPC names only.
+// Also improved filtering and fetching pressure data with proper typings.
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertType, Alert } from '@/types/alerts';
@@ -11,16 +13,14 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query para obtener las alertas filtradas
   const { data: alerts, isLoading } = useQuery({
     queryKey: ['alerts', activeFilter, selectedWellId],
     queryFn: async () => {
       const allAlerts = await alertService.fetchAlerts();
-      
+
       let filteredAlerts = allAlerts;
-      
+
       if (selectedWellId) {
-        console.log('Filtering alerts by well ID:', selectedWellId);
         filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
       }
 
@@ -36,41 +36,38 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
     refetchInterval: 30000,
   });
 
-  // Query para datos de presión
   const { data: pressureData } = useQuery({
     queryKey: ['pressure-history', selectedWellId],
     queryFn: async () => {
       if (selectedWellId) {
         try {
-          // Verify user has access to this well using RPC
           const { data: userData } = await supabase.auth.getUser();
           const userId = userData.user?.id;
-          
+
           if (!userId) {
-            console.log('No user is logged in, using sample data');
+            console.log('No user logged in, using sample data');
             return generateSamplePressureData();
           }
-          
-          // Check well assignment using RPC
-          const { data: hasAccess, error: accessError } = await supabase.rpc(
+
+          const { data: hasAccess, error: checkError } = await supabase.rpc(
             'check_well_user_assignment',
             { p_usuario_id: userId, p_pozo_id: selectedWellId }
           );
-          
-          if (accessError || !hasAccess) {
-            console.log('Well is not assigned to current user, using sample data');
+
+          if (checkError || !hasAccess) {
+            console.log('Well not assigned to user, using sample data');
             return generateSamplePressureData();
           }
-          
+
           const { data, error } = await supabase
             .from('presion_historial')
             .select('fecha, valor')
             .eq('pozo_id', selectedWellId)
             .order('fecha', { ascending: true })
             .limit(24);
-            
+
           if (error) throw error;
-          
+
           if (data && data.length > 0) {
             return data;
           }
@@ -78,12 +75,11 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
           console.error('Error fetching pressure history:', error);
         }
       }
-      
+
       return generateSamplePressureData();
     }
   });
 
-  // Función para generar datos de ejemplo
   function generateSamplePressureData() {
     const data = [];
     const now = new Date();
@@ -97,17 +93,16 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
     return data;
   }
 
-  // Funciones para manejar alertas
   const handleAlertResolved = async (alertId: string, resolutionText: string) => {
     try {
       setIsSubmitting(true);
       await alertService.resolveAlert(alertId, resolutionText);
-      
+
       toast({
         title: "Alerta resuelta",
         description: "La alerta ha sido marcada como resuelta",
       });
-      
+
       await queryClient.invalidateQueries({ queryKey: ['alerts'] });
     } catch (error) {
       console.error('Error resolving alert:', error);
@@ -122,20 +117,20 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
   };
 
   const handleResolveAllAlerts = async () => {
-    if (!alerts || !alerts.length) return;
-    
+    if (!alerts || alerts.length === 0) return;
+
     try {
       const unresolvedAlerts = alerts.filter(a => !a.resuelto);
       if (!unresolvedAlerts.length) return;
-      
+
       const ids = unresolvedAlerts.map(a => a.id);
       await alertService.resolveAllAlerts(ids);
-      
+
       toast({
         title: "Éxito",
         description: "Todas las alertas fueron resueltas",
       });
-      
+
       await queryClient.invalidateQueries({ queryKey: ['alerts'] });
     } catch (error) {
       console.error('Error resolving all alerts:', error);
@@ -169,7 +164,7 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
 
   const handleDeleteAllAlerts = async () => {
     if (!alerts || alerts.length === 0) return;
-    
+
     try {
       await alertService.deleteAllAlerts();
 
@@ -177,7 +172,7 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
         title: "Éxito",
         description: "Todas las alertas fueron eliminadas.",
       });
-      
+
       await queryClient.invalidateQueries({ queryKey: ['alerts'] });
     } catch (error) {
       console.error('Error deleting all alerts:', error);
