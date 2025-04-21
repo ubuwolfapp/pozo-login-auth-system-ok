@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ensureTestUser } from "./ensureTestUser";
 
@@ -67,9 +68,16 @@ async function initializeTestData() {
         return;
       }
 
-      // Revisar si el usuario tiene campo UUID, si no, obtenerlo del auth
-      testUserId = String(foundUser.id);
-      console.log("Usuario encontrado con ID:", testUserId);
+      // Get the user UUID from auth.users
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser || !authUser.user) {
+        console.error("No se pudo obtener el usuario autenticado");
+        return;
+      }
+      
+      // Use the UUID from the authenticated user
+      testUserId = authUser.user.id;
+      console.log("Usuario autenticado con ID:", testUserId);
     }
     
     // 3. Eliminar datos existentes (cuidado en entornos de producción)
