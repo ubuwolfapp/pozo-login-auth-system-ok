@@ -25,6 +25,31 @@ export interface Well {
 export const wellService = {
   async getWells() {
     try {
+      // Get current user ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      const userId = userData.user?.id;
+      if (!userId) {
+        console.log('No user logged in');
+        return [];
+      }
+      
+      // Get wells assigned to this user
+      const { data: userWells, error: assignmentError } = await supabase
+        .from('pozos_usuarios')
+        .select('pozo_id')
+        .eq('usuario_id', userId);
+        
+      if (assignmentError) throw assignmentError;
+      
+      if (!userWells || userWells.length === 0) {
+        console.log('No wells assigned to this user');
+        return [];
+      }
+      
+      const wellIds = userWells.map(w => w.pozo_id);
+      
       const { data, error } = await supabase
         .from('pozos')
         .select(`
@@ -35,7 +60,7 @@ export const wellService = {
           fotos_pozos(*),
           presion_historial(*)
         `)
-        .limit(1);  // Asegurarse de que solo devuelva un pozo
+        .in('id', wellIds);
 
       if (error) throw error;
       return data || [];
@@ -52,6 +77,29 @@ export const wellService = {
 
   async getWellById(id: string) {
     try {
+      // Get current user ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      const userId = userData.user?.id;
+      if (!userId) {
+        console.log('No user logged in');
+        return null;
+      }
+      
+      // Check if well is assigned to this user
+      const { data: assignment, error: assignmentError } = await supabase
+        .from('pozos_usuarios')
+        .select()
+        .eq('usuario_id', userId)
+        .eq('pozo_id', id)
+        .single();
+        
+      if (assignmentError) {
+        console.log('Well is not assigned to this user:', id);
+        return null;
+      }
+      
       const { data, error } = await supabase
         .from('pozos')
         .select(`
@@ -145,6 +193,15 @@ export const wellService = {
     estado?: string;
   }) {
     try {
+      // Get current user ID
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      
+      const userId = userData.user?.id;
+      if (!userId) {
+        throw new Error('No user logged in');
+      }
+      
       // Primero eliminamos todos los pozos existentes
       await supabase.from('pozos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
@@ -164,10 +221,20 @@ export const wellService = {
       );
 
       if (error) throw error;
+      
+      // Asignar el nuevo pozo al usuario actual
+      if (data) {
+        await supabase
+          .from('pozos_usuarios')
+          .insert({
+            usuario_id: userId,
+            pozo_id: data
+          });
+      }
 
       toast({
         title: "Pozo creado",
-        description: "El pozo ha sido creado exitosamente y es el único en el sistema",
+        description: "El pozo ha sido creado exitosamente y asignado a tu usuario",
       });
 
       return data;

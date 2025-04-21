@@ -42,6 +42,27 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
     queryFn: async () => {
       if (selectedWellId) {
         try {
+          // Verify user has access to this well
+          const { data: userData } = await supabase.auth.getUser();
+          const userId = userData.user?.id;
+          
+          if (!userId) {
+            console.log('No user is logged in, using sample data');
+            return generateSamplePressureData();
+          }
+          
+          const { data: assignment, error: assignmentError } = await supabase
+            .from('pozos_usuarios')
+            .select('id')
+            .eq('usuario_id', userId)
+            .eq('pozo_id', selectedWellId)
+            .single();
+          
+          if (assignmentError || !assignment) {
+            console.log('Well is not assigned to current user, using sample data');
+            return generateSamplePressureData();
+          }
+          
           const { data, error } = await supabase
             .from('presion_historial')
             .select('fecha, valor')
@@ -59,19 +80,23 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
         }
       }
       
-      // Datos de ejemplo si no hay datos reales
-      const data = [];
-      const now = new Date();
-      for (let i = 0; i < 24; i++) {
-        const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
-        data.push({
-          fecha: date.toISOString(),
-          valor: 7.5 + Math.sin(i / 3) + Math.random() * 0.5
-        });
-      }
-      return data;
+      return generateSamplePressureData();
     }
   });
+
+  // Función para generar datos de ejemplo
+  function generateSamplePressureData() {
+    const data = [];
+    const now = new Date();
+    for (let i = 0; i < 24; i++) {
+      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      data.push({
+        fecha: date.toISOString(),
+        valor: 7.5 + Math.sin(i / 3) + Math.random() * 0.5
+      });
+    }
+    return data;
+  }
 
   // Funciones para manejar alertas
   const handleAlertResolved = async (alertId: string, resolutionText: string) => {
