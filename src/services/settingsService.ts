@@ -149,7 +149,10 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
-        return data as UserSettings;
+        return {
+          ...data,
+          simulacion_activa: data.simulacion_activa ?? true
+        } as UserSettings;
       }
     } catch (error) {
       console.error('Error updating settings:', error);
