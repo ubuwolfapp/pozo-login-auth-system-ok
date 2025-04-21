@@ -55,18 +55,23 @@ async function initializeTestData() {
     // 2. Get the test user *UUID* from the custom table (id should be UUID, not serial)
     console.log("Obteniendo ID del usuario de prueba...");
     let testUserId: string;
+    let testUserDbId: number;
     {
       // Cambiar a select * para ver todos los campos
-      const { data: foundUser, error } = await supabase
+      const { data: userFromDb, error } = await supabase
         .from("usuarios")
         .select("*")
         .eq("email", "prueba@gmail.com")
         .maybeSingle();
 
-      if (!foundUser) {
+      if (!userFromDb) {
         console.error("Usuario prueba@gmail.com no encontrado, no se pueden asignar pozos.");
         return;
       }
+      
+      // Store the database ID (numeric)
+      testUserDbId = userFromDb.id;
+      console.log("Usuario de base de datos encontrado con ID:", testUserDbId);
 
       // Get the user UUID from auth.users
       const { data: authUser } = await supabase.auth.getUser();
@@ -187,12 +192,12 @@ async function initializeTestData() {
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
-      .eq("id", foundUser.id); // Using foundUser.id which is a number, not testUserId which is a UUID
+      .eq("id", testUserDbId); // Using testUserDbId which is a number
       
     if (userMapError) {
       console.error("Error asociando usuario con mapa:", userMapError);
     } else {
-      console.log(`Usuario ${foundUser.id} asociado con mapa ${mapId}`);
+      console.log(`Usuario ${testUserDbId} asociado con mapa ${mapId}`);
     }
 
     // 8. Verificar si existe la tabla pozos_usuarios
