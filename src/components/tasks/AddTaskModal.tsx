@@ -38,25 +38,37 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     enabled: open
   });
 
-  // Cargar usuarios al abrir el modal
+  // Cargar usuarios al abrir el modal y cuando cambia el usuario autenticado
   useEffect(() => {
     if (open) {
       setLoadingUsers(true);
       userService.getAllUsers().then(data => {
-        console.log("Usuarios cargados:", data);
+        console.log("Usuarios cargados en modal:", data);
         setUsuarios(data || []);
-        setLoadingUsers(false);
+        
+        // Si el usuario actual no está en la lista, intentar sincronizarlo
+        if (user && !data.some(u => u.email === user.email)) {
+          console.log("El usuario actual no está en la lista, intentando sincronizar:", user);
+          userService.syncAuthUserToPublic(user)
+            .then(syncedUser => {
+              if (syncedUser) {
+                setUsuarios(prev => [...prev, syncedUser]);
+              }
+            })
+            .catch(err => console.error("Error al sincronizar usuario:", err));
+        }
       }).catch(err => {
         console.error("Error al cargar usuarios:", err);
-        setLoadingUsers(false);
         toast({
           title: "Error al cargar usuarios",
           description: "No se pudieron cargar los usuarios",
           variant: "destructive"
         });
+      }).finally(() => {
+        setLoadingUsers(false);
       });
     }
-  }, [open]);
+  }, [open, user]);
 
   const handleFormSubmit = async (
     formData: TaskFormData, 
