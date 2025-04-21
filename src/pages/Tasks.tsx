@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { taskService } from '@/services/taskService';
@@ -9,8 +9,6 @@ import NavigationBar from '@/components/NavigationBar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import TaskFilters from "@/components/tasks/TaskFilters";
-import { toast } from "@/hooks/use-toast";
 
 const Tasks = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -25,45 +23,6 @@ const Tasks = () => {
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
-
-  // ---- FILTROS ----
-  const [selectedEstado, setSelectedEstado] = useState("");
-  const [selectedPozo, setSelectedPozo] = useState("");
-  const [selectedFecha, setSelectedFecha] = useState("");
-  // Sacar la lista única de estados y de pozos para los select
-  const estadosUnicos = Array.from(new Set(tasks.map(t => t.estado)));
-  const pozosUnicos = Array.from(new Set(tasks.map(t => t.pozo_id).filter(Boolean)));
-
-  function filtrarTareas(t) {
-    let r = true;
-    if (selectedEstado && t.estado !== selectedEstado) r = false;
-    if (selectedPozo && t.pozo_id !== selectedPozo) r = false;
-    if (selectedFecha) {
-      // Comparar solo por día
-      r = r && t.fecha_limite?.slice(0,10) === selectedFecha
-    }
-    return r;
-  }
-  // ---- FIN FILTROS ----
-
-  // Notificación de tarea nueva para mí
-  const tareasAnterioresRef = useRef<{id: string}[]>([]);
-  useEffect(() => {
-    if (tasks.length > 0 && userEmail) {
-      const nuevasAsignadas = tasks.filter(t => t.asignado_a === userEmail &&
-        !tareasAnterioresRef.current.some(prev => prev.id === t.id)
-      );
-      // Si hay alguna tarea nueva asignada a mí, notifico
-      if (tareasAnterioresRef.current.length && nuevasAsignadas.length) {
-        toast({
-          title: "Nueva tarea asignada",
-          description: `Te asignaron ${nuevasAsignadas.length} tarea(s) nueva(s).`,
-        });
-      }
-      // Refresco el ref para el próximo render
-      tareasAnterioresRef.current = tasks.map(t => ({ id: t.id }));
-    }
-  }, [tasks, userEmail]);
 
   // Detectar ?openModal=true&well=xxx en la URL
   useEffect(() => {
@@ -103,33 +62,14 @@ const Tasks = () => {
             Nueva Tarea
           </Button>
         </header>
-        {/* Filtros */}
-        <TaskFilters
-          estados={estadosUnicos}
-          pozos={pozosUnicos}
-          selectedEstado={selectedEstado}
-          selectedPozo={selectedPozo}
-          selectedFecha={selectedFecha}
-          onEstadoChange={setSelectedEstado}
-          onPozoChange={setSelectedPozo}
-          onFechaChange={setSelectedFecha}
-        />
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <h2 className="font-semibold text-lg mb-2">Tareas asignadas por mí</h2>
-            <TaskList
-              tasks={tasks.filter(filtrarTareas)}
-              myEmail={userEmail}
-              showOnly="assigned_by_me"
-            />
+            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_by_me" />
           </div>
           <div>
             <h2 className="font-semibold text-lg mb-2">Mis tareas asignadas</h2>
-            <TaskList
-              tasks={tasks.filter(filtrarTareas)}
-              myEmail={userEmail}
-              showOnly="assigned_to_me"
-            />
+            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_to_me" />
           </div>
         </div>
       </div>

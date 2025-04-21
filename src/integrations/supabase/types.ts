@@ -262,13 +262,10 @@ export type Database = {
           asignado_a: string
           asignado_por: string
           created_at: string | null
-          descripcion: string | null
           es_critica: boolean | null
           estado: string
           fecha_limite: string
-          foto_url: string | null
           id: string
-          link: string | null
           pozo_id: string | null
           titulo: string
         }
@@ -276,13 +273,10 @@ export type Database = {
           asignado_a: string
           asignado_por?: string
           created_at?: string | null
-          descripcion?: string | null
           es_critica?: boolean | null
           estado: string
           fecha_limite: string
-          foto_url?: string | null
           id?: string
-          link?: string | null
           pozo_id?: string | null
           titulo: string
         }
@@ -290,13 +284,10 @@ export type Database = {
           asignado_a?: string
           asignado_por?: string
           created_at?: string | null
-          descripcion?: string | null
           es_critica?: boolean | null
           estado?: string
           fecha_limite?: string
-          foto_url?: string | null
           id?: string
-          link?: string | null
           pozo_id?: string | null
           titulo?: string
         }

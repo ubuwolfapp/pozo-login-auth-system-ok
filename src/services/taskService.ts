@@ -5,9 +5,6 @@ import { toast } from "@/hooks/use-toast";
 export interface Task {
   id: string;
   titulo: string;
-  descripcion?: string;
-  link?: string;
-  foto_url?: string;
   pozo_id: string;
   asignado_a: string;
   fecha_limite: string;
@@ -15,23 +12,6 @@ export interface Task {
   es_critica: boolean;
   created_at: string;
   asignado_por: string;
-  descripcion_resolucion?: string;
-  foto_resolucion_url?: string;
-  fecha_resolucion?: string;
-}
-
-// Helper to upload image to 'tareas_adjuntos' bucket
-async function uploadTaskImage(file: File): Promise<string> {
-  const fileExt = file.name.split('.').pop();
-  const filePath = `tarea_${Date.now()}.${fileExt}`;
-  const { data, error } = await supabase.storage
-    .from('tareas_adjuntos')
-    .upload(filePath, file);
-
-  if (error) throw error;
-  // Get public URL
-  const { data: publicUrlData } = supabase.storage.from('tareas_adjuntos').getPublicUrl(filePath);
-  return publicUrlData?.publicUrl || "";
 }
 
 export const taskService = {
@@ -110,32 +90,11 @@ export const taskService = {
     }
   },
 
-  async updateTaskStatus(taskId: string, newStatus: Task['estado'], userEmail: string, resolutionDetails?: {
-    descripcion?: string;
-    foto?: File;
-  }) {
+  async updateTaskStatus(taskId: string, newStatus: Task['estado'], userEmail: string) {
     try {
-      let updateData: any = { estado: newStatus };
-      
-      // Si es una resolución y tenemos detalles
-      if (newStatus === 'resuelta' && resolutionDetails) {
-        updateData.descripcion_resolucion = resolutionDetails.descripcion || '';
-        updateData.fecha_resolucion = new Date().toISOString();
-        
-        // Subir foto si existe
-        if (resolutionDetails.foto) {
-          try {
-            const fotoUrl = await uploadTaskImage(resolutionDetails.foto);
-            updateData.foto_resolucion_url = fotoUrl;
-          } catch (e) {
-            console.error('Error uploading resolution image:', e);
-          }
-        }
-      }
-      
       const { data, error } = await supabase
         .from('tareas')
-        .update(updateData)
+        .update({ estado: newStatus })
         .eq('id', taskId)
         .eq('asignado_a', userEmail) // Solo puede cambiar estado el asignado
         .select()
@@ -172,7 +131,5 @@ export const taskService = {
       });
       return false;
     }
-  },
-
-  uploadTaskImage,
+  }
 };

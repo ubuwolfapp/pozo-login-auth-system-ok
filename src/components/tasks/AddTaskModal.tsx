@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from "react-hook-form";
 import { taskService } from '@/services/taskService';
 import { useQuery } from '@tanstack/react-query';
 import { wellService } from '@/services/wellService';
@@ -12,7 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import TaskForm, { TaskFormData } from './TaskForm';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Calendar } from 'lucide-react';
 
 interface AddTaskModalProps {
   open: boolean;
@@ -29,89 +33,55 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 }) => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  );
+  const [selectedWell, setSelectedWell] = useState<string>(preselectedWell || '');
+  const [selectedUser, setSelectedUser] = useState<string>('');
+  const [isCritical, setIsCritical] = useState(false);
   const [usuarios, setUsuarios] = useState<AppUser[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const { register, handleSubmit, reset } = useForm<{ titulo: string }>();
 
-  const { data: wells = [] } = useQuery({
+  const { data: wells = [], isLoading: wellsLoading } = useQuery({
     queryKey: ['wells'],
     queryFn: wellService.getWells,
     enabled: open
   });
 
-  // Cargar usuarios al abrir el modal y cuando cambia el usuario autenticado
+  // Cargar usuarios al abrir el modal
   useEffect(() => {
     if (open) {
-      setLoadingUsers(true);
-      userService.getAllUsers().then(data => {
-        console.log("Usuarios cargados en modal:", data);
-        setUsuarios(data || []);
-        
-        // Si el usuario actual no está en la lista, intentar sincronizarlo
-        if (user && !data.some(u => u.email === user.email)) {
-          console.log("El usuario actual no está en la lista, intentando sincronizar:", user);
-          userService.syncAuthUserToPublic(user)
-            .then(syncedUser => {
-              if (syncedUser) {
-                setUsuarios(prev => [...prev, syncedUser]);
-              }
-            })
-            .catch(err => console.error("Error al sincronizar usuario:", err));
-        }
-      }).catch(err => {
-        console.error("Error al cargar usuarios:", err);
-        toast({
-          title: "Error al cargar usuarios",
-          description: "No se pudieron cargar los usuarios",
-          variant: "destructive"
-        });
-      }).finally(() => {
-        setLoadingUsers(false);
-      });
+      userService.getAllUsers().then(setUsuarios);
     }
-  }, [open, user]);
+  }, [open]);
 
-  const handleFormSubmit = async (
-    formData: TaskFormData, 
-    options: {
-      selectedDate: Date;
-      selectedWell: string;
-      selectedUser: string;
-      isCritical: boolean;
+  // Preseleccionar pozo si llega por props
+  useEffect(() => {
+    if (open && preselectedWell) {
+      setSelectedWell(preselectedWell);
     }
-  ) => {
-    const { selectedDate, selectedWell, selectedUser, isCritical } = options;
+    if (!open) {
+      setSelectedWell('');
+      setSelectedUser('');
+      reset();
+      setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+      setIsCritical(false);
+    }
+  }, [open, preselectedWell, reset]);
 
-    if (!selectedDate || !selectedWell || !selectedUser || !formData.titulo) {
+  const onSubmit = async (formData: { titulo: string }) => {
+    if (!selectedDate || !selectedWell || !selectedUser) {
       toast({
-        title: "Completa todos los campos obligatorios",
+        title: "Completa todos los campos",
         variant: "destructive"
       });
       return;
     }
     setIsLoading(true);
 
-    let fotoUrl = undefined;
-    if (formData.foto && formData.foto.length > 0) {
-      const file = formData.foto[0];
-      // Subir foto al bucket "tareas_adjuntos"
-      try {
-        fotoUrl = await taskService.uploadTaskImage(file);
-      } catch (e) {
-        toast({
-          title: "Error al subir la foto",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-    }
-
     try {
       await taskService.createTask({
         titulo: formData.titulo,
-        descripcion: formData.descripcion || "",
-        link: formData.link || "",
-        foto_url: fotoUrl || "",
         pozo_id: selectedWell,
         asignado_a: selectedUser,
         asignado_por: user?.email || 'sistema',
@@ -124,6 +94,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         description: "Tarea creada correctamente",
       });
       if (onSuccess) onSuccess();
+      reset();
+      setSelectedWell(preselectedWell || '');
+      setSelectedUser('');
+      setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+      setIsCritical(false);
       onOpenChange(false);
     } catch (error) {
       // Manejo de error ya está en el servicio
@@ -137,14 +112,67 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         <DialogHeader>
           <DialogTitle>Nueva tarea</DialogTitle>
         </DialogHeader>
-        <TaskForm 
-          onSubmit={handleFormSubmit}
-          isLoading={isLoading}
-          wells={wells}
-          usuarios={usuarios}
-          preselectedWell={preselectedWell}
-          loadingUsers={loadingUsers}
-        />
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-2">
+          <div>
+            <Input
+              placeholder="Título de la tarea"
+              {...register('titulo', { required: true })}
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">Pozo</label>
+            <Select value={selectedWell} onValueChange={setSelectedWell}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el pozo" />
+              </SelectTrigger>
+              <SelectContent>
+                {wells.map((well: any) => (
+                  <SelectItem key={well.id} value={well.id}>
+                    {well.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">Asignar a usuario</label>
+            <Select value={selectedUser} onValueChange={setSelectedUser}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el usuario" />
+              </SelectTrigger>
+              <SelectContent>
+                {usuarios.map((u) => (
+                  <SelectItem key={u.email} value={u.email}>
+                    {u.nombre} ({u.email})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">Fecha límite</label>
+            <Input
+              type="date"
+              value={selectedDate?.toISOString().substring(0, 10) || ''}
+              onChange={e => setSelectedDate(new Date(e.target.value))}
+              disabled={isLoading}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={isCritical}
+              onChange={e => setIsCritical(e.target.checked)}
+              id="critical"
+              className="accent-red-500"
+            />
+            <label htmlFor="critical">¿Tarea crítica?</label>
+          </div>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? "Creando..." : "Crear tarea"}
+          </Button>
+        </form>
       </DialogContent>
     </Dialog>
   );

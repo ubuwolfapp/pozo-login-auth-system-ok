@@ -8,13 +8,12 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut } from 'lucide-react';
 
 const Dashboard = () => {
   const [wells, setWells] = useState<Well[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadWells();
@@ -44,10 +43,6 @@ const Dashboard = () => {
     navigate('/reports');
   };
 
-  const handleLogout = () => {
-    signOut();
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-slate-900">
@@ -58,16 +53,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
-      {/* Top bar with user info and logout */}
+      {/* Top bar with user info */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-3 fixed top-0 left-0 right-0 z-10">
         <div className="container mx-auto flex items-center justify-between">
-          <h2 className="text-sm font-medium flex items-center gap-2">
+          <h2 className="text-sm font-medium">
             Bienvenido, {user?.email}
           </h2>
-          <Button variant="ghost" className="flex items-center gap-2 text-white" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-            Logout
-          </Button>
         </div>
       </div>
 
@@ -95,4 +86,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

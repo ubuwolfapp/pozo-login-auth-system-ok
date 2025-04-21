@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { Task } from '@/services/taskService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertTriangle } from 'lucide-react';
 import ChangeStatusModal from './ChangeStatusModal';
-import ViewTaskModal from './ViewTaskModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
 import { toast } from '@/hooks/use-toast';
@@ -19,8 +19,6 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [viewTask, setViewTask] = useState<Task | null>(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const getStatusColor = (status: string) => {
@@ -36,6 +34,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
+  // Filtrado según "asignadas por mí" o "las mías"
   const filteredTasks = tasks.filter(task => {
     if (showOnly === "assigned_by_me") {
       return task.asignado_por === myEmail;
@@ -47,6 +46,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   });
 
   const handleStatusClick = (task: Task) => {
+    // Solo permitir cambiar el estado si es el asignado actual
     if (task.asignado_a !== myEmail) {
       toast({
         title: "Solo el usuario asignado puede cambiar el estado.",
@@ -58,25 +58,12 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     setIsStatusModalOpen(true);
   };
 
-  const handleStatusChange = async (
-    newStatus: Task['estado'], 
-    resolutionDetails?: {
-      descripcion?: string;
-      foto?: File;
-    }
-  ) => {
+  const handleStatusChange = async (newStatus: Task['estado']) => {
     if (!selectedTask) return;
 
     try {
-      await taskService.updateTaskStatus(
-        selectedTask.id, 
-        newStatus, 
-        myEmail || "", 
-        resolutionDetails
-      );
-      
+      await taskService.updateTaskStatus(selectedTask.id, newStatus, myEmail || "");
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      
       toast({
         title: "Estado actualizado",
         description: "El estado de la tarea ha sido actualizado exitosamente",
@@ -90,16 +77,11 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
-  const handleCardClick = (task: Task) => {
-    setViewTask(task);
-    setIsViewModalOpen(true);
-  };
-
   return (
     <>
       <div className="space-y-4">
         {filteredTasks.map((task) => (
-          <Card key={task.id} className="cursor-pointer hover:scale-[1.01] transition-transform" onClick={() => handleCardClick(task)}>
+          <Card key={task.id}>
             <CardHeader className="p-4">
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg font-semibold">
@@ -120,10 +102,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
                 </div>
                 <Badge
                   className={`cursor-pointer ${getStatusColor(task.estado)}`}
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleStatusClick(task);
-                  }}
+                  onClick={() => handleStatusClick(task)}
                 >
                   {task.estado}
                 </Badge>
@@ -143,12 +122,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
         onOpenChange={setIsStatusModalOpen}
         currentStatus={selectedTask?.estado || 'pendiente'}
         onStatusChange={handleStatusChange}
-      />
-
-      <ViewTaskModal
-        open={isViewModalOpen}
-        onOpenChange={setIsViewModalOpen}
-        task={viewTask}
       />
     </>
   );
