@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -134,6 +133,48 @@ export const taskService = {
       });
       return false;
     }
+  },
+
+  async getTaskHistory(taskId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('tareas_historial')
+        .select('*')
+        .eq('tarea_id', taskId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching task history:', error);
+      return [];
+    }
+  },
+
+  async resolveTask(updatedTask: Task) {
+    try {
+      const { data, error } = await supabase
+        .from('tareas')
+        .update({
+          estado: 'resuelta',
+          descripcion: updatedTask.descripcion,
+          link: updatedTask.link,
+          foto_url: updatedTask.foto_url,
+        })
+        .eq('id', updatedTask.id)
+        .eq('asignado_a', updatedTask.asignado_a)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error resolving task:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo resolver la tarea",
+        variant: "destructive"
+      });
+      throw error;
+    }
   }
 };
-
