@@ -11,6 +11,7 @@ export interface Task {
   estado: 'pendiente' | 'en_progreso' | 'resuelta';
   es_critica: boolean;
   created_at: string;
+  asignado_por: string;
 }
 
 export const taskService = {
@@ -22,15 +23,11 @@ export const taskService = {
         .order('fecha_limite');
 
       if (error) throw error;
-      
-      // Validate and transform the estado field to ensure it matches our type
       return data?.map(task => {
-        // Ensure estado is one of our valid types
         let validEstado: Task['estado'] = 'pendiente';
         if (task.estado === 'pendiente' || task.estado === 'en_progreso' || task.estado === 'resuelta') {
           validEstado = task.estado as Task['estado'];
         }
-        
         return {
           ...task,
           estado: validEstado
@@ -43,6 +40,31 @@ export const taskService = {
         description: "No se pudieron cargar las tareas",
         variant: "destructive"
       });
+      return [];
+    }
+  },
+
+  async getTasksByUser({ asignee, assigner }: { asignee: string; assigner: string; }) {
+    try {
+      const { data, error } = await supabase
+        .from('tareas')
+        .select('*')
+        .or(`asignado_por.eq.${assigner},asignado_a.eq.${asignee}`)
+        .order('fecha_limite');
+
+      if (error) throw error;
+      return data?.map(task => {
+        let validEstado: Task['estado'] = 'pendiente';
+        if (task.estado === 'pendiente' || task.estado === 'en_progreso' || task.estado === 'resuelta') {
+          validEstado = task.estado as Task['estado'];
+        }
+        return {
+          ...task,
+          estado: validEstado
+        } as Task;
+      }) || [];
+    } catch (error) {
+      console.error('Error fetching user tasks:', error);
       return [];
     }
   },
@@ -67,16 +89,17 @@ export const taskService = {
       throw error;
     }
   },
-  
-  async updateTaskStatus(taskId: string, newStatus: Task['estado']) {
+
+  async updateTaskStatus(taskId: string, newStatus: Task['estado'], userEmail: string) {
     try {
       const { data, error } = await supabase
         .from('tareas')
         .update({ estado: newStatus })
         .eq('id', taskId)
+        .eq('asignado_a', userEmail) // Solo puede cambiar estado el asignado
         .select()
         .single();
-        
+
       if (error) throw error;
       return data;
     } catch (error) {
@@ -89,14 +112,14 @@ export const taskService = {
       return null;
     }
   },
-  
+
   async deleteTask(taskId: string) {
     try {
       const { error } = await supabase
         .from('tareas')
         .delete()
         .eq('id', taskId);
-        
+
       if (error) throw error;
       return true;
     } catch (error) {

@@ -260,6 +260,7 @@ export type Database = {
       tareas: {
         Row: {
           asignado_a: string
+          asignado_por: string
           created_at: string | null
           es_critica: boolean | null
           estado: string
@@ -270,6 +271,7 @@ export type Database = {
         }
         Insert: {
           asignado_a: string
+          asignado_por?: string
           created_at?: string | null
           es_critica?: boolean | null
           estado: string
@@ -280,6 +282,7 @@ export type Database = {
         }
         Update: {
           asignado_a?: string
+          asignado_por?: string
           created_at?: string | null
           es_critica?: boolean | null
           estado?: string

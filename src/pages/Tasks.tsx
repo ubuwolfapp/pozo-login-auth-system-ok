@@ -8,33 +8,35 @@ import AddTaskModal from '@/components/tasks/AddTaskModal';
 import NavigationBar from '@/components/NavigationBar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const Tasks = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [preselectedWell, setPreselectedWell] = useState<string | undefined>(undefined);
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  const userEmail = user?.email || "";
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
 
-  // Detectamos si viene un pozo y openModal en la URL (ej: ?openModal=true&well=123)
+  // Detectar ?openModal=true&well=xxx en la URL
   useEffect(() => {
     const openModal = searchParams.get('openModal');
     const wellParam = searchParams.get('well');
     if (openModal === 'true') {
       setIsAddModalOpen(true);
       if (wellParam) setPreselectedWell(wellParam);
-      // Limpiamos los params para que no se reabra modal si usuario refresca
       searchParams.delete('openModal');
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
   const handleTaskAdded = () => {
-    // Refrescar la lista de tareas después de agregar una nueva
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
     setPreselectedWell(undefined);
   };
@@ -52,7 +54,7 @@ const Tasks = () => {
       <div className="container mx-auto px-4 py-6">
         <header className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Tareas</h1>
-          <Button 
+          <Button
             className="bg-cyan-500 hover:bg-cyan-600"
             onClick={() => setIsAddModalOpen(true)}
           >
@@ -60,11 +62,19 @@ const Tasks = () => {
             Nueva Tarea
           </Button>
         </header>
-        
-        <TaskList tasks={tasks} />
+        <div className="grid md:grid-cols-2 gap-10">
+          <div>
+            <h2 className="font-semibold text-lg mb-2">Tareas asignadas por mí</h2>
+            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_by_me" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-lg mb-2">Mis tareas asignadas</h2>
+            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_to_me" />
+          </div>
+        </div>
       </div>
-      
-      <AddTaskModal 
+
+      <AddTaskModal
         open={isAddModalOpen}
         onOpenChange={(open) => {
           setIsAddModalOpen(open);
@@ -73,7 +83,7 @@ const Tasks = () => {
         onSuccess={handleTaskAdded}
         preselectedWell={preselectedWell}
       />
-      
+
       <NavigationBar />
     </div>
   );

@@ -8,12 +8,15 @@ import ChangeStatusModal from './ChangeStatusModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from "@/hooks/useAuth";
 
 interface TaskListProps {
   tasks: Task[];
+  myEmail: string | null;
+  showOnly?: "assigned_by_me" | "assigned_to_me" | undefined;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const queryClient = useQueryClient();
@@ -31,16 +34,35 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
     }
   };
 
+  // Filtrado según "asignadas por mí" o "las mías"
+  const filteredTasks = tasks.filter(task => {
+    if (showOnly === "assigned_by_me") {
+      return task.asignado_por === myEmail;
+    }
+    if (showOnly === "assigned_to_me") {
+      return task.asignado_a === myEmail;
+    }
+    return true;
+  });
+
   const handleStatusClick = (task: Task) => {
+    // Solo permitir cambiar el estado si es el asignado actual
+    if (task.asignado_a !== myEmail) {
+      toast({
+        title: "Solo el usuario asignado puede cambiar el estado.",
+        variant: "destructive"
+      });
+      return;
+    }
     setSelectedTask(task);
     setIsStatusModalOpen(true);
   };
 
   const handleStatusChange = async (newStatus: Task['estado']) => {
     if (!selectedTask) return;
-    
+
     try {
-      await taskService.updateTaskStatus(selectedTask.id, newStatus);
+      await taskService.updateTaskStatus(selectedTask.id, newStatus, myEmail || "");
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({
         title: "Estado actualizado",
@@ -58,7 +80,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
   return (
     <>
       <div className="space-y-4">
-        {tasks.map((task) => (
+        {filteredTasks.map((task) => (
           <Card key={task.id}>
             <CardHeader className="p-4">
               <div className="flex items-start justify-between">
@@ -78,7 +100,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
                     {new Date(task.fecha_limite).toLocaleDateString()}
                   </span>
                 </div>
-                <Badge 
+                <Badge
                   className={`cursor-pointer ${getStatusColor(task.estado)}`}
                   onClick={() => handleStatusClick(task)}
                 >
@@ -87,6 +109,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
               </div>
               <div className="mt-2 text-sm text-gray-600">
                 Asignado a: {task.asignado_a}
+                <br />
+                Asignado por: {task.asignado_por}
               </div>
             </CardContent>
           </Card>
