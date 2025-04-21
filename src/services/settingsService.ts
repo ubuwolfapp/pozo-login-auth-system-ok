@@ -72,7 +72,7 @@ export const settingsService = {
 
       if (error) throw error;
       
-      // Add simulacion_activa if it doesn't exist
+      // Ensure simulacion_activa is added with a default value if it doesn't exist
       return {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
@@ -134,6 +134,7 @@ export const settingsService = {
           description: "Configuración creada correctamente",
         });
 
+        // Ensure simulacion_activa exists in returned data
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true
@@ -153,6 +154,7 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
+        // Ensure simulacion_activa exists in returned data
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true
