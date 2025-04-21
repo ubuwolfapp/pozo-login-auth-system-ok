@@ -1,8 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
-// Updated types with all required fields
 export interface UserSettings {
   id: string;
   usuario_id: string | null;
@@ -14,6 +12,7 @@ export interface UserSettings {
   umbral_temperatura: number;
   umbral_flujo: number;
   idioma: string;
+  simulacion_activa?: boolean;
 }
 
 export interface PozoUmbral {
@@ -34,21 +33,18 @@ export interface PozoUmbral {
 export const settingsService = {
   async getUserSettings() {
     try {
-      // Get the current user
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Try to fetch existing settings
       let { data: settings, error } = await supabase
         .from('configuracion_usuario')
         .select('*')
         .eq('usuario_id', userId)
         .maybeSingle();
 
-      // If no settings exist, create default settings
       if (!settings) {
         const defaultSettings = {
           usuario_id: userId,
@@ -59,7 +55,8 @@ export const settingsService = {
           umbral_presion: 8000,
           umbral_temperatura: 85,
           umbral_flujo: 600,
-          idioma: 'español'
+          idioma: 'español',
+          simulacion_activa: true,
         };
 
         const { data: newSettings, error: insertError } = await supabase
@@ -74,11 +71,11 @@ export const settingsService = {
 
       if (error) throw error;
       
-      // Ensure settings has all required fields with defaults if needed
       return {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
-        umbral_flujo: settings.umbral_flujo ?? 600
+        umbral_flujo: settings.umbral_flujo ?? 600,
+        simulacion_activa: settings.simulacion_activa ?? true,
       } as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -99,7 +96,6 @@ export const settingsService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Check if settings exist for this user
       const { data: existingSettings, error: checkError } = await supabase
         .from('configuracion_usuario')
         .select('id')
@@ -109,7 +105,6 @@ export const settingsService = {
       if (checkError) throw checkError;
 
       if (!existingSettings) {
-        // Create default settings with the updates applied
         const defaultSettings = {
           usuario_id: userId,
           notificaciones_activas: true,
@@ -120,6 +115,7 @@ export const settingsService = {
           umbral_temperatura: 85,
           umbral_flujo: 600,
           idioma: 'español',
+          simulacion_activa: true,
           ...settings
         };
 
@@ -138,7 +134,6 @@ export const settingsService = {
 
         return data as UserSettings;
       } else {
-        // Update existing settings
         const { data, error } = await supabase
           .from('configuracion_usuario')
           .update(settings)
@@ -166,7 +161,6 @@ export const settingsService = {
     }
   },
 
-  // TRAER TODOS LOS UMBRALES DE POZOS DEL USUARIO
   async getWellsUmbrales() {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -175,7 +169,6 @@ export const settingsService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Use the raw SQL query option to avoid type issues
       const { data, error } = await supabase
         .from('umbrales_pozo')
         .select('*, pozo:pozo_id(id, nombre)')
@@ -194,7 +187,6 @@ export const settingsService = {
     }
   },
 
-  // OBTENER UMBRAL PARA UN POZO ESPECÍFICO
   async getWellUmbral(pozoId: string) {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
@@ -203,7 +195,6 @@ export const settingsService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Use the raw SQL query option to avoid type issues
       const { data, error } = await supabase
         .from('umbrales_pozo')
         .select('*')
@@ -213,7 +204,6 @@ export const settingsService = {
 
       if (error) throw error;
 
-      // Si no existe configuración específica para este pozo, devolvemos la configuración general
       if (!data) {
         const { data: generalSettings } = await supabase
           .from('configuracion_usuario')
@@ -256,7 +246,6 @@ export const settingsService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Verificar si ya existe una configuración para este pozo
       const { data: existing } = await supabase
         .from('umbrales_pozo')
         .select('id')
@@ -265,7 +254,6 @@ export const settingsService = {
         .maybeSingle();
 
       if (existing) {
-        // Actualizar configuración existente
         const { data, error } = await supabase
           .from('umbrales_pozo')
           .update(umbrales)
@@ -281,7 +269,6 @@ export const settingsService = {
 
         return data[0];
       } else {
-        // Crear nueva configuración para este pozo
         const newUmbral = {
           pozo_id: pozoId,
           usuario_id: userId,

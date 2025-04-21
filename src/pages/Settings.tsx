@@ -45,7 +45,8 @@ const Settings = () => {
       setLocalSettings({
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
-        umbral_flujo: settings.umbral_flujo ?? 600
+        umbral_flujo: settings.umbral_flujo ?? 600,
+        simulacion_activa: settings.simulacion_activa ?? true,
       });
     }
   }, [settings]);
@@ -116,6 +117,7 @@ const Settings = () => {
       umbral_presion: localSettings.umbral_presion,
       umbral_temperatura: localSettings.umbral_temperatura,
       umbral_flujo: localSettings.umbral_flujo,
+      simulacion_activa: localSettings.simulacion_activa,
       idioma: localSettings.idioma
     });
   };
@@ -211,6 +213,20 @@ const Settings = () => {
                   onCheckedChange={() => handleSwitchChange('sms_activo')}
                 />
               </div>
+            </div>
+
+            {/* Simulación de valores */}
+            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">Simulación de valores</span>
+                </div>
+                <Switch
+                  checked={localSettings.simulacion_activa}
+                  onCheckedChange={() => handleSwitchChange('simulacion_activa')}
+                />
+              </div>
+              <span className="text-xs text-gray-400">Si está desactivado, no se generarán valores aleatorios de presión, temperatura ni flujo para los pozos.</span>
             </div>
 
             {/* Umbrales de Alerta Generales */}

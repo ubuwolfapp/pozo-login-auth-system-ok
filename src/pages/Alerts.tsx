@@ -150,10 +150,55 @@ const Alerts = () => {
     }
   };
 
+  const handleResolveAllAlerts = async () => {
+    if (!alerts || !alerts.length) return;
+    try {
+      const unresolvedAlerts = alerts.filter(a => !a.resuelto);
+      if (!unresolvedAlerts.length) return;
+      // Marcar todas como resueltas (actualiza en base)
+      const ids = unresolvedAlerts.map(a => a.id);
+      const fecha_resolucion = new Date().toISOString();
+      const { error } = await supabase
+        .from('alertas')
+        .update({
+          resuelto: true,
+          resolucion: "Resuelto en lote",
+          fecha_resolucion
+        })
+        .in('id', ids);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudieron resolver todas las alertas",
+          variant: "destructive"
+        });
+        return;
+      }
+      toast({
+        title: "Éxito",
+        description: "Todas las alertas fueron resueltas",
+      });
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    } catch (error) {
+      console.error('Error resolving all alerts:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
-      
+
+      <div className="container mx-auto flex justify-end px-4 pt-4">
+        <button
+          className="bg-pozo-orange text-white rounded px-4 py-2 font-semibold shadow hover:bg-orange-500 transition"
+          onClick={handleResolveAllAlerts}
+          disabled={!alerts || alerts.length === 0 || alerts.every(a => a.resuelto)}
+        >
+          Resolver todas
+        </button>
+      </div>
+
       <div className="container mx-auto px-0">
         <AlertFilters 
           activeFilter={activeFilter}
