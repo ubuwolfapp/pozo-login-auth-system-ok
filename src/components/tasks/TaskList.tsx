@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Task } from '@/services/taskService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +36,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
-  // Filtrado según "asignadas por mí" o "las mías"
   const filteredTasks = tasks.filter(task => {
     if (showOnly === "assigned_by_me") {
       return task.asignado_por === myEmail;
@@ -49,7 +47,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   });
 
   const handleStatusClick = (task: Task) => {
-    // Solo permitir cambiar el estado si es el asignado actual
     if (task.asignado_a !== myEmail) {
       toast({
         title: "Solo el usuario asignado puede cambiar el estado.",
@@ -61,12 +58,25 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     setIsStatusModalOpen(true);
   };
 
-  const handleStatusChange = async (newStatus: Task['estado']) => {
+  const handleStatusChange = async (
+    newStatus: Task['estado'], 
+    resolutionDetails?: {
+      descripcion?: string;
+      foto?: File;
+    }
+  ) => {
     if (!selectedTask) return;
 
     try {
-      await taskService.updateTaskStatus(selectedTask.id, newStatus, myEmail || "");
+      await taskService.updateTaskStatus(
+        selectedTask.id, 
+        newStatus, 
+        myEmail || "", 
+        resolutionDetails
+      );
+      
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      
       toast({
         title: "Estado actualizado",
         description: "El estado de la tarea ha sido actualizado exitosamente",

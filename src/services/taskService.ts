@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -14,6 +15,9 @@ export interface Task {
   es_critica: boolean;
   created_at: string;
   asignado_por: string;
+  descripcion_resolucion?: string;
+  foto_resolucion_url?: string;
+  fecha_resolucion?: string;
 }
 
 // Helper to upload image to 'tareas_adjuntos' bucket
@@ -106,11 +110,32 @@ export const taskService = {
     }
   },
 
-  async updateTaskStatus(taskId: string, newStatus: Task['estado'], userEmail: string) {
+  async updateTaskStatus(taskId: string, newStatus: Task['estado'], userEmail: string, resolutionDetails?: {
+    descripcion?: string;
+    foto?: File;
+  }) {
     try {
+      let updateData: any = { estado: newStatus };
+      
+      // Si es una resolución y tenemos detalles
+      if (newStatus === 'resuelta' && resolutionDetails) {
+        updateData.descripcion_resolucion = resolutionDetails.descripcion || '';
+        updateData.fecha_resolucion = new Date().toISOString();
+        
+        // Subir foto si existe
+        if (resolutionDetails.foto) {
+          try {
+            const fotoUrl = await uploadTaskImage(resolutionDetails.foto);
+            updateData.foto_resolucion_url = fotoUrl;
+          } catch (e) {
+            console.error('Error uploading resolution image:', e);
+          }
+        }
+      }
+      
       const { data, error } = await supabase
         .from('tareas')
-        .update({ estado: newStatus })
+        .update(updateData)
         .eq('id', taskId)
         .eq('asignado_a', userEmail) // Solo puede cambiar estado el asignado
         .select()
