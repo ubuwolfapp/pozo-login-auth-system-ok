@@ -1,276 +1,45 @@
+
 import React, { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
 import AlertList from '@/components/alerts/AlertList';
 import AlertFilters from '@/components/alerts/AlertFilters';
 import AlertsNavigation from '@/components/alerts/AlertsNavigation';
-import { Alert, AlertType } from '@/types/alerts';
-import { supabase } from '@/integrations/supabase/client';
+import AlertActions from '@/components/alerts/AlertActions';
+import { AlertType } from '@/types/alerts';
 import { wellService } from '@/services/wellService';
-import { useToast } from '@/hooks/use-toast';
+import { useAlerts } from '@/hooks/useAlerts';
 
 const Alerts = () => {
   const [activeFilter, setActiveFilter] = useState<AlertType>('todas');
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
+  // Cargar lista de pozos
   const { data: wells } = useQuery({
     queryKey: ['wells'],
     queryFn: wellService.getWells
   });
 
-  const fetchAlerts = async () => {
-    console.log('Fetching alerts from database');
-    let query = supabase
-      .from('alertas')
-      .select('*, pozo:pozo_id (id, nombre)')
-      .order('created_at', { ascending: false });
-    
-    const { data: dbAlerts, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching alerts from database:', error);
-      throw error;
-    }
-    
-    console.log('Database alerts fetched:', dbAlerts?.length || 0);
-    
-    return dbAlerts?.map(alert => ({
-      ...alert,
-      pozo: {
-        id: alert.pozo?.id || '',
-        nombre: alert.pozo?.nombre || ''
-      }
-    })) as Alert[] || [];
-  };
-
-  const { data: alerts, isLoading } = useQuery({
-    queryKey: ['alerts', activeFilter, selectedWellId],
-    queryFn: async () => {
-      const allAlerts = await fetchAlerts();
-      
-      let filteredAlerts = allAlerts;
-      
-      if (selectedWellId) {
-        console.log('Filtering alerts by well ID:', selectedWellId);
-        filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
-      }
-
-      if (activeFilter === 'critica') {
-        return filteredAlerts.filter(alert => alert.tipo === 'critica');
-      } else if (activeFilter === 'advertencia') {
-        return filteredAlerts.filter(alert => alert.tipo === 'advertencia');
-      } else if (activeFilter === 'resueltas') {
-        return filteredAlerts.filter(alert => alert.resuelto);
-      }
-      return filteredAlerts;
-    },
-    refetchInterval: 30000,
-    enabled: !!wells,
-  });
-
-  const { data: pressureData } = useQuery({
-    queryKey: ['pressure-history', selectedWellId],
-    queryFn: async () => {
-      if (selectedWellId) {
-        try {
-          const { data, error } = await supabase
-            .from('presion_historial')
-            .select('fecha, valor')
-            .eq('pozo_id', selectedWellId)
-            .order('fecha', { ascending: true })
-            .limit(24);
-            
-          if (error) throw error;
-          
-          if (data && data.length > 0) {
-            return data;
-          }
-        } catch (error) {
-          console.error('Error fetching pressure history:', error);
-        }
-      }
-      
-      const data = [];
-      const now = new Date();
-      for (let i = 0; i < 24; i++) {
-        const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
-        data.push({
-          fecha: date.toISOString(),
-          valor: 7.5 + Math.sin(i / 3) + Math.random() * 0.5
-        });
-      }
-      return data;
-    }
-  });
-
-  const handleAlertResolved = async (alertId: string, resolutionText: string) => {
-    console.log('Alert resolved callback:', alertId, 'Resolution:', resolutionText);
-    
-    try {
-      const fecha_resolucion = new Date().toISOString();
-      const updateData = { 
-        resuelto: true,
-        resolucion: resolutionText,
-        fecha_resolucion
-      };
-      
-      console.log('Updating alert in database:', alertId, 'with data:', updateData);
-      
-      const { error } = await supabase
-        .from('alertas')
-        .update(updateData)
-        .eq('id', alertId);
-          
-      if (error) {
-        console.error('Error updating alert in database:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar la resolución de la alerta",
-          variant: "destructive"
-        });
-        throw error;
-      }
-      
-      toast({
-        title: "Alerta resuelta",
-        description: "La alerta ha sido marcada como resuelta",
-      });
-      
-      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      
-    } catch (error) {
-      console.error('Error resolving alert:', error);
-      toast({
-        title: "Error",
-        description: "Ocurrió un error al resolver la alerta",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleResolveAllAlerts = async () => {
-    if (!alerts || !alerts.length) return;
-    try {
-      const unresolvedAlerts = alerts.filter(a => !a.resuelto);
-      if (!unresolvedAlerts.length) return;
-      // Marcar todas como resueltas (actualiza en base)
-      const ids = unresolvedAlerts.map(a => a.id);
-      const fecha_resolucion = new Date().toISOString();
-      const { error } = await supabase
-        .from('alertas')
-        .update({
-          resuelto: true,
-          resolucion: "Resuelto en lote",
-          fecha_resolucion
-        })
-        .in('id', ids);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudieron resolver todas las alertas",
-          variant: "destructive"
-        });
-        return;
-      }
-      toast({
-        title: "Éxito",
-        description: "Todas las alertas fueron resueltas",
-      });
-      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    } catch (error) {
-      console.error('Error resolving all alerts:', error);
-    }
-  };
-
-  const handleDeleteAllAlerts = async () => {
-    if (!alerts || alerts.length === 0) return;
-    try {
-      const { error } = await supabase
-        .from('alertas')
-        .delete()
-        .neq('id', '');
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "No se pudieron borrar todas las alertas.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Éxito",
-        description: "Todas las alertas fueron eliminadas.",
-      });
-      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    } catch (error) {
-      console.error('Error deleting all alerts:', error);
-      toast({
-        title: "Error",
-        description: "Ocurrió un error inesperado al borrar las alertas.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAlertDeleted = async (alertId: string) => {
-    try {
-      const { error } = await supabase
-        .from('alertas')
-        .delete()
-        .eq('id', alertId);
-
-      if (error) {
-        console.error('Error al borrar la alerta:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo borrar la alerta.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Alerta eliminada",
-        description: "La alerta fue eliminada correctamente.",
-      });
-
-      // Actualizar la lista de alertas
-      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
-    } catch (error) {
-      console.error('Error deleting alert:', error);
-      toast({
-        title: "Error",
-        description: "Hubo un error inesperado al borrar la alerta.",
-        variant: "destructive"
-      });
-    }
-  };
+  // Usar nuestro hook personalizado para manejar alertas
+  const {
+    alerts,
+    isLoading,
+    pressureData,
+    handleAlertResolved,
+    handleResolveAllAlerts,
+    handleAlertDeleted,
+    handleDeleteAllAlerts
+  } = useAlerts(activeFilter, selectedWellId);
 
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
 
-      <div className="container mx-auto flex justify-end gap-2 px-4 pt-4">
-        <button
-          className="bg-pozo-orange text-white rounded px-4 py-2 font-semibold shadow hover:bg-orange-500 transition"
-          onClick={handleResolveAllAlerts}
-          disabled={!alerts || alerts.length === 0 || alerts.every(a => a.resuelto)}
-        >
-          Resolver todas
-        </button>
-        <button
-          className="bg-red-600 text-white rounded px-4 py-2 font-semibold shadow hover:bg-red-700 transition"
-          onClick={handleDeleteAllAlerts}
-          disabled={!alerts || alerts.length === 0}
-        >
-          Borrar todas
-        </button>
-      </div>
+      <AlertActions
+        alerts={alerts}
+        onResolveAll={handleResolveAllAlerts}
+        onDeleteAll={handleDeleteAllAlerts}
+      />
 
       <div className="container mx-auto px-0">
         <AlertFilters 
@@ -287,7 +56,7 @@ const Alerts = () => {
         
         <div className="px-4 pb-24">
           <AlertList 
-            alerts={alerts as Alert[] | undefined} 
+            alerts={alerts}
             isLoading={isLoading}
             onAlertResolved={handleAlertResolved}
             onAlertDeleted={handleAlertDeleted}
