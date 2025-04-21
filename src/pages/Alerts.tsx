@@ -185,6 +185,40 @@ const Alerts = () => {
     }
   };
 
+  const handleAlertDeleted = async (alertId: string) => {
+    try {
+      const { error } = await supabase
+        .from('alertas')
+        .delete()
+        .eq('id', alertId);
+
+      if (error) {
+        console.error('Error al borrar la alerta:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo borrar la alerta.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Alerta eliminada",
+        description: "La alerta fue eliminada correctamente.",
+      });
+
+      // Actualizar la lista de alertas
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    } catch (error) {
+      console.error('Error deleting alert:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un error inesperado al borrar la alerta.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
@@ -215,8 +249,9 @@ const Alerts = () => {
         <div className="px-4 pb-24">
           <AlertList 
             alerts={alerts as Alert[] | undefined} 
-            isLoading={isLoading} 
+            isLoading={isLoading}
             onAlertResolved={handleAlertResolved}
+            onAlertDeleted={handleAlertDeleted}
           />
         </div>
       </div>
