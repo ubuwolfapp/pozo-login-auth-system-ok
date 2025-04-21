@@ -16,7 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Calendar } from 'lucide-react';
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar, FileImage } from 'lucide-react';
 
 interface AddTaskModalProps {
   open: boolean;
@@ -24,6 +25,12 @@ interface AddTaskModalProps {
   onSuccess?: () => void;
   preselectedWell?: string;
 }
+
+type FormValues = {
+  titulo: string;
+  descripcion?: string;
+  link?: string;
+};
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({
   open,
@@ -40,7 +47,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [isCritical, setIsCritical] = useState(false);
   const [usuarios, setUsuarios] = useState<AppUser[]>([]);
-  const { register, handleSubmit, reset } = useForm<{ titulo: string }>();
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+
+  const { register, handleSubmit, reset } = useForm<FormValues>();
 
   const { data: wells = [], isLoading: wellsLoading } = useQuery({
     queryKey: ['wells'],
@@ -66,10 +75,19 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       reset();
       setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
       setIsCritical(false);
+      setFotoFile(null);
     }
   }, [open, preselectedWell, reset]);
 
-  const onSubmit = async (formData: { titulo: string }) => {
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFotoFile(e.target.files[0]);
+    } else {
+      setFotoFile(null);
+    }
+  };
+
+  const onSubmit = async (formData: FormValues) => {
     if (!selectedDate || !selectedWell || !selectedUser) {
       toast({
         title: "Completa todos los campos",
@@ -80,14 +98,27 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     setIsLoading(true);
 
     try {
+      let foto_url = null;
+      // Si se sube una foto, (a futuro) deberíamos subirla y obtener la URL.
+      // Por ahora solo vemos si hay archivo y dejamos null (implementación de upload por Storage sería el siguiente paso)
+      if (fotoFile) {
+        toast({
+          title: "Función de subir fotos no implementada aún",
+          description: "La URL quedará vacía por ahora",
+        });
+        foto_url = null;
+      }
       await taskService.createTask({
         titulo: formData.titulo,
+        descripcion: formData.descripcion || null,
+        link: formData.link || null,
         pozo_id: selectedWell,
         asignado_a: selectedUser,
         asignado_por: user?.email || 'sistema',
         fecha_limite: selectedDate.toISOString(),
         estado: 'pendiente',
         es_critica: isCritical,
+        foto_url,
       });
       toast({
         title: "¡Tarea creada!",
@@ -99,6 +130,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setSelectedUser('');
       setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
       setIsCritical(false);
+      setFotoFile(null);
       onOpenChange(false);
     } catch (error) {
       // Manejo de error ya está en el servicio
@@ -159,6 +191,22 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               disabled={isLoading}
             />
           </div>
+          <div>
+            <label className="block mb-1 text-sm">Descripción (opcional)</label>
+            <Textarea
+              placeholder="Descripción detallada de la tarea"
+              {...register('descripcion')}
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-sm">Link opcional</label>
+            <Input
+              placeholder="https://enlace-a-documentos.com"
+              {...register('link')}
+              disabled={isLoading}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -168,6 +216,21 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               className="accent-red-500"
             />
             <label htmlFor="critical">¿Tarea crítica?</label>
+          </div>
+          <div>
+            <label className="block mb-1 text-sm flex items-center gap-1">
+              <FileImage className="h-4 w-4" />
+              Foto (opcional)
+            </label>
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={isLoading}
+              onChange={onFileChange}
+            />
+            {fotoFile && (
+              <span className="text-xs text-gray-400">Archivo seleccionado: {fotoFile.name}</span>
+            )}
           </div>
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Creando..." : "Crear tarea"}
@@ -179,3 +242,4 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 };
 
 export default AddTaskModal;
+

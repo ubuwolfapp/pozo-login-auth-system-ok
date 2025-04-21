@@ -262,10 +262,13 @@ export type Database = {
           asignado_a: string
           asignado_por: string
           created_at: string | null
+          descripcion: string | null
           es_critica: boolean | null
           estado: string
           fecha_limite: string
+          foto_url: string | null
           id: string
+          link: string | null
           pozo_id: string | null
           titulo: string
         }
@@ -273,10 +276,13 @@ export type Database = {
           asignado_a: string
           asignado_por?: string
           created_at?: string | null
+          descripcion?: string | null
           es_critica?: boolean | null
           estado: string
           fecha_limite: string
+          foto_url?: string | null
           id?: string
+          link?: string | null
           pozo_id?: string | null
           titulo: string
         }
@@ -284,10 +290,13 @@ export type Database = {
           asignado_a?: string
           asignado_por?: string
           created_at?: string | null
+          descripcion?: string | null
           es_critica?: boolean | null
           estado?: string
           fecha_limite?: string
+          foto_url?: string | null
           id?: string
+          link?: string | null
           pozo_id?: string | null
           titulo?: string
         }
@@ -297,6 +306,44 @@ export type Database = {
             columns: ["pozo_id"]
             isOneToOne: false
             referencedRelation: "pozos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_historial: {
+        Row: {
+          created_at: string
+          id: string
+          tarea_id: string
+          tipo_cambio: string
+          usuario_email: string
+          valor_anterior: Json | null
+          valor_nuevo: Json | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tarea_id: string
+          tipo_cambio: string
+          usuario_email: string
+          valor_anterior?: Json | null
+          valor_nuevo?: Json | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tarea_id?: string
+          tipo_cambio?: string
+          usuario_email?: string
+          valor_anterior?: Json | null
+          valor_nuevo?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_historial_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
             referencedColumns: ["id"]
           },
         ]

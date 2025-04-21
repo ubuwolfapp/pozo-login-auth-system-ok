@@ -12,6 +12,9 @@ export interface Task {
   es_critica: boolean;
   created_at: string;
   asignado_por: string;
+  descripcion?: string | null;
+  foto_url?: string | null;
+  link?: string | null;
 }
 
 export const taskService = {
@@ -133,3 +136,4 @@ export const taskService = {
     }
   }
 };
+
