@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -33,12 +32,20 @@ const Alerts = () => {
       return [];
     }
     
+    console.log(`Filtrando alertas para ${wellIds.length} pozos: ${wellIds.join(', ')}`);
+    
     // Consultar solo las alertas de los pozos del usuario
     let query = supabase
       .from('alertas')
       .select('*, pozo:pozo_id (id, nombre)')
       .in('pozo_id', wellIds)
       .order('created_at', { ascending: false });
+    
+    // Aplicar filtros adicionales según el filtro activo
+    if (selectedWellId) {
+      console.log(`Aplicando filtro adicional por pozo ID: ${selectedWellId}`);
+      query = query.eq('pozo_id', selectedWellId);
+    }
     
     const { data: dbAlerts, error } = await query;
     
@@ -70,13 +77,19 @@ const Alerts = () => {
         filteredAlerts = filteredAlerts.filter(alert => alert.pozo?.id === selectedWellId);
       }
 
+      // Aplicar filtro por tipo de alerta
       if (activeFilter === 'critica') {
+        console.log('Filtrando alertas críticas');
         return filteredAlerts.filter(alert => alert.tipo === 'critica');
       } else if (activeFilter === 'advertencia') {
+        console.log('Filtrando alertas de advertencia');
         return filteredAlerts.filter(alert => alert.tipo === 'advertencia');
       } else if (activeFilter === 'resueltas') {
+        console.log('Filtrando alertas resueltas');
         return filteredAlerts.filter(alert => alert.resuelto);
       }
+      
+      console.log('Retornando todas las alertas filtradas:', filteredAlerts.length);
       return filteredAlerts;
     },
     refetchInterval: 30000,

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
@@ -23,15 +22,22 @@ const Dashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
+        console.log("Iniciando carga de datos en Dashboard");
         const data = await wellService.getWells();
+        console.log(`Se encontraron ${data.length} pozos para el usuario`);
+        
         if (data && data.length > 0) {
           // Solo simulamos los pozos que están asignados al usuario actual
+          console.log("Simulando valores para los pozos del usuario");
           await simulationService.simulateUserWells();
           
           // Luego cargar los pozos con sus valores actualizados
+          console.log("Recargando datos de los pozos después de simulación");
           const updatedData = await wellService.getWells();
           setWells(updatedData);
+          console.log(`Datos actualizados: ${updatedData.length} pozos cargados`);
         } else {
+          console.log("No se encontraron pozos para este usuario");
           setWells([]);
         }
       } catch (error) {
