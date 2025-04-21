@@ -270,6 +270,27 @@ export type Database = {
           },
         ]
       }
+      pozos_usuarios: {
+        Row: {
+          created_at: string | null
+          id: string
+          pozo_id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pozo_id: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pozo_id?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       presion_historial: {
         Row: {
           fecha: string

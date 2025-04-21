@@ -198,37 +198,33 @@ export const wellService = {
         throw new Error('No user logged in');
       }
 
-      // Delete all existing wells except dummy ID
+      // Eliminar todos los pozos existentes excepto dummy ID
       await supabase.from('pozos').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
-      const { data, error } = await supabase.rpc(
-        'crear_pozo_completo',
-        {
-          p_nombre: wellData.nombre,
-          p_latitud: wellData.latitud,
-          p_longitud: wellData.longitud,
-          p_presion: wellData.presion || 7500,
-          p_temperatura: wellData.temperatura || 65,
-          p_flujo: wellData.flujo || 500,
-          p_nivel: wellData.nivel || 80,
-          p_produccion_diaria: wellData.produccion_diaria || 2500,
-          p_estado: wellData.estado || 'activo'
-        }
-      );
+      const { data, error } = await supabase.from('pozos').insert({
+        nombre: wellData.nombre,
+        latitud: wellData.latitud,
+        longitud: wellData.longitud,
+        presion: wellData.presion || 7500,
+        temperatura: wellData.temperatura || 65,
+        flujo: wellData.flujo || 500,
+        nivel: wellData.nivel || 80,
+        nivel_porcentaje: wellData.nivel || 80,
+        produccion_diaria: wellData.produccion_diaria || 2500,
+        estado: wellData.estado || 'activo'
+      }).select('id').single();
 
       if (error) throw error;
 
-      // Assign new well to current user using the RPC function
-      if (data) {
-        // Cast the function name to any to bypass type checking
+      // Asignar pozo al usuario usando la función assign_well_to_user (RPC)
+      if (data && data.id) {
         const { error: assignError } = await supabase.rpc(
-          'assign_well_to_user' as any,
+          'assign_well_to_user',
           {
             p_usuario_id: userId,
-            p_pozo_id: data
+            p_pozo_id: data.id
           }
         );
-          
         if (assignError) throw assignError;
       }
 
@@ -237,7 +233,7 @@ export const wellService = {
         description: "El pozo ha sido creado exitosamente y asignado a tu usuario",
       });
 
-      return data;
+      return data.id;
     } catch (error) {
       console.error('Error creating well:', error);
       toast({

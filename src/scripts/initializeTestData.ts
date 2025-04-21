@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ensureTestUser } from "./ensureTestUser";
 
@@ -52,13 +51,14 @@ async function initializeTestData() {
     // 1. Make sure we have a test user in both Auth and custom table
     await ensureTestUser();
     
-    // 2. Get the test user ID from the custom table
+    // 2. Get the test user *UUID* from the custom table (id should be UUID, not serial)
     console.log("Obteniendo ID del usuario de prueba...");
     let testUserId: string;
     {
+      // Cambiar a select * para ver todos los campos
       const { data: foundUser, error } = await supabase
         .from("usuarios")
-        .select("id")
+        .select("*")
         .eq("email", "prueba@gmail.com")
         .maybeSingle();
 
@@ -66,8 +66,8 @@ async function initializeTestData() {
         console.error("Usuario prueba@gmail.com no encontrado, no se pueden asignar pozos.");
         return;
       }
-      
-      // Convert ID to string if it's a number
+
+      // Revisar si el usuario tiene campo UUID, si no, obtenerlo del auth
       testUserId = String(foundUser.id);
       console.log("Usuario encontrado con ID:", testUserId);
     }
@@ -216,20 +216,25 @@ async function initializeTestData() {
       console.log("La tabla pozos_usuarios ya existe");
     }
     
-    // 9. Asignar TODOS los pozos al usuario de prueba directamente con SQL
-    console.log("Asignando pozos al usuario de prueba...");
+    // 9. Asignar TODOS los pozos al usuario de prueba usando assign_well_to_user RPC
+    console.log("Asignando pozos al usuario de prueba usando assign_well_to_user...");
     for (const well of wellList) {
       try {
         console.log(`Asignando pozo ${well.nombre} (${well.id}) al usuario ${testUserId}...`);
         
-        // Use SQL to insert directly
-        await runSQL(`
-          INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
-          VALUES ('${testUserId}', '${well.id}')
-          ON CONFLICT (usuario_id, pozo_id) DO NOTHING
-        `);
-        
-        console.log(`Pozo ${well.nombre} asignado correctamente mediante SQL directa`);
+        const { error: assignError } = await supabase.rpc(
+          'assign_well_to_user',
+          {
+            p_usuario_id: testUserId,
+            p_pozo_id: well.id
+          }
+        );
+
+        if (assignError) {
+          console.error(`Error al asignar pozo ${well.id} vía función RPC:`, assignError);
+        } else {
+          console.log(`Pozo ${well.nombre} asignado correctamente con función RPC`);
+        }
       } catch (err) {
         console.error(`Error al asignar pozo ${well.id}:`, err);
       }
