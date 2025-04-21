@@ -176,10 +176,11 @@ async function initializeTestData() {
     
     // 7. Asociar el usuario con el mapa
     console.log("Asociando usuario con mapa...");
+    // Here's the fix - convert testUserId to number before using it in the query
     const { error: userMapError } = await supabase
       .from("usuarios")
       .update({ pozos_mapa_id: mapId })
-      .eq("id", testUserId);
+      .eq("id", parseInt(testUserId, 10));
       
     if (userMapError) {
       console.error("Error asociando usuario con mapa:", userMapError);
@@ -245,7 +246,7 @@ async function initializeTestData() {
         WHERE usuario_id = '${testUserId}'
       `);
       
-      const wellsCount = Array.isArray(result) ? result.length : 0;
+      const wellsCount = result && Array.isArray(result) ? result.length : 0;
       console.log(`El usuario tiene ${wellsCount} pozos asignados:`, result);
     } catch (e) {
       console.error("Error al verificar asignaciones:", e);
