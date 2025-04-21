@@ -22,24 +22,12 @@ const Dashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        console.log("Iniciando carga de datos en Dashboard");
+        // Simular valores de todos los pozos antes de cargar (y generar alertas si es necesario)
+        await simulationService.simulateAllWells();
+
+        // Luego cargar los pozos con sus valores actualizados
         const data = await wellService.getWells();
-        console.log(`Se encontraron ${data.length} pozos para el usuario`);
-        
-        if (data && data.length > 0) {
-          // Solo simulamos los pozos que están asignados al usuario actual
-          console.log("Simulando valores para los pozos del usuario");
-          await simulationService.simulateUserWells();
-          
-          // Luego cargar los pozos con sus valores actualizados
-          console.log("Recargando datos de los pozos después de simulación");
-          const updatedData = await wellService.getWells();
-          setWells(updatedData);
-          console.log(`Datos actualizados: ${updatedData.length} pozos cargados`);
-        } else {
-          console.log("No se encontraron pozos para este usuario");
-          setWells([]);
-        }
+        setWells(data);
       } catch (error) {
         console.error('Error initializing data:', error);
         toast({
