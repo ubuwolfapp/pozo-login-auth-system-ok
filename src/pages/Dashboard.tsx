@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
 import { simulationService } from '@/services/simulationService';
 import WellList from '@/components/wells/WellList';
-import WellMap from '@/components/wells/WellMap';
+import WellMapLeaflet from '@/components/wells/WellMapLeaflet';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
@@ -98,7 +98,7 @@ const Dashboard = () => {
         </Button>
       </header>
 
-      <WellMap wells={wells} onSelectWell={handleSelectWell} />
+      <WellMapLeaflet wells={wells} onSelectWell={handleSelectWell} />
 
       <div className="mt-6">
         <WellList wells={wells} onSelectWell={handleSelectWell} />
