@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
@@ -11,10 +10,13 @@ import WellStats from '@/components/wells/WellStats';
 import WellHeader from '@/components/wells/WellHeader';
 import WellPressureChart from '@/components/wells/WellPressureChart';
 import WellActions from '@/components/wells/WellActions';
+import WellAlertHistoryModal from '@/components/wells/WellAlertHistoryModal';
 
 const WellDetails = () => {
   const { id } = useParams();
   const queryClient = useQueryClient();
+
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const { data: well, isLoading } = useQuery({
     queryKey: ['well', id],
@@ -53,6 +55,13 @@ const WellDetails = () => {
           wellName={well.nombre}
           wellId={well.id}
           onPhotoUpload={handlePhotoUpload}
+          onShowAlertHistory={() => setHistoryOpen(true)}
+        />
+
+        <WellAlertHistoryModal
+          wellId={well.id}
+          open={historyOpen}
+          onClose={() => setHistoryOpen(false)}
         />
 
         <div className="space-y-6">
