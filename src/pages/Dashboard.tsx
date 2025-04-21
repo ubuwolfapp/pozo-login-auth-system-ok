@@ -23,10 +23,16 @@ type PozoMapa = {
   zoom_inicial: number;
 };
 
+// Definimos una posición predeterminada para usar cuando no hay mapa asignado
+const DEFAULT_MAP_CONFIG = {
+  center: [19.4326, -99.1332] as [number, number],
+  zoom: 6
+};
+
 const Dashboard = () => {
   const [wells, setWells] = useState<Well[]>([]);
   const [loading, setLoading] = useState(true);
-  const [mapConfig, setMapConfig] = useState<{ center: [number, number]; zoom: number } | null>(null);
+  const [mapConfig, setMapConfig] = useState(DEFAULT_MAP_CONFIG);
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
@@ -36,64 +42,120 @@ const Dashboard = () => {
         // Simulación de valores antes de cargar
         await simulationService.simulateAllWells();
 
-        // 1. Obtener ID del pozo_mapa asignado al usuario
+        // 1. Obtener usuario y su configuración de mapa
         const { data: usuarioInfo, error: usuarioError } = await supabase
           .from('usuarios')
           .select('id, pozos_mapa_id')
           .eq('email', user?.email)
           .maybeSingle();
-        
+
+        // Si no hay usuario o hay error, cargar todos los pozos con configuración predeterminada
         if (usuarioError || !usuarioInfo) {
-          throw new Error("No se pudo obtener el usuario o el mapa asignado.");
+          console.warn("No se pudo obtener el usuario, mostrando todos los pozos disponibles");
+          const { data: allWells } = await supabase.from('pozos').select(`
+            *,
+            alertas(*),
+            tareas(*),
+            camaras_pozos(*),
+            fotos_pozos(*),
+            presion_historial(*)
+          `);
+          setWells(allWells || []);
+          return;
+        }
+        
+        const mapaId = usuarioInfo.pozos_mapa_id;
+        
+        // Si hay usuario pero no tiene mapa asignado
+        if (!mapaId) {
+          console.warn("Usuario sin mapa asignado, mostrando todos los pozos disponibles");
+          toast({
+            title: "Información",
+            description: "No tienes un mapa específico asignado. Mostrando vista general.",
+            variant: "default"
+          });
+          
+          const { data: allWells } = await supabase.from('pozos').select(`
+            *,
+            alertas(*),
+            tareas(*),
+            camaras_pozos(*),
+            fotos_pozos(*),
+            presion_historial(*)
+          `);
+          setWells(allWells || []);
+          return;
         }
 
-        const mapaId = usuarioInfo.pozos_mapa_id;
-        if (!mapaId) throw new Error("No tienes un mapa asignado.");
-
-        // 2. Traer la configuración del mapa
+        // 2. Si hay mapa asignado, traer su configuración
         const { data: mapa, error: mapaError } = await supabase
           .from('pozos_mapa')
           .select('*')
           .eq('id', mapaId)
           .maybeSingle();
 
-        if (mapaError || !mapa) throw new Error("No se encontró la configuración del pozo mapa.");
+        if (mapaError) {
+          console.error("Error al obtener configuración del mapa:", mapaError);
+          toast({
+            title: "Error",
+            description: "Error al cargar la configuración del mapa",
+            variant: "destructive"
+          });
+        } 
+        else if (mapa) {
+          // Actualizar configuración del mapa
+          setMapConfig({
+            center: [mapa.centro_latitud, mapa.centro_longitud],
+            zoom: mapa.zoom_inicial,
+          });
 
-        setMapConfig({
-          center: [mapa.centro_latitud, mapa.centro_longitud],
-          zoom: mapa.zoom_inicial,
-        });
+          // 3. Obtener los pozos asignados al mapa
+          const { data: pozosRelacion, error: pozosRelacionError } = await supabase
+            .from('pozos_mapas_relacion')
+            .select('pozo_id')
+            .eq('pozos_mapa_id', mapaId);
 
-        // 3. Obtener los pozos asignados al mapa
-        const { data: pozosRelacion, error: pozosRelacionError } = await supabase
-          .from('pozos_mapas_relacion')
-          .select('pozo_id')
-          .eq('pozos_mapa_id', mapaId);
+          if (pozosRelacionError) {
+            console.error("Error al obtener relaciones de pozos:", pozosRelacionError);
+            toast({
+              title: "Error",
+              description: "No se pudieron obtener los pozos asignados a este mapa",
+              variant: "destructive"
+            });
+            return;
+          }
 
-        if (pozosRelacionError) throw new Error("No se pudieron obtener los pozos asignados a este mapa.");
+          const pozoIds = pozosRelacion.map((rel: any) => rel.pozo_id);
 
-        const pozoIds = pozosRelacion.map((rel: any) => rel.pozo_id);
+          // 4. Traer los datos completos de esos pozos
+          let pozos: Well[] = [];
+          if (pozoIds.length > 0) {
+            const { data: pozosData, error: pozosError } = await supabase
+              .from('pozos')
+              .select(`
+                *,
+                alertas(*),
+                tareas(*),
+                camaras_pozos(*),
+                fotos_pozos(*),
+                presion_historial(*)
+              `)
+              .in('id', pozoIds);
 
-        // 4. Traer los datos completos de esos pozos
-        let pozos: Well[] = [];
-        if (pozoIds.length > 0) {
-          const { data: pozosData, error: pozosError } = await supabase
-            .from('pozos')
-            .select(`
-              *,
-              alertas(*),
-              tareas(*),
-              camaras_pozos(*),
-              fotos_pozos(*),
-              presion_historial(*)
-            `)
-            .in('id', pozoIds);
+            if (pozosError) {
+              console.error("Error al obtener datos de pozos:", pozosError);
+              toast({
+                title: "Error",
+                description: "No se pudieron obtener los datos de los pozos",
+                variant: "destructive"
+              });
+              return;
+            }
+            pozos = pozosData || [];
+          }
 
-          if (pozosError) throw new Error("No se pudieron obtener los datos de los pozos.");
-          pozos = pozosData || [];
+          setWells(pozos);
         }
-
-        setWells(pozos);
       } catch (error: any) {
         console.error('Error initializing data:', error);
         toast({
@@ -121,7 +183,7 @@ const Dashboard = () => {
     await signOut();
   };
 
-  if (loading || !mapConfig) {
+  if (loading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
       <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
     </div>;
