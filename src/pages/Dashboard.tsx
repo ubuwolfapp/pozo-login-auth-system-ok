@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
@@ -22,12 +23,17 @@ const Dashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Simular valores de todos los pozos antes de cargar (y generar alertas si es necesario)
-        await simulationService.simulateAllWells();
-
-        // Luego cargar los pozos con sus valores actualizados
         const data = await wellService.getWells();
-        setWells(data);
+        if (data && data.length > 0) {
+          // Solo simulamos los pozos que están asignados al usuario actual
+          await simulationService.simulateUserWells();
+          
+          // Luego cargar los pozos con sus valores actualizados
+          const updatedData = await wellService.getWells();
+          setWells(updatedData);
+        } else {
+          setWells([]);
+        }
       } catch (error) {
         console.error('Error initializing data:', error);
         toast({

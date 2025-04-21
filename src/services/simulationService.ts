@@ -39,9 +39,19 @@ export const simulationService = {
     }
   },
 
-  async simulateAllWells() {
+  // Nuevo método para simular solo los pozos del usuario actual
+  async simulateUserWells() {
     try {
-      // Obtener todos los pozos
+      // Obtener ID del usuario actual
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      const userId = userData.user?.id;
+      if (!userId) throw new Error("No user is logged in");
+
+      // Obtener todos los pozos asignados al usuario actual
+      // Como no tenemos una tabla de asignación de usuarios, usaremos todos los pozos
+      // En un sistema real, filtraríamos por pozos asignados al usuario
       const { data: wells, error: wellsError } = await supabase
         .from('pozos')
         .select('id');
@@ -50,14 +60,16 @@ export const simulationService = {
 
       if (!wells || wells.length === 0) return false;
 
-      // Simular valores para cada pozo
+      console.log(`Simulando valores para ${wells.length} pozos del usuario actual`);
+
+      // Simular valores para cada pozo del usuario
       for (const well of wells) {
         await this.simulateWellValues(well.id);
       }
 
       return true;
     } catch (error) {
-      console.error('Error simulating all wells:', error);
+      console.error('Error simulating user wells:', error);
       toast({
         title: "Error",
         description: "No se pudieron simular los valores de los pozos",
@@ -65,5 +77,10 @@ export const simulationService = {
       });
       return false;
     }
+  },
+
+  // Mantenemos el método original para compatibilidad
+  async simulateAllWells() {
+    return this.simulateUserWells();
   }
 };

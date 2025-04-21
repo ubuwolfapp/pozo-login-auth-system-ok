@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -22,9 +23,21 @@ const Alerts = () => {
 
   const fetchAlerts = async () => {
     console.log('Fetching alerts from database');
+    
+    // Obtener los IDs de los pozos del usuario
+    const userWells = await wellService.getWells();
+    const wellIds = userWells.map(well => well.id);
+    
+    if (wellIds.length === 0) {
+      console.log('No wells found for user, returning empty alerts');
+      return [];
+    }
+    
+    // Consultar solo las alertas de los pozos del usuario
     let query = supabase
       .from('alertas')
       .select('*, pozo:pozo_id (id, nombre)')
+      .in('pozo_id', wellIds)
       .order('created_at', { ascending: false });
     
     const { data: dbAlerts, error } = await query;
