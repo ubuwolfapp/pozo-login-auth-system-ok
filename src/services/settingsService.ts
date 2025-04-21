@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -12,7 +13,7 @@ export interface UserSettings {
   umbral_temperatura: number;
   umbral_flujo: number;
   idioma: string;
-  simulacion_activa?: boolean;
+  simulacion_activa: boolean;
 }
 
 export interface PozoUmbral {
