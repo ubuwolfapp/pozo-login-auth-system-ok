@@ -185,6 +185,38 @@ const Alerts = () => {
     }
   };
 
+  const handleDeleteAllAlerts = async () => {
+    if (!alerts || alerts.length === 0) return;
+    try {
+      const { error } = await supabase
+        .from('alertas')
+        .delete()
+        .neq('id', '');
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "No se pudieron borrar todas las alertas.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Todas las alertas fueron eliminadas.",
+      });
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    } catch (error) {
+      console.error('Error deleting all alerts:', error);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error inesperado al borrar las alertas.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleAlertDeleted = async (alertId: string) => {
     try {
       const { error } = await supabase
@@ -223,13 +255,20 @@ const Alerts = () => {
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
 
-      <div className="container mx-auto flex justify-end px-4 pt-4">
+      <div className="container mx-auto flex justify-end gap-2 px-4 pt-4">
         <button
           className="bg-pozo-orange text-white rounded px-4 py-2 font-semibold shadow hover:bg-orange-500 transition"
           onClick={handleResolveAllAlerts}
           disabled={!alerts || alerts.length === 0 || alerts.every(a => a.resuelto)}
         >
           Resolver todas
+        </button>
+        <button
+          className="bg-red-600 text-white rounded px-4 py-2 font-semibold shadow hover:bg-red-700 transition"
+          onClick={handleDeleteAllAlerts}
+          disabled={!alerts || alerts.length === 0}
+        >
+          Borrar todas
         </button>
       </div>
 
