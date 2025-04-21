@@ -3,9 +3,8 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { wellService, type Well } from '@/services/wellService';
 import NavigationBar from '@/components/NavigationBar';
-import { useMapbox } from '@/hooks/useMapbox';
+import { useOpenStreetMap } from '@/hooks/useOpenStreetMap';
 import { useWellMarkers } from '@/hooks/useWellMarkers';
-import MapTokenDialog from '@/components/maps/MapTokenDialog';
 import MapLoading from '@/components/maps/MapLoading';
 import MapError from '@/components/maps/MapError';
 import MapEmptyState from '@/components/maps/MapEmptyState';
@@ -13,26 +12,13 @@ import { Button } from '@/components/ui/button';
 import { LogOut, Filter } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import mapboxgl from 'mapbox-gl';
+import 'leaflet/dist/leaflet.css';
 
 const MapPage = () => {
-  const [showTokenDialog, setShowTokenDialog] = useState(false);
-  const [tempToken, setTempToken] = useState('');
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const { user, signOut } = useAuth();
   
-  const [storedToken, setStoredToken] = useState(() => {
-    return localStorage.getItem('mapbox_token') || '';
-  });
-
-  // Use stored token if it exists
-  const MAPBOX_TOKEN = storedToken || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
-  
-  // Set Mapbox token
-  mapboxgl.accessToken = MAPBOX_TOKEN;
-
-  const { mapContainer, map, mapError } = useMapbox({
+  const { mapContainer, map, mapError } = useOpenStreetMap({
     centro_latitud: 19.4326,
     centro_longitud: -99.1332,
     zoom_inicial: 5
@@ -42,6 +28,8 @@ const MapPage = () => {
     queryKey: ['wells-for-map'],
     queryFn: wellService.getWells
   });
+
+  console.log("Wells loaded:", wells.length, wells);
 
   // Filter wells based on active filter
   const filteredWells = wells.filter(well => {
@@ -55,41 +43,13 @@ const MapPage = () => {
 
   // Handle well selection
   const handleSelectWell = (well: Well) => {
-    // Create popup for the selected well
     if (!map.current) return;
-    
-    // Remove existing popups
-    const existingPopups = document.querySelectorAll('.mapboxgl-popup');
-    existingPopups.forEach(popup => popup.remove());
-    
-    const popupNode = document.createElement('div');
-    popupNode.innerHTML = `
-      <div class="p-2">
-        <h3 class="font-bold">${well.nombre}</h3>
-        <p class="text-sm">Producción: ${well.produccion_diaria} barriles/día</p>
-        <p class="text-sm">Estado: ${well.estado}</p>
-      </div>
-    `;
-    
-    new mapboxgl.Popup({ closeOnClick: true })
-      .setLngLat([well.longitud, well.latitud])
-      .setDOMContent(popupNode)
-      .addTo(map.current);
+    // OpenStreetMap markers handle this with popups
+    console.log("Well selected:", well);
   };
 
   // Use the well markers hook
   useWellMarkers(map, filteredWells, handleSelectWell);
-
-  const handleSaveToken = () => {
-    if (tempToken) {
-      localStorage.setItem('mapbox_token', tempToken);
-      setStoredToken(tempToken);
-      setShowTokenDialog(false);
-      
-      // Force reload of the page to reinitialize map with new token
-      window.location.reload();
-    }
-  };
 
   const handleLogout = async () => {
     await signOut();
@@ -144,19 +104,11 @@ const MapPage = () => {
           {mapError && (
             <MapError 
               error={mapError} 
-              onRetry={() => setShowTokenDialog(true)} 
+              onRetry={() => window.location.reload()} 
             />
           )}
 
           {!mapError && filteredWells && filteredWells.length === 0 && <MapEmptyState />}
-
-          <MapTokenDialog 
-            open={showTokenDialog}
-            onOpenChange={setShowTokenDialog}
-            tempToken={tempToken}
-            onTokenChange={setTempToken}
-            onSave={handleSaveToken}
-          />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
