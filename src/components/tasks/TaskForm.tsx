@@ -5,6 +5,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2 } from "lucide-react";
 import { AppUser } from '@/services/userService';
 
 export interface TaskFormData {
@@ -25,6 +26,7 @@ interface TaskFormProps {
   wells: any[];
   usuarios: AppUser[];
   preselectedWell?: string;
+  loadingUsers?: boolean;
 }
 
 const TaskForm: React.FC<TaskFormProps> = ({
@@ -32,7 +34,8 @@ const TaskForm: React.FC<TaskFormProps> = ({
   isLoading,
   wells,
   usuarios,
-  preselectedWell
+  preselectedWell,
+  loadingUsers = false
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -79,26 +82,39 @@ const TaskForm: React.FC<TaskFormProps> = ({
             <SelectValue placeholder="Selecciona el pozo" />
           </SelectTrigger>
           <SelectContent>
-            {wells.map((well: any) => (
-              <SelectItem key={well.id} value={well.id}>
-                {well.nombre}
-              </SelectItem>
-            ))}
+            {wells.length === 0 ? (
+              <SelectItem value="no_wells">No hay pozos disponibles</SelectItem>
+            ) : (
+              wells.map((well: any) => (
+                <SelectItem key={well.id} value={well.id}>
+                  {well.nombre}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
       <div>
         <label className="block mb-1 text-sm">Asignar a usuario</label>
         <Select value={selectedUser} onValueChange={setSelectedUser}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona el usuario" />
+          <SelectTrigger disabled={loadingUsers}>
+            <SelectValue placeholder={
+              loadingUsers 
+                ? "Cargando usuarios..." 
+                : "Selecciona el usuario"
+            } />
           </SelectTrigger>
           <SelectContent>
-            {usuarios.length === 0 ? (
+            {loadingUsers ? (
+              <div className="flex items-center justify-center p-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>Cargando usuarios...</span>
+              </div>
+            ) : usuarios.length === 0 ? (
               <SelectItem value="no_users">No hay usuarios disponibles</SelectItem>
             ) : (
               usuarios.map((u) => (
-                <SelectItem key={u.email} value={u.email}>
+                <SelectItem key={String(u.id)} value={u.email}>
                   {u.nombre} ({u.email})
                 </SelectItem>
               ))
@@ -142,7 +158,10 @@ const TaskForm: React.FC<TaskFormProps> = ({
         />
         <label htmlFor="critical">¿Tarea crítica?</label>
       </div>
-      <Button type="submit" disabled={isLoading}>
+      <Button type="submit" disabled={isLoading} className="relative">
+        {isLoading && (
+          <Loader2 className="h-4 w-4 absolute left-4 animate-spin" />
+        )}
         {isLoading ? "Creando..." : "Crear tarea"}
       </Button>
     </form>

@@ -30,6 +30,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [usuarios, setUsuarios] = useState<AppUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
 
   const { data: wells = [] } = useQuery({
     queryKey: ['wells'],
@@ -40,9 +41,19 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   // Cargar usuarios al abrir el modal
   useEffect(() => {
     if (open) {
+      setLoadingUsers(true);
       userService.getAllUsers().then(data => {
         console.log("Usuarios cargados:", data);
         setUsuarios(data || []);
+        setLoadingUsers(false);
+      }).catch(err => {
+        console.error("Error al cargar usuarios:", err);
+        setLoadingUsers(false);
+        toast({
+          title: "Error al cargar usuarios",
+          description: "No se pudieron cargar los usuarios",
+          variant: "destructive"
+        });
       });
     }
   }, [open]);
@@ -120,6 +131,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           wells={wells}
           usuarios={usuarios}
           preselectedWell={preselectedWell}
+          loadingUsers={loadingUsers}
         />
       </DialogContent>
     </Dialog>
