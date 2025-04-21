@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
@@ -79,7 +78,6 @@ const Dashboard = () => {
   }
 
   return <div className="min-h-screen bg-slate-900 text-white pb-20">
-    {/* Top bar with user info and logout */}
     <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
       <div className="container mx-auto flex items-center justify-between">
         <h2 className="text-sm font-medium">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService, UserSettings } from '@/services/settingsService';
@@ -60,7 +59,6 @@ const Settings = () => {
         ...wellUmbrales
       });
     } else if (selectedWellId && settings) {
-      // Si no hay umbrales específicos para el pozo, usar los valores generales (extraemos de settings)
       setLocalWellUmbrales({
         pozo_id: selectedWellId,
         umbral_presion: settings.umbral_presion ?? 8000,
