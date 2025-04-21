@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Calendar } from 'lucide-react';
 
 interface AddTaskModalProps {
   open: boolean;
@@ -24,6 +24,13 @@ interface AddTaskModalProps {
   onSuccess?: () => void;
   preselectedWell?: string;
 }
+
+type FormFields = {
+  titulo: string;
+  descripcion?: string;
+  link?: string;
+  foto?: FileList;
+};
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({
   open,
@@ -40,9 +47,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [isCritical, setIsCritical] = useState(false);
   const [usuarios, setUsuarios] = useState<AppUser[]>([]);
-  const { register, handleSubmit, reset } = useForm<{ titulo: string }>();
+  const { register, handleSubmit, reset, setValue } = useForm<FormFields>();
 
-  const { data: wells = [], isLoading: wellsLoading } = useQuery({
+  const { data: wells = [] } = useQuery({
     queryKey: ['wells'],
     queryFn: wellService.getWells,
     enabled: open
@@ -69,19 +76,42 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     }
   }, [open, preselectedWell, reset]);
 
-  const onSubmit = async (formData: { titulo: string }) => {
-    if (!selectedDate || !selectedWell || !selectedUser) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue('foto', e.target.files as FileList);
+  };
+
+  const onSubmit = async (formData: FormFields) => {
+    if (!selectedDate || !selectedWell || !selectedUser || !formData.titulo) {
       toast({
-        title: "Completa todos los campos",
+        title: "Completa todos los campos obligatorios",
         variant: "destructive"
       });
       return;
     }
     setIsLoading(true);
 
+    let fotoUrl = undefined;
+    if (formData.foto && formData.foto.length > 0) {
+      const file = formData.foto[0];
+      // Subir foto al bucket "tareas_adjuntos"
+      try {
+        fotoUrl = await taskService.uploadTaskImage(file);
+      } catch (e) {
+        toast({
+          title: "Error al subir la foto",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       await taskService.createTask({
         titulo: formData.titulo,
+        descripcion: formData.descripcion || "",
+        link: formData.link || "",
+        foto_url: fotoUrl || "",
         pozo_id: selectedWell,
         asignado_a: selectedUser,
         asignado_por: user?.email || 'sistema',
@@ -117,6 +147,13 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <Input
               placeholder="Título de la tarea"
               {...register('titulo', { required: true })}
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <Textarea
+              placeholder="Descripción de la tarea"
+              {...register('descripcion')}
               disabled={isLoading}
             />
           </div>
@@ -159,6 +196,24 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               disabled={isLoading}
             />
           </div>
+          <div>
+            <label className="block mb-1 text-sm">Adjuntar foto (opcional)</label>
+            <Input
+              type="file"
+              accept="image/*"
+              {...register('foto')}
+              onChange={handleFileChange}
+              disabled={isLoading}
+            />
+          </div>
+          <div>
+            <Input
+              placeholder="Link externo (opcional)"
+              {...register('link')}
+              disabled={isLoading}
+              type="url"
+            />
+          </div>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -179,3 +234,4 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 };
 
 export default AddTaskModal;
+

@@ -1,10 +1,12 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
 export interface Task {
   id: string;
   titulo: string;
+  descripcion?: string;
+  link?: string;
+  foto_url?: string;
   pozo_id: string;
   asignado_a: string;
   fecha_limite: string;
@@ -12,6 +14,20 @@ export interface Task {
   es_critica: boolean;
   created_at: string;
   asignado_por: string;
+}
+
+// Helper to upload image to 'tareas_adjuntos' bucket
+async function uploadTaskImage(file: File): Promise<string> {
+  const fileExt = file.name.split('.').pop();
+  const filePath = `tarea_${Date.now()}.${fileExt}`;
+  const { data, error } = await supabase.storage
+    .from('tareas_adjuntos')
+    .upload(filePath, file);
+
+  if (error) throw error;
+  // Get public URL
+  const { data: publicUrlData } = supabase.storage.from('tareas_adjuntos').getPublicUrl(filePath);
+  return publicUrlData?.publicUrl || "";
 }
 
 export const taskService = {
@@ -131,5 +147,7 @@ export const taskService = {
       });
       return false;
     }
-  }
+  },
+
+  uploadTaskImage,
 };
