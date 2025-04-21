@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import NavigationBar from '@/components/NavigationBar';
@@ -14,6 +13,7 @@ import ReportChart from '@/components/reports/ReportChart';
 import ReportSummary from '@/components/reports/ReportSummary';
 import { useReportData } from '@/hooks/useReportData';
 import { toast } from '@/components/ui/use-toast';
+import { generateReportPdf } from "@/utils/reportPdf";
 
 const Reports: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +44,23 @@ const Reports: React.FC = () => {
   };
 
   const handleGeneratePDF = () => {
+    if (!reportData) {
+      toast({
+        title: "No hay datos",
+        description: "No hay datos para generar el PDF",
+        variant: "destructive"
+      });
+      return;
+    }
+    generateReportPdf({
+      reportData,
+      parameterLabel:
+        selectedParameter === "produccion" ? "Producción" :
+        selectedParameter === "presion" ? "Presión" :
+        selectedParameter === "dato3" ? "Dato 3" : selectedParameter,
+      startDate,
+      endDate
+    });
     toast({
       title: "PDF generado",
       description: "El PDF ha sido generado correctamente"

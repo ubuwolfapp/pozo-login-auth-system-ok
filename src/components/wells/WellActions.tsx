@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,15 +12,13 @@ const WellActions = ({ wellId }: WellActionsProps) => {
   return (
     <div className="grid grid-cols-2 gap-4">
       <Button 
-        variant="outline" 
-        className="w-full"
+        className="w-full bg-[#FF6200] hover:bg-[#FF6200]/80 text-white"
         onClick={() => navigate(`/settings`)}
       >
         Ajustar Umbrales
       </Button>
       <Button 
-        variant="outline" 
-        className="w-full"
+        className="w-full bg-[#FF6200] hover:bg-[#FF6200]/80 text-white"
         onClick={() => navigate(`/tasks/new?well=${wellId}`)}
       >
         Asignar Tarea
