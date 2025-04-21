@@ -513,10 +513,6 @@ export type Database = {
         Args: { p_usuario_id: string }
         Returns: string[]
       }
-      run_sql: {
-        Args: { sql_query: string; params?: Json }
-        Returns: Json
-      }
       simular_valores_pozo: {
         Args: { p_pozo_id: string }
         Returns: undefined
