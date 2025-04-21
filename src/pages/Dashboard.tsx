@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
+import { simulationService } from '@/services/simulationService';
 import WellList from '@/components/wells/WellList';
 import WellMap from '@/components/wells/WellMap';
 import { Button } from '@/components/ui/button';
@@ -8,6 +10,7 @@ import { toast } from '@/components/ui/use-toast';
 import NavigationBar from '@/components/NavigationBar';
 import { useAuth } from '@/hooks/useAuth';
 import { LogOut } from 'lucide-react';
+
 const Dashboard = () => {
   const [wells, setWells] = useState<Well[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,9 +19,31 @@ const Dashboard = () => {
     user,
     signOut
   } = useAuth();
+
   useEffect(() => {
-    loadWells();
+    const initializeData = async () => {
+      try {
+        // Primero simular nuevos valores para todos los pozos
+        await simulationService.simulateAllWells();
+        
+        // Luego cargar los pozos con sus valores actualizados
+        const data = await wellService.getWells();
+        setWells(data);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
   }, []);
+
   const loadWells = async () => {
     try {
       const data = await wellService.getWells();
@@ -34,20 +59,25 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
+
   const handleSelectWell = (well: Well) => {
     navigate(`/wells/${well.id}`);
   };
+
   const handleGenerateReport = () => {
     navigate('/reports');
   };
+
   const handleLogout = async () => {
     await signOut();
   };
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
       </div>;
   }
+
   return <div className="min-h-screen bg-slate-900 text-white pb-20">
       {/* Top bar with user info and logout */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
@@ -80,4 +110,5 @@ const Dashboard = () => {
       <NavigationBar />
     </div>;
 };
+
 export default Dashboard;

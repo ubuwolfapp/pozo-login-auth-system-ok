@@ -1,34 +1,67 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { settingsService, UserSettings } from '@/services/settingsService';
+import { settingsService, UserSettings, PozoUmbral } from '@/services/settingsService';
+import { wellService } from '@/services/wellService';
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NavigationBar from '@/components/NavigationBar';
-import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert } from 'lucide-react';
+import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, Thermometer, Droplet } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("general");
+  const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
 
-  const { data: settings, isLoading } = useQuery({
+  // Consultas para obtener configuraciones y pozos
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ['userSettings'],
     queryFn: settingsService.getUserSettings
   });
 
-  // Local state for form values
-  const [localSettings, setLocalSettings] = useState<UserSettings | null>(null);
+  const { data: wells, isLoading: isLoadingWells } = useQuery({
+    queryKey: ['wells'],
+    queryFn: wellService.getWells
+  });
 
-  // When data loads, initialize local state
+  const { data: wellUmbrales, isLoading: isLoadingUmbrales } = useQuery({
+    queryKey: ['wellUmbrales', selectedWellId],
+    queryFn: () => selectedWellId ? settingsService.getWellUmbral(selectedWellId) : null,
+    enabled: !!selectedWellId
+  });
+
+  // Estado local para formularios
+  const [localSettings, setLocalSettings] = useState<UserSettings | null>(null);
+  const [localWellUmbrales, setLocalWellUmbrales] = useState<any>(null);
+
+  // Inicializar estados locales cuando se cargan los datos
   useEffect(() => {
     if (settings) {
       setLocalSettings(settings);
     }
   }, [settings]);
 
+  useEffect(() => {
+    if (wellUmbrales) {
+      setLocalWellUmbrales(wellUmbrales);
+    } else if (selectedWellId && settings) {
+      // Si no hay umbrales específicos para el pozo, usar los valores generales
+      setLocalWellUmbrales({
+        pozo_id: selectedWellId,
+        umbral_presion: settings.umbral_presion,
+        umbral_temperatura: settings.umbral_temperatura,
+        umbral_flujo: settings.umbral_flujo
+      });
+    }
+  }, [wellUmbrales, selectedWellId, settings]);
+
+  // Mutaciones para actualizar
   const updateSettingsMutation = useMutation({
     mutationFn: settingsService.updateSettings,
     onSuccess: () => {
@@ -36,21 +69,37 @@ const Settings = () => {
     },
   });
 
-  // Handlers update local state only
+  const updateWellUmbralMutation = useMutation({
+    mutationFn: (data: { pozoId: string, umbrales: any }) => 
+      settingsService.updateWellUmbral(data.pozoId, data.umbrales),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wellUmbrales'] });
+    },
+  });
+
+  // Manejadores para cambios en configuración general
   const handleSwitchChange = (field: keyof UserSettings) => {
     if (!localSettings) return;
     setLocalSettings(prev => prev ? { ...prev, [field]: !prev[field] } : prev);
   };
 
-  const handlePressureThresholdChange = (value: string) => {
+  const handleThresholdChange = (field: keyof UserSettings, value: string) => {
     if (!localSettings) return;
     const numValue = parseInt(value);
     if (isNaN(numValue)) return;
-    setLocalSettings(prev => prev ? { ...prev, umbral_presion: numValue } : prev);
+    setLocalSettings(prev => prev ? { ...prev, [field]: numValue } : prev);
   };
 
-  // Save button handler
-  const handleSaveChanges = () => {
+  // Manejadores para cambios en umbrales de pozo
+  const handleWellThresholdChange = (field: string, value: string) => {
+    if (!localWellUmbrales) return;
+    const numValue = parseInt(value);
+    if (isNaN(numValue)) return;
+    setLocalWellUmbrales(prev => ({ ...prev, [field]: numValue }));
+  };
+
+  // Guardar cambios
+  const handleSaveGeneralChanges = () => {
     if (!localSettings) return;
     updateSettingsMutation.mutate({
       notificaciones_activas: localSettings.notificaciones_activas,
@@ -58,12 +107,30 @@ const Settings = () => {
       correo_activo: localSettings.correo_activo,
       sms_activo: localSettings.sms_activo,
       umbral_presion: localSettings.umbral_presion,
+      umbral_temperatura: localSettings.umbral_temperatura,
+      umbral_flujo: localSettings.umbral_flujo,
       idioma: localSettings.idioma
     });
   };
 
-  if (isLoading || !localSettings) {
-    return <div className="min-h-screen bg-slate-900 text-white p-6">Cargando...</div>;
+  const handleSaveWellUmbrales = () => {
+    if (!localWellUmbrales || !selectedWellId) return;
+    updateWellUmbralMutation.mutate({
+      pozoId: selectedWellId,
+      umbrales: {
+        umbral_presion: localWellUmbrales.umbral_presion,
+        umbral_temperatura: localWellUmbrales.umbral_temperatura,
+        umbral_flujo: localWellUmbrales.umbral_flujo
+      }
+    });
+  };
+
+  if (isLoadingSettings || isLoadingWells || !localSettings) {
+    return <div className="min-h-screen bg-slate-900 text-white p-6">
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+      </div>
+    </div>;
   }
 
   return (
@@ -80,101 +147,260 @@ const Settings = () => {
           <h1 className="text-2xl font-bold">Configuración</h1>
         </header>
 
-        <div className="space-y-6">
-          {/* Notificaciones Section */}
-          <div className="bg-slate-800 rounded-lg p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5 text-gray-400" />
-                <span>Notificaciones</span>
-              </div>
-              <Switch
-                checked={localSettings.notificaciones_activas}
-                onCheckedChange={() => handleSwitchChange('notificaciones_activas')}
-              />
-            </div>
+        <Tabs
+          defaultValue="general"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-4"
+        >
+          <TabsList className="bg-slate-800 border-slate-700">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="pozos">Pozos</TabsTrigger>
+          </TabsList>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Bell className="h-5 w-5 text-gray-400" />
-                <span>Push</span>
-              </div>
-              <Switch
-                checked={localSettings.push_activo}
-                onCheckedChange={() => handleSwitchChange('push_activo')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-gray-400" />
-                <span>Correo</span>
-              </div>
-              <Switch
-                checked={localSettings.correo_activo}
-                onCheckedChange={() => handleSwitchChange('correo_activo')}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <MessageSquare className="h-5 w-5 text-gray-400" />
-                <span>SMS</span>
-              </div>
-              <Switch
-                checked={localSettings.sms_activo}
-                onCheckedChange={() => handleSwitchChange('sms_activo')}
-              />
-            </div>
-          </div>
-
-          {/* Umbrales de Alerta Section */}
-          <div className="bg-slate-800 rounded-lg p-4 space-y-4">
-            <h2 className="flex items-center gap-2 mb-4">
-              <CircleAlert className="h-5 w-5 text-gray-400" />
-              Umbrales de Alerta
-            </h2>
-            <div className="flex items-center justify-between">
-              <span className="text-orange-500">Presión</span>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  value={localSettings.umbral_presion || 8000}
-                  onChange={(e) => handlePressureThresholdChange(e.target.value)}
-                  className="w-24 bg-slate-700 border-slate-600"
+          <TabsContent value="general" className="space-y-4">
+            {/* Notificaciones Section */}
+            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-gray-400" />
+                  <span>Notificaciones</span>
+                </div>
+                <Switch
+                  checked={localSettings.notificaciones_activas}
+                  onCheckedChange={() => handleSwitchChange('notificaciones_activas')}
                 />
-                <span className="text-gray-400">psi</span>
               </div>
-            </div>
-          </div>
 
-          {/* Idioma Section */}
-          <div className="bg-slate-800 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Globe className="h-5 w-5 text-gray-400" />
-                <span>Idioma</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Bell className="h-5 w-5 text-gray-400" />
+                  <span>Push</span>
+                </div>
+                <Switch
+                  checked={localSettings.push_activo}
+                  onCheckedChange={() => handleSwitchChange('push_activo')}
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <span>Español</span>
-                <ArrowLeft className="h-5 w-5 rotate-180" />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                  <span>Correo</span>
+                </div>
+                <Switch
+                  checked={localSettings.correo_activo}
+                  onCheckedChange={() => handleSwitchChange('correo_activo')}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <MessageSquare className="h-5 w-5 text-gray-400" />
+                  <span>SMS</span>
+                </div>
+                <Switch
+                  checked={localSettings.sms_activo}
+                  onCheckedChange={() => handleSwitchChange('sms_activo')}
+                />
               </div>
             </div>
-          </div>
-          {/* Guardar cambios */}
-          <div className="mt-6">
-            <Button 
-              onClick={handleSaveChanges} 
-              disabled={updateSettingsMutation.isPending}
-              className="relative"
-            >
-              {updateSettingsMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              Guardar Cambios
-            </Button>
-          </div>
-        </div>
+
+            {/* Umbrales de Alerta Generales */}
+            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+              <h2 className="flex items-center gap-2 mb-4">
+                <CircleAlert className="h-5 w-5 text-gray-400" />
+                Umbrales de Alerta Predeterminados
+              </h2>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-orange-500 flex items-center gap-2">
+                  <CircleAlert className="h-4 w-4" />
+                  Presión
+                </span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={localSettings.umbral_presion || 8000}
+                    onChange={(e) => handleThresholdChange('umbral_presion', e.target.value)}
+                    className="w-24 bg-slate-700 border-slate-600"
+                  />
+                  <span className="text-gray-400">psi</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-red-500 flex items-center gap-2">
+                  <Thermometer className="h-4 w-4" />
+                  Temperatura
+                </span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={localSettings.umbral_temperatura || 85}
+                    onChange={(e) => handleThresholdChange('umbral_temperatura', e.target.value)}
+                    className="w-24 bg-slate-700 border-slate-600"
+                  />
+                  <span className="text-gray-400">°C</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-cyan-500 flex items-center gap-2">
+                  <Droplet className="h-4 w-4" />
+                  Flujo
+                </span>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={localSettings.umbral_flujo || 600}
+                    onChange={(e) => handleThresholdChange('umbral_flujo', e.target.value)}
+                    className="w-24 bg-slate-700 border-slate-600"
+                  />
+                  <span className="text-gray-400">m³/h</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Idioma Section */}
+            <div className="bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-gray-400" />
+                  <span>Idioma</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>Español</span>
+                  <ArrowLeft className="h-5 w-5 rotate-180" />
+                </div>
+              </div>
+            </div>
+            
+            {/* Guardar cambios */}
+            <div className="mt-6">
+              <Button 
+                onClick={handleSaveGeneralChanges} 
+                disabled={updateSettingsMutation.isPending}
+                className="relative"
+              >
+                {updateSettingsMutation.isPending && (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                )}
+                Guardar Cambios
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pozos" className="space-y-4">
+            {/* Selección de Pozo */}
+            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm text-gray-300">Seleccionar Pozo</label>
+                <Select
+                  value={selectedWellId || ''}
+                  onValueChange={(value) => setSelectedWellId(value)}
+                >
+                  <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectValue placeholder="Seleccione un pozo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600">
+                    {wells?.map((well) => (
+                      <SelectItem key={well.id} value={well.id} className="text-white">
+                        {well.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {selectedWellId && localWellUmbrales && (
+              <>
+                {/* Umbrales de Alerta por Pozo */}
+                <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+                  <h2 className="flex items-center gap-2 mb-4">
+                    <CircleAlert className="h-5 w-5 text-gray-400" />
+                    Umbrales de Alerta para {wells?.find(w => w.id === selectedWellId)?.nombre}
+                  </h2>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-500 flex items-center gap-2">
+                      <CircleAlert className="h-4 w-4" />
+                      Presión
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={localWellUmbrales.umbral_presion || 8000}
+                        onChange={(e) => handleWellThresholdChange('umbral_presion', e.target.value)}
+                        className="w-24 bg-slate-700 border-slate-600"
+                      />
+                      <span className="text-gray-400">psi</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-red-500 flex items-center gap-2">
+                      <Thermometer className="h-4 w-4" />
+                      Temperatura
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={localWellUmbrales.umbral_temperatura || 85}
+                        onChange={(e) => handleWellThresholdChange('umbral_temperatura', e.target.value)}
+                        className="w-24 bg-slate-700 border-slate-600"
+                      />
+                      <span className="text-gray-400">°C</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-cyan-500 flex items-center gap-2">
+                      <Droplet className="h-4 w-4" />
+                      Flujo
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={localWellUmbrales.umbral_flujo || 600}
+                        onChange={(e) => handleWellThresholdChange('umbral_flujo', e.target.value)}
+                        className="w-24 bg-slate-700 border-slate-600"
+                      />
+                      <span className="text-gray-400">m³/h</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Guardar cambios de pozo */}
+                <div className="mt-6">
+                  <Button 
+                    onClick={handleSaveWellUmbrales} 
+                    disabled={updateWellUmbralMutation.isPending}
+                    className="relative"
+                  >
+                    {updateWellUmbralMutation.isPending && (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    )}
+                    Guardar Cambios
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {selectedWellId && isLoadingUmbrales && (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
+              </div>
+            )}
+
+            {!selectedWellId && (
+              <div className="bg-slate-800 rounded-lg p-4 text-center text-gray-400">
+                Seleccione un pozo para configurar sus umbrales
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
       <NavigationBar />
     </div>
