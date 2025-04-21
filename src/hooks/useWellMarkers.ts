@@ -66,9 +66,8 @@ export const useWellMarkers = (
 
     // Clean up function
     return () => {
-      if (map.current) {
-        // Fix the Leaflet error by checking if the map exists
-        markersLayer.remove();
+      if (map.current && !map.current._leaflet_id) {
+        map.current.removeLayer(markersLayer);
       }
     };
   }, [wells, map.current, onSelectWell]);

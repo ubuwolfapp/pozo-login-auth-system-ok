@@ -1,90 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ensureTestUser } from "./ensureTestUser";
-
-// Helper function to run SQL directly for database operations not in the API
-async function runSQL(query: string, params?: Record<string, any>) {
-  try {
-    const { data, error } = await supabase.rpc('run_sql', { 
-      sql_query: query,
-      params: params || {}
-    });
-    
-    if (error) {
-      console.error("SQL error:", error);
-      return null;
-    }
-    return data;
-  } catch (e) {
-    console.error("SQL execution error:", e);
-    return null;
-  }
-}
-
-// Check if a table exists using direct SQL
-async function checkTableExists(tableName: string): Promise<boolean> {
-  try {
-    const { data, error } = await supabase.rpc('run_sql', {
-      sql_query: `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = '${tableName}'
-        )
-      `
-    });
-    
-    if (error) {
-      console.error("Error checking table:", error);
-      return false;
-    }
-    
-    // Fix: Check if data is an array and has elements before accessing properties
-    // Also ensure we're safely accessing the 'exists' property which might be of different types
-    if (Array.isArray(data) && data.length > 0) {
-      // Handle the case where exists might be represented as boolean, string 'true'/'false', or other formats
-      // Fix: Use type checking to safely access 'exists' property
-      const firstRow = data[0];
-      if (typeof firstRow === 'object' && firstRow !== null && 'exists' in firstRow) {
-        const existsValue = firstRow.exists;
-        return existsValue === true || existsValue === 'true' || existsValue === 't';
-      }
-    }
-    return false;
-  } catch (e) {
-    console.error("Error in checkTableExists:", e);
-    return false;
-  }
-}
 
 async function initializeTestData() {
   try {
     console.log("Iniciando proceso de creación de datos de prueba...");
     
-    // 1. Make sure we have a test user in both Auth and custom table
-    await ensureTestUser();
-    
-    // 2. Get the test user ID from the custom table
-    console.log("Obteniendo ID del usuario de prueba...");
-    let testUserId: string;
-    {
-      const { data: foundUser, error } = await supabase
-        .from("usuarios")
-        .select("id")
-        .eq("email", "prueba@gmail.com")
-        .maybeSingle();
-
-      if (!foundUser) {
-        console.error("Usuario prueba@gmail.com no encontrado, no se pueden asignar pozos.");
-        return;
-      }
-      
-      // Convert ID to string if it's a number
-      testUserId = String(foundUser.id);
-      console.log("Usuario encontrado con ID:", testUserId);
-    }
-    
-    // 3. Eliminar datos existentes (cuidado en entornos de producción)
+    // 1. Eliminar datos existentes (cuidado en entornos de producción)
     console.log("Eliminando datos existentes...");
     await supabase.from("fotos_pozos").delete().neq("id", "0");
     await supabase.from("presion_historial").delete().neq("id", 0);
@@ -96,7 +17,7 @@ async function initializeTestData() {
     await supabase.from("pozos_mapa").delete().neq("id", "0");
     console.log("Datos existentes eliminados correctamente.");
 
-    // 4. Crear mapa por defecto para OpenStreetMap (nombre explícito)
+    // 2. Crear mapa por defecto para OpenStreetMap (nombre explícito)
     console.log("Creando mapa por defecto...");
     let mapId: string;
     {
@@ -118,7 +39,41 @@ async function initializeTestData() {
       console.log("Mapa creado con ID:", mapId);
     }
 
-    // 5. Crear pozos de ejemplo
+    // 3. Crear usuario de prueba en la DB pública (no solo en auth)
+    console.log("Verificando usuario de prueba...");
+    let testUserId: string;
+    {
+      const { data: foundUser, error } = await supabase
+        .from("usuarios")
+        .select("id,email")
+        .eq("email", "prueba@gmail.com")
+        .maybeSingle();
+
+      if (!foundUser) {
+        console.log("Usuario prueba@gmail.com no encontrado, creando uno nuevo...");
+        const { data: newUser, error: userError } = await supabase
+          .from("usuarios")
+          .insert({
+            email: "prueba@gmail.com",
+            password: "contraseña123",
+            nombre: "Usuario Prueba",
+            rol: "ingeniero",
+          })
+          .select("id")
+          .single();
+        if (userError) {
+          console.error("Error al crear usuario:", userError);
+          throw userError;
+        }
+        testUserId = String(newUser.id);
+        console.log("Usuario creado con ID:", testUserId);
+      } else {
+        testUserId = String(foundUser.id);
+        console.log("Usuario encontrado con ID:", testUserId);
+      }
+    }
+
+    // 4. Crear pozos de ejemplo
     console.log("Creando pozos de ejemplo...");
     const exampleWells = [
       {
@@ -171,7 +126,7 @@ async function initializeTestData() {
       console.log(`Pozo ${well.nombre} creado con ID: ${well.id}`);
     }
 
-    // 6. Relacionar pozos con el mapa creado (tabla de relación)
+    // 5. Relacionar pozos con el mapa creado (tabla de relación)
     console.log("Relacionando pozos con el mapa...");
     for (const well of wellList) {
       const { error: relError } = await supabase.from("pozos_mapas_relacion").insert({
@@ -185,64 +140,28 @@ async function initializeTestData() {
         console.log(`Pozo ${well.nombre} relacionado con mapa ${mapId}`);
       }
     }
-    
-    // 7. Asociar el usuario con el mapa
-    console.log("Asociando usuario con mapa...");
-    // Fix: Convert mapId to number if needed for type compatibility - using a type assertion
-    const { error: userMapError } = await supabase
-      .from("usuarios")
-      .update({ pozos_mapa_id: mapId })
-      .eq("id", Number(testUserId)); // Fix: Convert testUserId to number
-      
-    if (userMapError) {
-      console.error("Error asociando usuario con mapa:", userMapError);
-    } else {
-      console.log(`Usuario ${testUserId} asociado con mapa ${mapId}`);
-    }
 
-    // 8. Verificar si existe la tabla pozos_usuarios
+    // 6. Crear tabla pozos_usuarios si no existe
+    // Esta tabla debe existir para la función assign_well_to_user
     console.log("Verificando si existe la tabla pozos_usuarios...");
-    const tableExists = await checkTableExists('pozos_usuarios');
     
-    if (!tableExists) {
-      console.log("La tabla pozos_usuarios no existe. Creándola...");
-      
-      // Crear tabla directamente con SQL ya que no tenemos la función RPC
-      await runSQL(`
-        CREATE TABLE IF NOT EXISTS public.pozos_usuarios (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          usuario_id UUID NOT NULL,
-          pozo_id UUID NOT NULL,
-          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-          UNIQUE(usuario_id, pozo_id)
-        );
-        
-        COMMENT ON TABLE public.pozos_usuarios IS 'Tabla de relación entre usuarios y pozos';
-        
-        -- Add indexes for better performance
-        CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_usuario_id ON public.pozos_usuarios(usuario_id);
-        CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_pozo_id ON public.pozos_usuarios(pozo_id);
-      `);
-      
-      console.log("Tabla pozos_usuarios creada correctamente");
-    } else {
-      console.log("La tabla pozos_usuarios ya existe");
-    }
-    
-    // 9. Asignar TODOS los pozos al usuario de prueba directamente con SQL
+    // 7. Asignar TODOS los pozos al usuario de prueba
     console.log("Asignando pozos al usuario de prueba...");
     for (const well of wellList) {
       try {
         console.log(`Asignando pozo ${well.nombre} (${well.id}) al usuario ${testUserId}...`);
         
-        // Use SQL to insert directly since the table is not in the types
-        await runSQL(`
-          INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
-          VALUES ('${testUserId}', '${well.id}')
-          ON CONFLICT (usuario_id, pozo_id) DO NOTHING
-        `);
+        // Llamar directamente a la RPC assign_well_to_user
+        const { error: assignError } = await supabase.rpc("assign_well_to_user", {
+          p_usuario_id: testUserId,
+          p_pozo_id: well.id,
+        });
         
-        console.log(`Pozo ${well.nombre} asignado correctamente mediante SQL directa`);
+        if (assignError) {
+          console.error(`Error asignando pozo ${well.id} al usuario ${testUserId}:`, assignError);
+        } else {
+          console.log(`Pozo ${well.nombre} asignado correctamente al usuario de prueba`);
+        }
       } catch (err) {
         console.error(`Error al asignar pozo ${well.id}:`, err);
       }
@@ -250,19 +169,16 @@ async function initializeTestData() {
 
     console.log("Datos de prueba inicializados correctamente.");
     
-    // Verificar asignaciones con SQL
+    // Verificar asignaciones
     console.log("Verificando asignaciones de pozos...");
-    try {
-      const result = await runSQL(`
-        SELECT pozo_id FROM public.pozos_usuarios 
-        WHERE usuario_id = '${testUserId}'
-      `);
-      
-      // Fix: Check if result is an array before accessing length
-      const assignedCount = Array.isArray(result) ? result.length : 0;
-      console.log(`El usuario tiene ${assignedCount} pozos asignados:`, result);
-    } catch (e) {
-      console.error("Error al verificar asignaciones:", e);
+    const { data: userWells, error: checkError } = await supabase.rpc("get_user_wells", {
+      p_usuario_id: testUserId
+    });
+    
+    if (checkError) {
+      console.error("Error al verificar pozos asignados:", checkError);
+    } else {
+      console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
     }
   } catch (err) {
     console.error("Error inicializando datos de prueba:", err);
@@ -272,5 +188,4 @@ async function initializeTestData() {
 if (require.main === module) {
   initializeTestData();
 }
-
 export { initializeTestData };
