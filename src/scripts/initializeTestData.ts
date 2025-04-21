@@ -5,9 +5,11 @@ import { ensureTestUser } from "./ensureTestUser";
 // Helper function to run SQL directly for database operations not in the API
 async function runSQL(query: string, params?: Record<string, any>) {
   try {
-    const { data, error } = await supabase.rpc('run_sql', { 
-      sql_query: query,
-      params: params || {}
+    const { data, error } = await supabase.functions.invoke('execute-sql', {
+      body: { 
+        sql_query: query,
+        params: params || {}
+      }
     });
     
     if (error) {
@@ -24,22 +26,19 @@ async function runSQL(query: string, params?: Record<string, any>) {
 // Check if a table exists using direct SQL
 async function checkTableExists(tableName: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc('run_sql', {
-      sql_query: `
-        SELECT EXISTS (
-          SELECT FROM information_schema.tables 
-          WHERE table_schema = 'public' 
-          AND table_name = '${tableName}'
-        )
-      `
-    });
+    const result = await runSQL(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = '${tableName}'
+      )
+    `);
     
-    if (error) {
-      console.error("Error checking table:", error);
+    if (!result || !Array.isArray(result) || result.length === 0) {
       return false;
     }
     
-    return data && data.length > 0 && data[0].exists;
+    return result[0]?.exists === true;
   } catch (e) {
     console.error("Error in checkTableExists:", e);
     return false;
@@ -195,7 +194,7 @@ async function initializeTestData() {
     if (!tableExists) {
       console.log("La tabla pozos_usuarios no existe. Creándola...");
       
-      // Crear tabla directamente con SQL ya que no tenemos la función RPC
+      // Crear tabla directamente con SQL
       await runSQL(`
         CREATE TABLE IF NOT EXISTS public.pozos_usuarios (
           id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -223,7 +222,7 @@ async function initializeTestData() {
       try {
         console.log(`Asignando pozo ${well.nombre} (${well.id}) al usuario ${testUserId}...`);
         
-        // Use SQL to insert directly since the table is not in the types
+        // Use SQL to insert directly
         await runSQL(`
           INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
           VALUES ('${testUserId}', '${well.id}')
@@ -246,7 +245,8 @@ async function initializeTestData() {
         WHERE usuario_id = '${testUserId}'
       `);
       
-      console.log(`El usuario tiene ${result?.length || 0} pozos asignados:`, result);
+      const wellsCount = Array.isArray(result) ? result.length : 0;
+      console.log(`El usuario tiene ${wellsCount} pozos asignados:`, result);
     } catch (e) {
       console.error("Error al verificar asignaciones:", e);
     }

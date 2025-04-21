@@ -4,9 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 // Helper function to run SQL directly for database operations not in the API
 async function runSQL(query: string, params?: Record<string, any>) {
   try {
-    const { data, error } = await supabase.rpc('run_sql', { 
-      sql_query: query,
-      params: params || {}
+    const { data, error } = await supabase.functions.invoke('execute-sql', {
+      body: { 
+        sql_query: query,
+        params: params || {}
+      }
     });
     
     if (error) {
@@ -68,7 +70,7 @@ async function assignWellsToUser() {
     for (const well of availableWells) {
       console.log(`Asignando pozo ${well.id} (${well.nombre || 'Sin nombre'}) al usuario...`);
       
-      // Use SQL to insert directly since the table is not in the types
+      // Use direct SQL execution
       await runSQL(`
         INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
         VALUES ('${userId}', '${well.id}')
@@ -85,7 +87,8 @@ async function assignWellsToUser() {
       WHERE usuario_id = '${userId}'
     `);
     
-    console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
+    const wellsCount = Array.isArray(userWells) ? userWells.length : 0;
+    console.log(`El usuario tiene ${wellsCount} pozos asignados:`, userWells);
   } catch (error) {
     console.error('Error ejecutando la asignación:', error);
   }
