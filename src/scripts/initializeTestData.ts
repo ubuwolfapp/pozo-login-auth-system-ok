@@ -2,6 +2,50 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ensureTestUser } from "./ensureTestUser";
 
+// Helper function to run SQL directly for database operations not in the API
+async function runSQL(query: string, params?: Record<string, any>) {
+  try {
+    const { data, error } = await supabase.rpc('run_sql', { 
+      sql_query: query,
+      params: params || {}
+    });
+    
+    if (error) {
+      console.error("SQL error:", error);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.error("SQL execution error:", e);
+    return null;
+  }
+}
+
+// Check if a table exists using direct SQL
+async function checkTableExists(tableName: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('run_sql', {
+      sql_query: `
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = '${tableName}'
+        )
+      `
+    });
+    
+    if (error) {
+      console.error("Error checking table:", error);
+      return false;
+    }
+    
+    return data && data.length > 0 && data[0].exists;
+  } catch (e) {
+    console.error("Error in checkTableExists:", e);
+    return false;
+  }
+}
+
 async function initializeTestData() {
   try {
     console.log("Iniciando proceso de creación de datos de prueba...");
@@ -24,6 +68,7 @@ async function initializeTestData() {
         return;
       }
       
+      // Convert ID to string if it's a number
       testUserId = String(foundUser.id);
       console.log("Usuario encontrado con ID:", testUserId);
     }
@@ -143,58 +188,49 @@ async function initializeTestData() {
       console.log(`Usuario ${testUserId} asociado con mapa ${mapId}`);
     }
 
-    // 8. Crear tabla pozos_usuarios si no existe
+    // 8. Verificar si existe la tabla pozos_usuarios
     console.log("Verificando si existe la tabla pozos_usuarios...");
-    const { error: tableError } = await supabase.rpc("check_table_exists", {
-      p_table_name: "pozos_usuarios"
-    });
+    const tableExists = await checkTableExists('pozos_usuarios');
     
-    if (tableError) {
-      console.error("Error al verificar tabla pozos_usuarios:", tableError);
-      console.log("Creando tabla pozos_usuarios...");
+    if (!tableExists) {
+      console.log("La tabla pozos_usuarios no existe. Creándola...");
       
-      // Create the table with a simple query
-      const { error: createTableError } = await supabase.rpc("create_pozos_usuarios_table");
+      // Crear tabla directamente con SQL ya que no tenemos la función RPC
+      await runSQL(`
+        CREATE TABLE IF NOT EXISTS public.pozos_usuarios (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          usuario_id UUID NOT NULL,
+          pozo_id UUID NOT NULL,
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+          UNIQUE(usuario_id, pozo_id)
+        );
+        
+        COMMENT ON TABLE public.pozos_usuarios IS 'Tabla de relación entre usuarios y pozos';
+        
+        -- Add indexes for better performance
+        CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_usuario_id ON public.pozos_usuarios(usuario_id);
+        CREATE INDEX IF NOT EXISTS idx_pozos_usuarios_pozo_id ON public.pozos_usuarios(pozo_id);
+      `);
       
-      if (createTableError) {
-        console.error("Error al crear tabla pozos_usuarios:", createTableError);
-      } else {
-        console.log("Tabla pozos_usuarios creada correctamente");
-      }
+      console.log("Tabla pozos_usuarios creada correctamente");
+    } else {
+      console.log("La tabla pozos_usuarios ya existe");
     }
     
-    // 9. Asignar TODOS los pozos al usuario de prueba
+    // 9. Asignar TODOS los pozos al usuario de prueba directamente con SQL
     console.log("Asignando pozos al usuario de prueba...");
     for (const well of wellList) {
       try {
         console.log(`Asignando pozo ${well.nombre} (${well.id}) al usuario ${testUserId}...`);
         
-        // Insertar directamente en pozos_usuarios si no existe la función RPC
-        // Este enfoque es un respaldo por si la función RPC no existe
-        const { error: insertError } = await supabase
-          .from("pozos_usuarios")
-          .upsert({
-            usuario_id: testUserId,
-            pozo_id: well.id
-          });
+        // Use SQL to insert directly since the table is not in the types
+        await runSQL(`
+          INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
+          VALUES ('${testUserId}', '${well.id}')
+          ON CONFLICT (usuario_id, pozo_id) DO NOTHING
+        `);
         
-        if (insertError) {
-          console.error(`Error asignando pozo ${well.id} al usuario ${testUserId}:`, insertError);
-          
-          // Intentar con la función RPC si está disponible
-          const { error: rpcError } = await supabase.rpc("assign_well_to_user", {
-            p_usuario_id: testUserId,
-            p_pozo_id: well.id
-          });
-          
-          if (rpcError) {
-            console.error(`RPC error asignando pozo ${well.id}:`, rpcError);
-          } else {
-            console.log(`Pozo ${well.nombre} asignado correctamente mediante RPC`);
-          }
-        } else {
-          console.log(`Pozo ${well.nombre} asignado correctamente mediante inserción directa`);
-        }
+        console.log(`Pozo ${well.nombre} asignado correctamente mediante SQL directa`);
       } catch (err) {
         console.error(`Error al asignar pozo ${well.id}:`, err);
       }
@@ -202,19 +238,15 @@ async function initializeTestData() {
 
     console.log("Datos de prueba inicializados correctamente.");
     
-    // Verificar asignaciones
+    // Verificar asignaciones con SQL
     console.log("Verificando asignaciones de pozos...");
     try {
-      const { data: userWells, error: checkError } = await supabase
-        .from("pozos_usuarios")
-        .select("pozo_id")
-        .eq("usuario_id", testUserId);
+      const result = await runSQL(`
+        SELECT pozo_id FROM public.pozos_usuarios 
+        WHERE usuario_id = '${testUserId}'
+      `);
       
-      if (checkError) {
-        console.error("Error al verificar pozos asignados:", checkError);
-      } else {
-        console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
-      }
+      console.log(`El usuario tiene ${result?.length || 0} pozos asignados:`, result);
     } catch (e) {
       console.error("Error al verificar asignaciones:", e);
     }

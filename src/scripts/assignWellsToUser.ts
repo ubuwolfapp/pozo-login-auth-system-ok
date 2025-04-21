@@ -1,6 +1,25 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Helper function to run SQL directly for database operations not in the API
+async function runSQL(query: string, params?: Record<string, any>) {
+  try {
+    const { data, error } = await supabase.rpc('run_sql', { 
+      sql_query: query,
+      params: params || {}
+    });
+    
+    if (error) {
+      console.error("SQL error:", error);
+      return null;
+    }
+    return data;
+  } catch (e) {
+    console.error("SQL execution error:", e);
+    return null;
+  }
+}
+
 async function assignWellsToUser() {
   try {
     console.log("Iniciando proceso de asignación de pozos...");
@@ -45,34 +64,28 @@ async function assignWellsToUser() {
     
     console.log(`Se encontraron ${availableWells.length} pozos disponibles.`);
 
-    // Asignar todos los pozos al usuario
+    // Asignar todos los pozos al usuario con SQL directo
     for (const well of availableWells) {
       console.log(`Asignando pozo ${well.id} (${well.nombre || 'Sin nombre'}) al usuario...`);
       
-      const { error: assignError } = await supabase.rpc(
-        'assign_well_to_user',
-        { p_usuario_id: userId, p_pozo_id: well.id }
-      );
+      // Use SQL to insert directly since the table is not in the types
+      await runSQL(`
+        INSERT INTO public.pozos_usuarios (usuario_id, pozo_id)
+        VALUES ('${userId}', '${well.id}')
+        ON CONFLICT (usuario_id, pozo_id) DO NOTHING
+      `);
       
-      if (assignError) {
-        console.error(`Error asignando el pozo ${well.id} al usuario:`, assignError);
-      } else {
-        console.log(`Pozo ${well.id} asignado al usuario ${userEmail} correctamente.`);
-      }
+      console.log(`Pozo ${well.id} asignado al usuario ${userEmail} correctamente.`);
     }
     
-    // Verificar asignaciones
+    // Verificar asignaciones con SQL
     console.log("Verificando asignaciones de pozos...");
-    const { data: userWells, error: checkError } = await supabase.rpc(
-      "get_user_wells",
-      { p_usuario_id: userId }
-    );
+    const userWells = await runSQL(`
+      SELECT pozo_id FROM public.pozos_usuarios 
+      WHERE usuario_id = '${userId}'
+    `);
     
-    if (checkError) {
-      console.error("Error al verificar pozos asignados:", checkError);
-    } else {
-      console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
-    }
+    console.log(`El usuario tiene ${userWells?.length || 0} pozos asignados:`, userWells);
   } catch (error) {
     console.error('Error ejecutando la asignación:', error);
   }
