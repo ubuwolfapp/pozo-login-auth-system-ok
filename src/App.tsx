@@ -14,13 +14,13 @@ import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
 import WellDetails from "./pages/WellDetails";
 
+// Create a new QueryClient instance outside of component
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <TooltipProvider>
-        <Toaster />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Navigate to="/auth/login" replace />} />
@@ -78,6 +78,7 @@ const App = () => (
           />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Toaster />
       </TooltipProvider>
     </BrowserRouter>
   </QueryClientProvider>
