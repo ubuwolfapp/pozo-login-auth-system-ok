@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -185,17 +186,82 @@ const Alerts = () => {
     }
   };
 
+  // NUEVA FUNCIÓN: Eliminar alertas resueltas y guardarlas en el historial
+  const handleDeleteResolvedAlerts = async () => {
+    if (!alerts || !alerts.length) return;
+    try {
+      const resolvedAlerts = alerts.filter(a => a.resuelto);
+      if (resolvedAlerts.length === 0) return;
+
+      toast({ title: "Eliminando...", description: "Moviendo alertas resueltas al historial." });
+
+      // Primero, guardar en historial
+      const historialInserts = resolvedAlerts.map(alert => ({
+        alerta_original_id: alert.id,
+        tipo: alert.tipo,
+        mensaje: alert.mensaje,
+        pozo_id: alert.pozo?.id || '',
+        created_at: alert.created_at,
+        resuelto: alert.resuelto,
+        fecha_resolucion: alert.fecha_resolucion,
+        resolucion: alert.resolucion,
+        valor: alert.valor,
+        unidad: alert.unidad,
+        eliminado_at: new Date().toISOString(),
+      }));
+
+      // Insertar todas al historial de alertas
+      const { error: insertHistError } = await supabase.from('alertas_historial').insert(historialInserts);
+      if (insertHistError) {
+        console.error("Error insertando historial:", insertHistError);
+        toast({ title: "Error", description: "No se pudo guardar el historial antes de eliminar.", variant: "destructive" });
+        return;
+      }
+
+      const ids = resolvedAlerts.map(alert => alert.id);
+      // Eliminar las alertas resueltas de la tabla principal
+      const { error: deleteError } = await supabase.from('alertas').delete().in('id', ids);
+      if (deleteError) {
+        console.error("Error eliminando alertas resueltas:", deleteError);
+        toast({ title: "Error", description: "No se pudieron eliminar las alertas resueltas.", variant: "destructive" });
+        return;
+      }
+
+      toast({
+        title: "Resueltas eliminadas",
+        description: "Las alertas resueltas fueron movidas al historial y eliminadas.",
+      });
+
+      await queryClient.invalidateQueries({ queryKey: ['alerts'] });
+    } catch (err) {
+      console.error("Error en eliminación de alertas resueltas:", err);
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al eliminar las alertas resueltas.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
 
-      <div className="container mx-auto flex justify-end px-4 pt-4">
+      <div className="container mx-auto flex justify-end px-4 pt-4 gap-3">
         <button
           className="bg-pozo-orange text-white rounded px-4 py-2 font-semibold shadow hover:bg-orange-500 transition"
           onClick={handleResolveAllAlerts}
           disabled={!alerts || alerts.length === 0 || alerts.every(a => a.resuelto)}
         >
           Resolver todas
+        </button>
+        {/* BOTÓN NUEVO: Eliminar resueltas */}
+        <button
+          className="bg-red-600 text-white rounded px-4 py-2 font-semibold shadow hover:bg-red-700 transition"
+          onClick={handleDeleteResolvedAlerts}
+          disabled={!alerts || alerts.filter(a => a.resuelto).length === 0}
+        >
+          Eliminar resueltas
         </button>
       </div>
 
