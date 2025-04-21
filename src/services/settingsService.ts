@@ -133,7 +133,10 @@ export const settingsService = {
           description: "Configuración creada correctamente",
         });
 
-        return data as UserSettings;
+        return {
+          ...data,
+          simulacion_activa: data.simulacion_activa ?? true
+        } as UserSettings;
       } else {
         const { data, error } = await supabase
           .from('configuracion_usuario')
