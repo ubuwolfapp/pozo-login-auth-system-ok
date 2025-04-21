@@ -96,6 +96,7 @@ export type Database = {
           idioma: string | null
           notificaciones_activas: boolean | null
           push_activo: boolean | null
+          simulacion_activa: boolean | null
           sms_activo: boolean | null
           umbral_flujo: number | null
           umbral_presion: number | null
@@ -109,6 +110,7 @@ export type Database = {
           idioma?: string | null
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
+          simulacion_activa?: boolean | null
           sms_activo?: boolean | null
           umbral_flujo?: number | null
           umbral_presion?: number | null
@@ -122,6 +124,7 @@ export type Database = {
           idioma?: string | null
           notificaciones_activas?: boolean | null
           push_activo?: boolean | null
+          simulacion_activa?: boolean | null
           sms_activo?: boolean | null
           umbral_flujo?: number | null
           umbral_presion?: number | null
