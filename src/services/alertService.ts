@@ -20,27 +20,22 @@ export const alertService = {
         return [];
       }
       
-      // Get wells assigned to the current user
-      const { data: userWells, error: wellsError } = await supabase
-        .from('pozos_usuarios')
-        .select('pozo_id')
-        .eq('usuario_id', userId);
+      // Get wells assigned to the current user using RPC
+      const { data: userWellIds, error: rpcError } = await supabase.rpc(
+        'get_user_wells',
+        { p_usuario_id: userId }
+      );
         
-      if (wellsError) throw wellsError;
-      
-      if (!userWells || userWells.length === 0) {
+      if (rpcError || !userWellIds || userWellIds.length === 0) {
         console.log('No wells assigned to current user');
         return [];
       }
-      
-      // Extract well IDs
-      const wellIds = userWells.map(well => well.pozo_id);
       
       // Fetch alerts for the user's wells
       const { data: dbAlerts, error } = await supabase
         .from('alertas')
         .select('*, pozo:pozo_id (id, nombre)')
-        .in('pozo_id', wellIds)
+        .in('pozo_id', userWellIds)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -84,14 +79,13 @@ export const alertService = {
     
     if (alertError) throw alertError;
     
-    const { data: assignment, error: assignmentError } = await supabase
-      .from('pozos_usuarios')
-      .select('id')
-      .eq('usuario_id', userId)
-      .eq('pozo_id', alert.pozo_id)
-      .single();
+    // Check well assignment using RPC
+    const { data: hasAccess, error: accessError } = await supabase.rpc(
+      'check_well_user_assignment',
+      { p_usuario_id: userId, p_pozo_id: alert.pozo_id }
+    );
     
-    if (assignmentError || !assignment) {
+    if (accessError || !hasAccess) {
       throw new Error("Usuario no tiene acceso a esta alerta");
     }
     
@@ -127,15 +121,13 @@ export const alertService = {
     
     if (!userId) throw new Error("No user is logged in");
     
-    // Get wells assigned to the user
-    const { data: userWells } = await supabase
-      .from('pozos_usuarios')
-      .select('pozo_id')
-      .eq('usuario_id', userId);
+    // Get wells assigned to the user using RPC
+    const { data: userWellIds, error: rpcError } = await supabase.rpc(
+      'get_user_wells',
+      { p_usuario_id: userId }
+    );
     
-    if (!userWells || userWells.length === 0) return;
-    
-    const userWellIds = userWells.map(w => w.pozo_id);
+    if (rpcError || !userWellIds || userWellIds.length === 0) return;
     
     // Get alerts that belong to the user's wells
     const { data: allowedAlerts } = await supabase
@@ -182,14 +174,13 @@ export const alertService = {
     
     if (alertError) throw alertError;
     
-    const { data: assignment, error: assignmentError } = await supabase
-      .from('pozos_usuarios')
-      .select('id')
-      .eq('usuario_id', userId)
-      .eq('pozo_id', alert.pozo_id)
-      .single();
+    // Check well assignment using RPC
+    const { data: hasAccess, error: accessError } = await supabase.rpc(
+      'check_well_user_assignment',
+      { p_usuario_id: userId, p_pozo_id: alert.pozo_id }
+    );
     
-    if (assignmentError || !assignment) {
+    if (accessError || !hasAccess) {
       throw new Error("Usuario no tiene acceso a esta alerta");
     }
     
@@ -214,15 +205,13 @@ export const alertService = {
     
     if (!userId) throw new Error("No user is logged in");
     
-    // Get wells assigned to the user
-    const { data: userWells } = await supabase
-      .from('pozos_usuarios')
-      .select('pozo_id')
-      .eq('usuario_id', userId);
+    // Get wells assigned to the user using RPC
+    const { data: userWellIds, error: rpcError } = await supabase.rpc(
+      'get_user_wells',
+      { p_usuario_id: userId }
+    );
     
-    if (!userWells || userWells.length === 0) return;
-    
-    const userWellIds = userWells.map(w => w.pozo_id);
+    if (rpcError || !userWellIds || userWellIds.length === 0) return;
     
     // Get alerts that belong to the user's wells
     const { data: alerts } = await supabase

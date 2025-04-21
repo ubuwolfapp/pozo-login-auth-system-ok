@@ -20,15 +20,14 @@ export const simulationService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
       
-      // Check if the well is assigned to the current user
-      const { data: assignedWell, error: assignmentError } = await supabase
-        .from('pozos_usuarios')
-        .select('pozo_id')
-        .eq('usuario_id', userId)
-        .eq('pozo_id', pozoId)
-        .single();
+      // Check if the well is assigned to the current user using RPC function
+      // This avoids the TypeScript error with the pozos_usuarios table
+      const { data: wellBelongsToUser, error: rpcError } = await supabase.rpc(
+        'check_well_user_assignment',
+        { p_usuario_id: userId, p_pozo_id: pozoId }
+      );
       
-      if (assignmentError || !assignedWell) {
+      if (rpcError || !wellBelongsToUser) {
         console.log('Well is not assigned to current user:', pozoId);
         return false;
       }
@@ -76,22 +75,20 @@ export const simulationService = {
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
       
-      // Get wells assigned to the current user
-      const { data: userWells, error: wellsError } = await supabase
-        .from('pozos_usuarios')
-        .select('pozo_id')
-        .eq('usuario_id', userId);
+      // Get wells assigned to the current user using RPC function
+      const { data: userWellIds, error: rpcError } = await supabase.rpc(
+        'get_user_wells',
+        { p_usuario_id: userId }
+      );
 
-      if (wellsError) throw wellsError;
-
-      if (!userWells || userWells.length === 0) {
+      if (rpcError || !userWellIds || !userWellIds.length) {
         console.log('No wells assigned to current user');
         return false;
       }
 
       // Simulate values for each of the user's assigned wells
-      for (const well of userWells) {
-        await this.simulateWellValues(well.pozo_id);
+      for (const wellId of userWellIds) {
+        await this.simulateWellValues(wellId);
       }
 
       return true;

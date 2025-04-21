@@ -42,7 +42,7 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
     queryFn: async () => {
       if (selectedWellId) {
         try {
-          // Verify user has access to this well
+          // Verify user has access to this well using RPC
           const { data: userData } = await supabase.auth.getUser();
           const userId = userData.user?.id;
           
@@ -51,14 +51,13 @@ export function useAlerts(activeFilter: AlertType, selectedWellId: string | null
             return generateSamplePressureData();
           }
           
-          const { data: assignment, error: assignmentError } = await supabase
-            .from('pozos_usuarios')
-            .select('id')
-            .eq('usuario_id', userId)
-            .eq('pozo_id', selectedWellId)
-            .single();
+          // Check well assignment using RPC
+          const { data: hasAccess, error: accessError } = await supabase.rpc(
+            'check_well_user_assignment',
+            { p_usuario_id: userId, p_pozo_id: selectedWellId }
+          );
           
-          if (assignmentError || !assignment) {
+          if (accessError || !hasAccess) {
             console.log('Well is not assigned to current user, using sample data');
             return generateSamplePressureData();
           }

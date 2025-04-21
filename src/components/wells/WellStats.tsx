@@ -39,7 +39,7 @@ const WellStats = ({ well }: WellStatsProps) => {
             Producción: {production.toLocaleString()} barriles/día
           </div>
           <div className="text-white text-sm mt-1">
-            Última actualización: {new Date(well.ultima_actualizacion).toLocaleDateString()}
+            Última actualización: {new Date(well.ultima_actualizacion || new Date()).toLocaleDateString()}
           </div>
         </div>
       </div>
