@@ -5,7 +5,6 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Well } from '@/services/wellService';
 
-// Corrige el icono por defecto de leaflet (sino no aparece nada)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -19,9 +18,11 @@ L.Icon.Default.mergeOptions({
 interface WellMapLeafletProps {
   wells: Well[];
   onSelectWell: (well: Well) => void;
+  initialCenter?: [number, number];
+  initialZoom?: number;
 }
 
-const DEFAULT_POSITION = [19.4326, -99.1332]; // CDMX
+const DEFAULT_POSITION: [number, number] = [19.4326, -99.1332];
 
 const estadoColor = (estado: string) => {
   if (estado === 'activo') return 'bg-green-500';
@@ -29,12 +30,17 @@ const estadoColor = (estado: string) => {
   return 'bg-red-600';
 };
 
-const WellMapLeaflet: React.FC<WellMapLeafletProps> = ({ wells, onSelectWell }) => {
+const WellMapLeaflet: React.FC<WellMapLeafletProps> = ({
+  wells,
+  onSelectWell,
+  initialCenter = DEFAULT_POSITION,
+  initialZoom = 6,
+}) => {
   return (
     <div className="relative w-full h-[50vh] rounded-lg overflow-hidden bg-slate-800">
       <MapContainer
-        center={DEFAULT_POSITION as [number, number]}
-        zoom={6}
+        center={initialCenter}
+        zoom={initialZoom}
         className="w-full h-full min-h-[50vh]"
         scrollWheelZoom={true}
         style={{
