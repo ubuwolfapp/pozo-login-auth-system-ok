@@ -1,25 +1,33 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { settingsService } from "./settingsService";
 
 export const simulationService = {
   async simulateWellValues(pozoId: string) {
     try {
-      // Llamar a la función RPC de Supabase para simular valores
+      // Check if simulation is enabled in user settings
+      const settings = await settingsService.getUserSettings();
+      if (settings && settings.simulacion_activa === false) {
+        console.log('Simulation is disabled in user settings');
+        return false;
+      }
+
+      // Call the Supabase RPC function to simulate values
       const { error } = await supabase.rpc('simular_valores_pozo', {
         p_pozo_id: pozoId
       });
 
       if (error) throw error;
 
-      // Obtener el ID del usuario actual
+      // Get the current user ID
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
       const userId = userData.user?.id;
       if (!userId) throw new Error("No user is logged in");
 
-      // Comprobar umbrales y generar alertas si es necesario
+      // Check thresholds and generate alerts if needed
       const { error: checkError } = await supabase.rpc('comprobar_umbrales_pozo', {
         p_pozo_id: pozoId,
         p_usuario_id: userId
@@ -41,7 +49,14 @@ export const simulationService = {
 
   async simulateAllWells() {
     try {
-      // Obtener todos los pozos
+      // Check if simulation is enabled in user settings
+      const settings = await settingsService.getUserSettings();
+      if (settings && settings.simulacion_activa === false) {
+        console.log('Simulation is disabled in user settings');
+        return false;
+      }
+      
+      // Get all wells
       const { data: wells, error: wellsError } = await supabase
         .from('pozos')
         .select('id');
@@ -50,7 +65,7 @@ export const simulationService = {
 
       if (!wells || wells.length === 0) return false;
 
-      // Simular valores para cada pozo
+      // Simulate values for each well
       for (const well of wells) {
         await this.simulateWellValues(well.id);
       }
