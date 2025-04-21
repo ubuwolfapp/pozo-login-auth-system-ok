@@ -37,38 +37,19 @@ export const userService = {
     console.log("No se encontraron usuarios en tabla pública, consultando usuarios autenticados...");
     
     try {
-      // Obtenemos todos los usuarios autenticados (requiere privilegios de admin en función RPC)
-      // Esto solo funcionará si tenemos una función RPC configurada o usamos el cliente admin
-      const { data: authUsersData, error: authError } = await supabase.rpc('get_all_auth_users');
+      // Obtenemos el usuario actual como fallback
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (authError) {
-        console.error("Error al obtener usuarios autenticados via RPC:", authError);
-        console.log("Intentando obtener al menos el usuario actual");
+      if (session?.user) {
+        const currentUser = session.user;
+        console.log("Usuario actual encontrado:", currentUser);
         
-        // Si falla la RPC, al menos intentamos obtener el usuario actual
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          const currentUser = session.user;
-          console.log("Usuario actual encontrado:", currentUser);
-          
-          return [{
-            id: currentUser.id,
-            email: currentUser.email || "usuario@example.com",
-            nombre: currentUser.email?.split('@')[0] || "Usuario",
-            rol: "usuario"
-          }];
-        }
-      }
-      
-      if (authUsersData && authUsersData.length > 0) {
-        console.log("Usuarios autenticados encontrados via RPC:", authUsersData);
-        return authUsersData.map((user: any) => ({
-          id: user.id,
-          email: user.email || "",
-          nombre: user.email?.split('@')[0] || "Usuario",
+        return [{
+          id: currentUser.id,
+          email: currentUser.email || "usuario@example.com",
+          nombre: currentUser.email?.split('@')[0] || "Usuario",
           rol: "usuario"
-        }));
+        }];
       }
       
       // Si no pudimos obtener usuarios de ningún lado, devolver al menos un usuario de ejemplo
