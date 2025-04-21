@@ -4,14 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 async function initializeTestData() {
   try {
     // 1. Eliminar datos existentes (cuidado en entornos de producción)
-    await supabase.from("fotos_pozos").delete().neq("id", 0);
-    await supabase.from("presion_historial").delete().neq("id", 0);
-    await supabase.from("alertas").delete().neq("id", 0);
-    await supabase.from("tareas").delete().neq("id", 0);
-    await supabase.from("camaras_pozos").delete().neq("id", 0);
-    await supabase.from("pozos_mapas_relacion").delete().neq("id", 0);
-    await supabase.from("pozos").delete().neq("id", 0);
-    await supabase.from("pozos_mapa").delete().neq("id", 0);
+    await supabase.from("fotos_pozos").delete().neq("id", "0");
+    await supabase.from("presion_historial").delete().neq("id", "0");
+    await supabase.from("alertas").delete().neq("id", "0");
+    await supabase.from("tareas").delete().neq("id", "0");
+    await supabase.from("camaras_pozos").delete().neq("id", "0");
+    await supabase.from("pozos_mapas_relacion").delete().neq("id", "0");
+    await supabase.from("pozos").delete().neq("id", "0");
+    await supabase.from("pozos_mapa").delete().neq("id", "0");
 
     // 2. Crear mapa por defecto
     let mapId: string;
