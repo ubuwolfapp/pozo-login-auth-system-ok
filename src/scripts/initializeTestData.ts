@@ -5,7 +5,7 @@ async function initializeTestData() {
   try {
     // 1. Eliminar datos existentes (cuidado en entornos de producción)
     await supabase.from("fotos_pozos").delete().neq("id", "0");
-    await supabase.from("presion_historial").delete().neq("id", "0");
+    await supabase.from("presion_historial").delete().neq("id", 0); // This is a number field
     await supabase.from("alertas").delete().neq("id", "0");
     await supabase.from("tareas").delete().neq("id", "0");
     await supabase.from("camaras_pozos").delete().neq("id", "0");
