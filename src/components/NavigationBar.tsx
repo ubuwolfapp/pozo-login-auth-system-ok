@@ -18,7 +18,7 @@ interface NavigationIconProps {
 }
 
 const BadgeNumber: React.FC<{ count: number }> = ({ count }) => (
-  <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full px-1.5 text-[11px] min-w-[18px] text-center border border-white shadow font-bold z-10">
+  <span className="absolute -top-3 right-1 bg-red-500 text-white rounded-full px-1 text-[10px] min-w-[16px] text-center border border-white shadow font-bold z-10 leading-[14px]">
     {count}
   </span>
 );
