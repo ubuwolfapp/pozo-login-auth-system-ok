@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import NavigationBar from '@/components/NavigationBar';
 import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -164,9 +165,12 @@ const Settings = () => {
           <div className="mt-6">
             <Button 
               onClick={handleSaveChanges} 
-              isLoading={updateSettingsMutation.isLoading} 
-              disabled={updateSettingsMutation.isLoading}
+              disabled={updateSettingsMutation.isPending}
+              className="relative"
             >
+              {updateSettingsMutation.isPending && (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              )}
               Guardar Cambios
             </Button>
           </div>
@@ -178,4 +182,3 @@ const Settings = () => {
 };
 
 export default Settings;
-
