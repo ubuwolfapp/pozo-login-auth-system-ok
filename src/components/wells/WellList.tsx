@@ -23,9 +23,16 @@ const WellList: React.FC<WellListProps> = ({ wells, onSelectWell }) => {
               <p className="text-sm text-gray-400">{well.produccion_diaria} barriles/día</p>
             </div>
           </div>
-          {well.estado === 'advertencia' && (
-            <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
-          )}
+          <div className="flex items-center space-x-4">
+            {well.estado === 'advertencia' && (
+              <ExclamationTriangleIcon className="h-6 w-6 text-red-500" />
+            )}
+            <img
+              src="https://via.placeholder.com/48"
+              alt="Pozo ejemplo"
+              className="w-12 h-12 rounded-md object-cover border border-gray-600"
+            />
+          </div>
         </div>
       ))}
     </div>
@@ -33,3 +40,4 @@ const WellList: React.FC<WellListProps> = ({ wells, onSelectWell }) => {
 };
 
 export default WellList;
+
