@@ -5,7 +5,7 @@ async function initializeTestData() {
   try {
     // 1. Eliminar datos existentes (cuidado en entornos de producción)
     await supabase.from("fotos_pozos").delete().neq("id", "0");
-    await supabase.from("presion_historial").delete().neq("id", 0); // This is a number field
+    await supabase.from("presion_historial").delete().neq("id", 0);
     await supabase.from("alertas").delete().neq("id", "0");
     await supabase.from("tareas").delete().neq("id", "0");
     await supabase.from("camaras_pozos").delete().neq("id", "0");
@@ -13,13 +13,13 @@ async function initializeTestData() {
     await supabase.from("pozos").delete().neq("id", "0");
     await supabase.from("pozos_mapa").delete().neq("id", "0");
 
-    // 2. Crear mapa por defecto
+    // 2. Crear mapa por defecto para OpenStreetMap (nombre genérico)
     let mapId: string;
     {
       const { data: mapa, error: mapaError } = await supabase
         .from("pozos_mapa")
         .insert({
-          nombre: "Mapa de prueba",
+          nombre: "Mapa de prueba OpenStreetMap",
           centro_latitud: 19.4326,
           centro_longitud: -99.1332,
           zoom_inicial: 5,
@@ -30,36 +30,30 @@ async function initializeTestData() {
       mapId = mapa.id;
     }
 
-    // 3. Crear usuarios de prueba
-    const exampleUsers = [
-      { email: "prueba@gmail.com", password: "contraseña123", nombre: "Usuario Prueba", rol: "ingeniero" },
-      { email: "demo2@pozos.com", password: "test456", nombre: "Jane Demo", rol: "supervisor" },
-    ];
-
-    let userList: { id: any; email: string }[] = [];
-    for (const u of exampleUsers) {
-      // Busca si el usuario existe
-      const { data: userExists } = await supabase
+    // 3. Crear usuario de prueba en la DB pública (no solo en auth)
+    let testUserId: number;
+    {
+      const { data: foundUser, error } = await supabase
         .from("usuarios")
-        .select("id")
-        .eq("email", u.email)
+        .select("id,email")
+        .eq("email", "prueba@gmail.com")
         .maybeSingle();
 
-      if (!userExists) {
+      if (!foundUser) {
         const { data: newUser, error: userError } = await supabase
           .from("usuarios")
           .insert({
-            email: u.email,
-            password: u.password,
-            nombre: u.nombre,
-            rol: u.rol,
+            email: "prueba@gmail.com",
+            password: "contraseña123",
+            nombre: "Usuario Prueba",
+            rol: "ingeniero",
           })
-          .select("id,email")
+          .select("id")
           .single();
         if (userError) throw userError;
-        userList.push({ id: newUser.id, email: newUser.email });
+        testUserId = newUser.id;
       } else {
-        userList.push({ id: userExists.id, email: u.email });
+        testUserId = foundUser.id;
       }
     }
 
@@ -100,7 +94,6 @@ async function initializeTestData() {
       },
     ];
 
-    // Insertar y recuperar IDs
     let wellList: { id: string; nombre: string }[] = [];
     for (const w of exampleWells) {
       const { data: well, error: wellError } = await supabase
@@ -112,33 +105,27 @@ async function initializeTestData() {
       wellList.push({ id: well.id, nombre: well.nombre });
     }
 
-    // 5. Relacionar pozos con mapa y usuarios (RPC)
+    // 5. Relacionar pozos con el mapa creado (tabla de relación)
     for (const well of wellList) {
-      // Relación con mapa
-      const { error: relError } = await supabase.rpc(
-        "assign_well_to_map",
-        { p_pozo_id: well.id, p_pozos_mapa_id: mapId }
-      );
-      if (relError) {
-        console.error(`Error relacionando pozo ${well.nombre} con mapa:`, relError);
-      }
+      await supabase.from("pozos_mapas_relacion").insert({
+        pozo_id: well.id,
+        pozos_mapa_id: mapId,
+      });
+    }
 
-      // Asignación a usuarios demo
-      for (const u of userList) {
-        // Asignar solo los dos primeros pozos al primer usuario
-        if (
-          (u.email === "prueba@gmail.com" &&
-            (well.nombre === "Pozo Alpha" || well.nombre === "Pozo Gamma")) ||
-          (u.email === "demo2@pozos.com" && well.nombre === "Pozo Beta")
-        ) {
-          const { error: assignError } = await supabase.rpc(
-            "assign_well_to_user",
-            { p_usuario_id: u.id, p_pozo_id: well.id }
-          );
-          if (assignError) {
-            console.error(`Error asignando pozo a usuario demo:`, assignError);
-          }
-        }
+    // 6. Asignar dos pozos al usuario de prueba (usuarios-pozos)
+    // Suponiendo existe una tabla de relación (por la función assign_well_to_user de Supabase)
+    // Asignar Alpha y Gamma al usuario de prueba
+    for (const well of wellList) {
+      if (
+        well.nombre === "Pozo Alpha" ||
+        well.nombre === "Pozo Gamma"
+      ) {
+        // Llama función RPC assign_well_to_user
+        await supabase.rpc("assign_well_to_user", {
+          p_usuario_id: testUserId,
+          p_pozo_id: well.id,
+        });
       }
     }
 
