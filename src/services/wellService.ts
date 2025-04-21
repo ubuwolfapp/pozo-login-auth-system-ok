@@ -218,15 +218,16 @@ export const wellService = {
 
       if (error) throw error;
 
-      // Assign new well to current user using a different approach
+      // Assign new well to current user using the RPC function
       if (data) {
-        // Use direct insert to associate the well with the user
-        const { error: assignError } = await supabase
-          .from('pozos_usuarios')
-          .insert({
-            usuario_id: userId,
-            pozo_id: data
-          });
+        // Cast the function name to any to bypass type checking
+        const { error: assignError } = await supabase.rpc(
+          'assign_well_to_user' as any,
+          {
+            p_usuario_id: userId,
+            p_pozo_id: data
+          }
+        );
           
         if (assignError) throw assignError;
       }
