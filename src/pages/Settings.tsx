@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsService, UserSettings } from '@/services/settingsService';
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +18,16 @@ const Settings = () => {
     queryFn: settingsService.getUserSettings
   });
 
+  // Local state for form values
+  const [localSettings, setLocalSettings] = useState<UserSettings | null>(null);
+
+  // When data loads, initialize local state
+  useEffect(() => {
+    if (settings) {
+      setLocalSettings(settings);
+    }
+  }, [settings]);
+
   const updateSettingsMutation = useMutation({
     mutationFn: settingsService.updateSettings,
     onSuccess: () => {
@@ -25,37 +35,35 @@ const Settings = () => {
     },
   });
 
+  // Handlers update local state only
   const handleSwitchChange = (field: keyof UserSettings) => {
-    if (!settings) return;
-    updateSettingsMutation.mutate({
-      [field]: !settings[field]
-    });
+    if (!localSettings) return;
+    setLocalSettings(prev => prev ? { ...prev, [field]: !prev[field] } : prev);
   };
 
   const handlePressureThresholdChange = (value: string) => {
+    if (!localSettings) return;
     const numValue = parseInt(value);
     if (isNaN(numValue)) return;
+    setLocalSettings(prev => prev ? { ...prev, umbral_presion: numValue } : prev);
+  };
+
+  // Save button handler
+  const handleSaveChanges = () => {
+    if (!localSettings) return;
     updateSettingsMutation.mutate({
-      umbral_presion: numValue
+      notificaciones_activas: localSettings.notificaciones_activas,
+      push_activo: localSettings.push_activo,
+      correo_activo: localSettings.correo_activo,
+      sms_activo: localSettings.sms_activo,
+      umbral_presion: localSettings.umbral_presion,
+      idioma: localSettings.idioma
     });
   };
 
-  if (isLoading) {
+  if (isLoading || !localSettings) {
     return <div className="min-h-screen bg-slate-900 text-white p-6">Cargando...</div>;
   }
-
-  // Default values in case settings is null
-  const defaultSettings = {
-    notificaciones_activas: true,
-    push_activo: true,
-    correo_activo: true,
-    sms_activo: true,
-    umbral_presion: 8000,
-    idioma: 'español'
-  };
-  
-  // Use either the fetched settings or default values
-  const currentSettings = settings || defaultSettings;
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
@@ -80,7 +88,7 @@ const Settings = () => {
                 <span>Notificaciones</span>
               </div>
               <Switch
-                checked={currentSettings.notificaciones_activas}
+                checked={localSettings.notificaciones_activas}
                 onCheckedChange={() => handleSwitchChange('notificaciones_activas')}
               />
             </div>
@@ -91,7 +99,7 @@ const Settings = () => {
                 <span>Push</span>
               </div>
               <Switch
-                checked={currentSettings.push_activo}
+                checked={localSettings.push_activo}
                 onCheckedChange={() => handleSwitchChange('push_activo')}
               />
             </div>
@@ -102,7 +110,7 @@ const Settings = () => {
                 <span>Correo</span>
               </div>
               <Switch
-                checked={currentSettings.correo_activo}
+                checked={localSettings.correo_activo}
                 onCheckedChange={() => handleSwitchChange('correo_activo')}
               />
             </div>
@@ -113,7 +121,7 @@ const Settings = () => {
                 <span>SMS</span>
               </div>
               <Switch
-                checked={currentSettings.sms_activo}
+                checked={localSettings.sms_activo}
                 onCheckedChange={() => handleSwitchChange('sms_activo')}
               />
             </div>
@@ -130,7 +138,7 @@ const Settings = () => {
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
-                  value={currentSettings.umbral_presion || 8000}
+                  value={localSettings.umbral_presion || 8000}
                   onChange={(e) => handlePressureThresholdChange(e.target.value)}
                   className="w-24 bg-slate-700 border-slate-600"
                 />
@@ -152,6 +160,16 @@ const Settings = () => {
               </div>
             </div>
           </div>
+          {/* Guardar cambios */}
+          <div className="mt-6">
+            <Button 
+              onClick={handleSaveChanges} 
+              isLoading={updateSettingsMutation.isLoading} 
+              disabled={updateSettingsMutation.isLoading}
+            >
+              Guardar Cambios
+            </Button>
+          </div>
         </div>
       </div>
       <NavigationBar />
@@ -160,3 +178,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
