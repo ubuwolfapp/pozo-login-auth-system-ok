@@ -22,7 +22,7 @@ const Reports: React.FC = () => {
     new Date(new Date().setDate(new Date().getDate() - 15))
   );
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const { reportData, isLoading } = useReportData(selectedParameter);
+  const { reportData, isLoading } = useReportData(selectedParameter, startDate, endDate);
 
   const handleBack = () => {
     navigate(-1);
@@ -75,6 +75,7 @@ const Reports: React.FC = () => {
           <DateSelector 
             startDate={startDate}
             endDate={endDate}
+            onStartDateSelect={(date) => date && setStartDate(date)}
             onEndDateSelect={(date) => date && setEndDate(date)}
           />
           

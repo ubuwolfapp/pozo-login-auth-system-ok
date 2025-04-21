@@ -14,7 +14,7 @@ export interface ReportData {
   }[];
 }
 
-export function useReportData(selectedParameter: string) {
+export function useReportData(selectedParameter: string, startDate?: Date, endDate?: Date) {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,10 +22,16 @@ export function useReportData(selectedParameter: string) {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Formatear fechas para la consulta
+        const formattedStartDate = startDate ? startDate.toISOString() : new Date(new Date().setDate(new Date().getDate() - 15)).toISOString();
+        const formattedEndDate = endDate ? endDate.toISOString() : new Date().toISOString();
+
         if (selectedParameter === 'presion') {
           const { data: pressureData, error } = await supabase
             .from('presion_historial')
             .select('fecha, valor')
+            .gte('fecha', formattedStartDate)
+            .lte('fecha', formattedEndDate)
             .order('fecha', { ascending: true });
 
           if (error) throw error;
@@ -43,15 +49,29 @@ export function useReportData(selectedParameter: string) {
             });
           }
         } else {
+          // Para otros parámetros, generamos datos de ejemplo dentro del rango de fechas
+          const fechas = [];
+          const valores = [];
+          
+          // Generar datos para cada día en el rango
+          const currentDate = new Date(startDate || new Date(new Date().setDate(new Date().getDate() - 15)));
+          const end = new Date(endDate || new Date());
+          
+          while (currentDate <= end) {
+            fechas.push(currentDate.toISOString());
+            
+            // Generar un valor aleatorio entre 2000 y 4000
+            const randomValue = Math.floor(Math.random() * 2000) + 2000;
+            valores.push(randomValue);
+            
+            // Avanzar al día siguiente
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          
           setReportData({
             pozo_nombre: "Pozo #1",
-            fechas: [
-              "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04",
-              "2025-04-05", "2025-04-06", "2025-04-07", "2025-04-08",
-              "2025-04-09", "2025-04-10", "2025-04-11", "2025-04-12",
-              "2025-04-13", "2025-04-14", "2025-04-15", "2025-04-16"
-            ],
-            valores: [2000, 2500, 3000, 2000, 3500, 3000, 2500, 4000, 3000, 3500, 2000, 2500, 3000, 3500, 4000, 3000],
+            fechas: fechas,
+            valores: valores,
             resumen: [
               { parametro: "presion", valor: "8500 psi", estado: "Pendiente" },
               { parametro: "temperatura", valor: "75°C", estado: "En Progreso" },
@@ -72,7 +92,7 @@ export function useReportData(selectedParameter: string) {
     };
 
     fetchData();
-  }, [selectedParameter]);
+  }, [selectedParameter, startDate, endDate]);
 
   return { reportData, isLoading };
 }
