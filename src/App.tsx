@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
 import WellDetails from "./pages/WellDetails";
+import Cameras from "./pages/Cameras"; // Nueva página de cámaras
+import Map from "./pages/Map"; // Nueva página de mapa centralizado
 
 // Create a new QueryClient instance outside of component
 const queryClient = new QueryClient();
@@ -73,6 +75,23 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <WellDetails />
+              </ProtectedRoute>
+            } 
+          />
+          {/* Nuevas rutas */}
+          <Route 
+            path="/cameras" 
+            element={
+              <ProtectedRoute>
+                <Cameras />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/map" 
+            element={
+              <ProtectedRoute>
+                <Map />
               </ProtectedRoute>
             } 
           />

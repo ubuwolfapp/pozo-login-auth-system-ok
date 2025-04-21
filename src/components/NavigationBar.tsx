@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeIcon, BellIcon, ChartBarIcon, ListBulletIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
+import { Map, Video } from 'lucide-react';
 
 interface NavigationIconProps {
   icon: React.ReactNode;
@@ -44,6 +45,20 @@ const NavigationBar: React.FC = () => {
           label="Alertas"
           isActive={currentPath === '/alerts'} 
           onClick={() => navigate('/alerts')} 
+        />
+
+        <NavigationIcon 
+          icon={<Map className="h-6 w-6" />} 
+          label="Mapa"
+          isActive={currentPath === '/map'} 
+          onClick={() => navigate('/map')} 
+        />
+        
+        <NavigationIcon 
+          icon={<Video className="h-6 w-6" />} 
+          label="Cámaras"
+          isActive={currentPath === '/cameras'} 
+          onClick={() => navigate('/cameras')} 
         />
         
         <NavigationIcon 
