@@ -40,7 +40,13 @@ async function checkTableExists(tableName: string): Promise<boolean> {
     }
     
     // Fix: Check if data is an array and has elements before accessing properties
-    return Array.isArray(data) && data.length > 0 && data[0].exists;
+    // Also ensure we're safely accessing the 'exists' property which might be of different types
+    if (Array.isArray(data) && data.length > 0) {
+      // Handle the case where exists might be represented as boolean, string 'true'/'false', or other formats
+      const existsValue = data[0]?.exists;
+      return existsValue === true || existsValue === 'true' || existsValue === 't';
+    }
+    return false;
   } catch (e) {
     console.error("Error in checkTableExists:", e);
     return false;
