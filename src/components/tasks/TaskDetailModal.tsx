@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,8 @@ import { Task, taskService } from "@/services/taskService";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
-import { Image, FileText, Clock, FolderOpen } from "lucide-react";
+import { Image, FileText, Clock, FolderOpen, Download } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TaskDetailModalProps {
   open: boolean;
@@ -41,19 +41,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [historial, setHistorial] = useState<TaskHistory[]>([]);
   const [resolviendo, setResolviendo] = useState(false);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   useEffect(() => {
-    // Reset campos al abrir/cerrar modal
     setDescripcion(task?.descripcion || "");
     setLink(task?.link || "");
     setFotoFile(null);
     setFotoUrl(task?.foto_url || null);
     setResolviendo(false);
-    // Cargar historial
+    setDocumentFile(null);
     if (task?.id && open) {
       fetchHistorial(task.id);
     }
-  // eslint-disable-next-line
   }, [task, open]);
 
   const fetchHistorial = async (taskId: string) => {
@@ -73,28 +72,91 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     }
   };
 
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setDocumentFile(e.target.files[0]);
+    } else {
+      setDocumentFile(null);
+    }
+  };
+
   const handleResolve = async () => {
     if (!task) return;
     setIsSaving(true);
     try {
-      // Cargar imagen: omitido - implementar aquí si hay bucket (por ahora deja url en null)
       let foto_url = fotoUrl;
       if (fotoFile) {
-        toast({
-          title: "Subida de fotos no implementada aún",
-          description: "Solo se almacena referencia.",
-        });
-        // Aquí iría lógica de upload real
-        foto_url = null;
+        try {
+          const fileExt = fotoFile.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `task-photos/${task.id}/${fileName}`;
+
+          const { error: uploadError, data } = await supabase.storage
+            .from('task-photos')
+            .upload(filePath, fotoFile);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-photos')
+            .getPublicUrl(filePath);
+
+          foto_url = publicUrl;
+          toast({
+            title: "Foto subida",
+            description: "La foto se ha subido correctamente",
+          });
+        } catch (error) {
+          console.error("Error al subir foto:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir la foto",
+            variant: "destructive"
+          });
+        }
       }
-      // Actualizar tarea con nuevos datos (estado, descripción, foto...)
+
+      let doc_url = task.doc_url;
+      if (documentFile) {
+        try {
+          const fileExt = documentFile.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `task-docs/${task.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('task-docs')
+            .upload(filePath, documentFile);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-docs')
+            .getPublicUrl(filePath);
+
+          doc_url = publicUrl;
+          toast({
+            title: "Documento subido",
+            description: "El documento se ha subido correctamente",
+          });
+        } catch (error) {
+          console.error("Error al subir documento:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir el documento",
+            variant: "destructive"
+          });
+        }
+      }
+
       await taskService.resolveTask({
         ...task,
         estado: "resuelta",
         descripcion,
         link,
         foto_url,
+        doc_url
       });
+      
       toast({
         title: "¡Tarea resuelta!",
         description: "La tarea fue marcada como resuelta.",
@@ -155,8 +217,31 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           )}
           {task.foto_url && (
             <div>
-              <Image className="w-4 h-4 inline-block mr-1" />
-              <img src={task.foto_url} alt="Tarea" className="rounded max-h-40 mt-1 border" />
+              <p className="flex items-center gap-1 mb-1">
+                <Image className="w-4 h-4" />
+                <span className="font-medium">Foto adjunta:</span>
+              </p>
+              <a href={task.foto_url} target="_blank" rel="noopener noreferrer">
+                <img 
+                  src={task.foto_url} 
+                  alt="Foto de tarea" 
+                  className="rounded-md max-h-60 mt-1 border hover:opacity-90 transition-opacity cursor-pointer" 
+                />
+              </a>
+            </div>
+          )}
+          {task.doc_url && (
+            <div className="flex gap-2 items-center">
+              <FileText className="w-4 h-4" />
+              <a 
+                href={task.doc_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-400 underline flex items-center gap-1"
+              >
+                Documento adjunto
+                <Download size={16} />
+              </a>
             </div>
           )}
         </div>
@@ -185,6 +270,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <Input type="file" accept="image/*" onChange={handleFileChange} />
               {fotoFile && <div className="text-xs text-gray-500">Archivo: {fotoFile.name}</div>}
             </div>
+            <div className="mt-2">
+              <label className="block mb-1">Documento (opcional)</label>
+              <Input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" onChange={handleDocumentChange} />
+              {documentFile && <div className="text-xs text-gray-500">Archivo: {documentFile.name}</div>}
+            </div>
             <DialogFooter>
               <Button
                 className="bg-green-700 text-white"
@@ -197,7 +287,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           </>
         )}
 
-        {/* Historial */}
         <hr className="my-3" />
         <div>
           <div className="font-bold mb-1 flex items-center gap-1"><Clock className="w-4 h-4" />Historial de Cambios</div>

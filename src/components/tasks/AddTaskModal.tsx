@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { taskService } from '@/services/taskService';
@@ -17,7 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar, FileImage } from 'lucide-react';
+import { Calendar, FileImage, FileText } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
 
 interface AddTaskModalProps {
   open: boolean;
@@ -48,6 +48,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [isCritical, setIsCritical] = useState(false);
   const [usuarios, setUsuarios] = useState<AppUser[]>([]);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   const { register, handleSubmit, reset } = useForm<FormValues>();
 
@@ -76,6 +77,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
       setIsCritical(false);
       setFotoFile(null);
+      setDocumentFile(null);
     }
   }, [open, preselectedWell, reset]);
 
@@ -84,6 +86,14 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setFotoFile(e.target.files[0]);
     } else {
       setFotoFile(null);
+    }
+  };
+
+  const onDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setDocumentFile(e.target.files[0]);
+    } else {
+      setDocumentFile(null);
     }
   };
 
@@ -99,15 +109,67 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
     try {
       let foto_url = null;
-      // Si se sube una foto, (a futuro) deberíamos subirla y obtener la URL.
-      // Por ahora solo vemos si hay archivo y dejamos null (implementación de upload por Storage sería el siguiente paso)
+      let doc_url = null;
+      
+      // Subir foto si existe
       if (fotoFile) {
-        toast({
-          title: "Función de subir fotos no implementada aún",
-          description: "La URL quedará vacía por ahora",
-        });
-        foto_url = null;
+        try {
+          const fileExt = fotoFile.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `task-photos/new/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('task-photos')
+            .upload(filePath, fotoFile);
+
+          if (uploadError) throw uploadError;
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-photos')
+            .getPublicUrl(filePath);
+
+          foto_url = publicUrl;
+        } catch (error) {
+          console.error("Error al subir foto:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir la foto",
+            variant: "destructive"
+          });
+        }
       }
+      
+      // Subir documento si existe
+      if (documentFile) {
+        try {
+          const fileExt = documentFile.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `task-docs/new/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('task-docs')
+            .upload(filePath, documentFile);
+
+          if (uploadError) throw uploadError;
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-docs')
+            .getPublicUrl(filePath);
+
+          doc_url = publicUrl;
+        } catch (error) {
+          console.error("Error al subir documento:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir el documento",
+            variant: "destructive"
+          });
+        }
+      }
+      
+      // Crear tarea con los datos recolectados
       await taskService.createTask({
         titulo: formData.titulo,
         descripcion: formData.descripcion || null,
@@ -119,11 +181,14 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         estado: 'pendiente',
         es_critica: isCritical,
         foto_url,
+        doc_url
       });
+      
       toast({
         title: "¡Tarea creada!",
         description: "Tarea creada correctamente",
       });
+      
       if (onSuccess) onSuccess();
       reset();
       setSelectedWell(preselectedWell || '');
@@ -131,6 +196,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setSelectedDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
       setIsCritical(false);
       setFotoFile(null);
+      setDocumentFile(null);
       onOpenChange(false);
     } catch (error) {
       // Manejo de error ya está en el servicio
@@ -232,6 +298,21 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               <span className="text-xs text-gray-400">Archivo seleccionado: {fotoFile.name}</span>
             )}
           </div>
+          <div>
+            <label className="block mb-1 text-sm flex items-center gap-1">
+              <FileText className="h-4 w-4" />
+              Documento (opcional)
+            </label>
+            <Input
+              type="file"
+              accept=".pdf,.doc,.docx,.xls,.xlsx"
+              disabled={isLoading}
+              onChange={onDocumentChange}
+            />
+            {documentFile && (
+              <span className="text-xs text-gray-400">Archivo seleccionado: {documentFile.name}</span>
+            )}
+          </div>
           <Button type="submit" disabled={isLoading}>
             {isLoading ? "Creando..." : "Crear tarea"}
           </Button>
@@ -242,4 +323,3 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 };
 
 export default AddTaskModal;
-

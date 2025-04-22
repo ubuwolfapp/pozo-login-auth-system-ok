@@ -61,6 +61,7 @@ const Dashboard = () => {
             presion_historial(*)
           `);
           setWells(allWells || []);
+          setLoading(false);
           return;
         }
         
@@ -84,6 +85,7 @@ const Dashboard = () => {
             presion_historial(*)
           `);
           setWells(allWells || []);
+          setLoading(false);
           return;
         }
 
@@ -101,13 +103,30 @@ const Dashboard = () => {
             description: "Error al cargar la configuración del mapa",
             variant: "destructive"
           });
+          setLoading(false);
         } 
         else if (mapa) {
-          // Actualizar configuración del mapa
-          setMapConfig({
-            center: [mapa.centro_latitud, mapa.centro_longitud],
-            zoom: mapa.zoom_inicial,
-          });
+          console.log("Configuración de mapa encontrada:", mapa);
+          
+          // Actualizar configuración del mapa con los valores exactos de la base de datos
+          const centerLat = parseFloat(mapa.centro_latitud);
+          const centerLon = parseFloat(mapa.centro_longitud);
+          
+          // Verificar que las coordenadas sean números válidos
+          if (!isNaN(centerLat) && !isNaN(centerLon)) {
+            setMapConfig({
+              center: [centerLat, centerLon],
+              zoom: mapa.zoom_inicial,
+            });
+            console.log(`Mapa centrado en [${centerLat}, ${centerLon}] con zoom ${mapa.zoom_inicial}`);
+          } else {
+            console.error("Coordenadas inválidas en la base de datos:", mapa.centro_latitud, mapa.centro_longitud);
+            toast({
+              title: "Error",
+              description: "Las coordenadas del mapa son inválidas",
+              variant: "destructive"
+            });
+          }
 
           // 3. Obtener los pozos asignados al mapa
           const { data: pozosRelacion, error: pozosRelacionError } = await supabase
@@ -122,10 +141,12 @@ const Dashboard = () => {
               description: "No se pudieron obtener los pozos asignados a este mapa",
               variant: "destructive"
             });
+            setLoading(false);
             return;
           }
 
           const pozoIds = pozosRelacion.map((rel: any) => rel.pozo_id);
+          console.log("IDs de pozos asignados al mapa:", pozoIds);
 
           // 4. Traer los datos completos de esos pozos
           let pozos: Well[] = [];
@@ -149,9 +170,13 @@ const Dashboard = () => {
                 description: "No se pudieron obtener los datos de los pozos",
                 variant: "destructive"
               });
+              setLoading(false);
               return;
             }
             pozos = pozosData || [];
+            console.log("Pozos encontrados:", pozos.length);
+          } else {
+            console.log("No hay pozos asignados a este mapa");
           }
 
           setWells(pozos);

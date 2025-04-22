@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,6 +14,7 @@ export interface Task {
   asignado_por: string;
   descripcion?: string | null;
   foto_url?: string | null;
+  doc_url?: string | null;
   link?: string | null;
 }
 
@@ -159,6 +161,7 @@ export const taskService = {
           descripcion: updatedTask.descripcion,
           link: updatedTask.link,
           foto_url: updatedTask.foto_url,
+          doc_url: updatedTask.doc_url,
         })
         .eq('id', updatedTask.id)
         .eq('asignado_a', updatedTask.asignado_a)
@@ -172,6 +175,35 @@ export const taskService = {
       toast({
         title: "Error",
         description: "No se pudo resolver la tarea",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  },
+  
+  async uploadTaskFile(file: File, taskId: string, fileType: 'photo' | 'document') {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const bucketFolder = fileType === 'photo' ? 'task-photos' : 'task-docs';
+      const filePath = `${bucketFolder}/${taskId}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from(bucketFolder)
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketFolder)
+        .getPublicUrl(filePath);
+        
+      return publicUrl;
+    } catch (error) {
+      console.error(`Error uploading ${fileType}:`, error);
+      toast({
+        title: "Error",
+        description: `No se pudo subir el ${fileType === 'photo' ? 'foto' : 'documento'}`,
         variant: "destructive"
       });
       throw error;
