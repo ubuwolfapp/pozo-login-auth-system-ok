@@ -38,17 +38,14 @@ const Dashboard = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Simulación de valores antes de cargar
         await simulationService.simulateAllWells();
 
-        // 1. Obtener usuario y su configuración de mapa
         const { data: usuarioInfo, error: usuarioError } = await supabase
           .from('usuarios')
           .select('id, pozos_mapa_id')
           .eq('email', user?.email)
           .maybeSingle();
 
-        // Si no hay usuario o hay error, cargar todos los pozos con configuración predeterminada
         if (usuarioError || !usuarioInfo) {
           console.warn("No se pudo obtener el usuario, mostrando todos los pozos disponibles");
           const { data: allWells } = await supabase.from('pozos').select(`
@@ -66,7 +63,6 @@ const Dashboard = () => {
         
         const mapaId = usuarioInfo.pozos_mapa_id;
         
-        // Si hay usuario pero no tiene mapa asignado
         if (!mapaId) {
           console.warn("Usuario sin mapa asignado, mostrando todos los pozos disponibles");
           toast({
@@ -88,7 +84,6 @@ const Dashboard = () => {
           return;
         }
 
-        // 2. Si hay mapa asignado, traer su configuración
         const { data: mapa, error: mapaError } = await supabase
           .from('pozos_mapa')
           .select('*')
@@ -105,52 +100,27 @@ const Dashboard = () => {
           setLoading(false);
         } 
         else if (mapa) {
-          console.log("Configuración de mapa encontrada:", mapa);
+          // Ensure proper type conversion for map coordinates
+          const centerLat = Number(mapa.centro_latitud);
+          const centerLon = Number(mapa.centro_longitud);
+          const zoomLevel = Number(mapa.zoom_inicial);
           
-          // Actualizar configuración del mapa con los valores exactos de la base de datos
-          const centerLat = parseFloat(mapa.centro_latitud.toString());
-          const centerLon = parseFloat(mapa.centro_longitud.toString());
-          
-          // Verificar que las coordenadas sean números válidos
-          if (!isNaN(centerLat) && !isNaN(centerLon)) {
+          if (!isNaN(centerLat) && !isNaN(centerLon) && !isNaN(zoomLevel)) {
             setMapConfig({
-              center: [centerLat, centerLon] as [number, number],
-              zoom: mapa.zoom_inicial,
-            });
-            console.log(`Mapa centrado en [${centerLat}, ${centerLon}] con zoom ${mapa.zoom_inicial}`);
-          } else {
-            console.error("Coordenadas inválidas en la base de datos:", mapa.centro_latitud, mapa.centro_longitud);
-            toast({
-              title: "Error",
-              description: "Las coordenadas del mapa son inválidas",
-              variant: "destructive"
+              center: [centerLat, centerLon],
+              zoom: zoomLevel
             });
           }
 
-          // 3. Obtener los pozos asignados al mapa
-          const { data: pozosRelacion, error: pozosRelacionError } = await supabase
+          const { data: pozosRelacion } = await supabase
             .from('pozos_mapas_relacion')
             .select('pozo_id')
             .eq('pozos_mapa_id', mapaId);
 
-          if (pozosRelacionError) {
-            console.error("Error al obtener relaciones de pozos:", pozosRelacionError);
-            toast({
-              title: "Error",
-              description: "No se pudieron obtener los pozos asignados a este mapa",
-              variant: "destructive"
-            });
-            setLoading(false);
-            return;
-          }
+          const pozoIds = (pozosRelacion || []).map((rel: any) => rel.pozo_id);
 
-          const pozoIds = pozosRelacion.map((rel: any) => rel.pozo_id);
-          console.log("IDs de pozos asignados al mapa:", pozoIds);
-
-          // 4. Traer los datos completos de esos pozos
-          let pozos: Well[] = [];
           if (pozoIds.length > 0) {
-            const { data: pozosData, error: pozosError } = await supabase
+            const { data: pozosData } = await supabase
               .from('pozos')
               .select(`
                 *,
@@ -162,23 +132,8 @@ const Dashboard = () => {
               `)
               .in('id', pozoIds);
 
-            if (pozosError) {
-              console.error("Error al obtener datos de pozos:", pozosError);
-              toast({
-                title: "Error",
-                description: "No se pudieron obtener los datos de los pozos",
-                variant: "destructive"
-              });
-              setLoading(false);
-              return;
-            }
-            pozos = pozosData || [];
-            console.log("Pozos encontrados:", pozos.length);
-          } else {
-            console.log("No hay pozos asignados a este mapa");
+            setWells(pozosData || []);
           }
-
-          setWells(pozos);
         }
       } catch (error: any) {
         console.error('Error initializing data:', error);
