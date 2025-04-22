@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { wellService } from '@/services/wellService';
@@ -8,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
+import { useState } from 'react';
+import LiveCameraModal from '@/components/wells/LiveCameraModal';
 
 const Cameras = () => {
   const { user, signOut } = useAuth();
@@ -27,15 +28,12 @@ const Cameras = () => {
       </div>;
   }
 
-  // Filtrar pozos que tienen cámaras
   const wellsWithCameras = wells?.filter(well => 
     well.camaras_pozos && well.camaras_pozos.length > 0
   ) || [];
 
-  // Si no hay cámaras, mostrar un mensaje (usamos datos de ejemplo si no hay)
   const hasCameras = wellsWithCameras.length > 0;
   
-  // Datos de ejemplo para simular cámaras si no hay ninguna real
   const exampleWells = hasCameras ? [] : [
     {
       id: 'example-1',
@@ -56,9 +54,10 @@ const Cameras = () => {
   
   const displayWells = hasCameras ? wellsWithCameras : exampleWells;
 
+  const [selectedCamera, setSelectedCamera] = useState<any>(null);
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
-      {/* Top bar with user info and logout */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
         <div className="container mx-auto flex items-center justify-between">
           <h2 className="text-sm font-medium">
@@ -102,7 +101,12 @@ const Cameras = () => {
                       <h3 className="font-medium">{camera.nombre}</h3>
                       <p className="text-sm text-gray-400">{camera.descripcion}</p>
                       <div className="flex justify-between mt-3">
-                        <Button variant="outline" size="sm" className="text-xs">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-xs"
+                          onClick={() => setSelectedCamera(camera)}
+                        >
                           Ver en vivo
                         </Button>
                         <Button variant="outline" size="sm" className="text-xs">
@@ -125,6 +129,14 @@ const Cameras = () => {
       </div>
 
       <NavigationBar />
+      
+      {selectedCamera && (
+        <LiveCameraModal
+          open={!!selectedCamera}
+          onClose={() => setSelectedCamera(null)}
+          camera={selectedCamera}
+        />
+      )}
     </div>
   );
 };
