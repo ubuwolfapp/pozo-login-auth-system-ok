@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { wellService, type Well } from '@/services/wellService';
@@ -109,13 +108,13 @@ const Dashboard = () => {
           console.log("Configuración de mapa encontrada:", mapa);
           
           // Actualizar configuración del mapa con los valores exactos de la base de datos
-          const centerLat = parseFloat(mapa.centro_latitud);
-          const centerLon = parseFloat(mapa.centro_longitud);
+          const centerLat = parseFloat(mapa.centro_latitud.toString());
+          const centerLon = parseFloat(mapa.centro_longitud.toString());
           
           // Verificar que las coordenadas sean números válidos
           if (!isNaN(centerLat) && !isNaN(centerLon)) {
             setMapConfig({
-              center: [centerLat, centerLon],
+              center: [centerLat, centerLon] as [number, number],
               zoom: mapa.zoom_inicial,
             });
             console.log(`Mapa centrado en [${centerLat}, ${centerLon}] con zoom ${mapa.zoom_inicial}`);

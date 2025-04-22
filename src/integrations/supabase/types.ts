@@ -371,6 +371,7 @@ export type Database = {
           asignado_por: string
           created_at: string | null
           descripcion: string | null
+          doc_url: string | null
           es_critica: boolean | null
           estado: string
           fecha_limite: string
@@ -385,6 +386,7 @@ export type Database = {
           asignado_por?: string
           created_at?: string | null
           descripcion?: string | null
+          doc_url?: string | null
           es_critica?: boolean | null
           estado: string
           fecha_limite: string
@@ -399,6 +401,7 @@ export type Database = {
           asignado_por?: string
           created_at?: string | null
           descripcion?: string | null
+          doc_url?: string | null
           es_critica?: boolean | null
           estado?: string
           fecha_limite?: string

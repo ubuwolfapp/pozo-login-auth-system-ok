@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -180,13 +179,13 @@ export const taskService = {
       throw error;
     }
   },
-  
+
   async uploadTaskFile(file: File, taskId: string, fileType: 'photo' | 'document') {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const bucketFolder = fileType === 'photo' ? 'task-photos' : 'task-docs';
-      const filePath = `${bucketFolder}/${taskId}/${fileName}`;
+      const filePath = `${taskId}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage
         .from(bucketFolder)
