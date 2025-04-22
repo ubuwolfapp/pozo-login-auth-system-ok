@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { wellService } from '@/services/wellService';
 import NavigationBar from '@/components/NavigationBar';
@@ -7,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
 import LiveCameraModal from '@/components/wells/LiveCameraModal';
 
 const Cameras = () => {
   const { user, signOut } = useAuth();
+  const [selectedCamera, setSelectedCamera] = useState<any>(null);
   
   const { data: wells, isLoading } = useQuery({
     queryKey: ['wells-with-cameras'],
@@ -53,8 +54,6 @@ const Cameras = () => {
   ];
   
   const displayWells = hasCameras ? wellsWithCameras : exampleWells;
-
-  const [selectedCamera, setSelectedCamera] = useState<any>(null);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">

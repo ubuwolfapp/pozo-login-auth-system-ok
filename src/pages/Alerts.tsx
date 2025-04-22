@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -106,15 +105,18 @@ const Alerts = () => {
     }
   });
 
-  const handleAlertResolved = async (alertId: string, resolutionText: string) => {
+  const handleAlertResolved = async (alertId: string, resolutionText: string, photoUrl?: string | null, docUrl?: string | null) => {
     console.log('Alert resolved callback:', alertId, 'Resolution:', resolutionText);
+    console.log('Photo URL:', photoUrl, 'Document URL:', docUrl);
     
     try {
       const fecha_resolucion = new Date().toISOString();
       const updateData = { 
         resuelto: true,
         resolucion: resolutionText,
-        fecha_resolucion
+        fecha_resolucion,
+        foto_url: photoUrl || null,
+        doc_url: docUrl || null
       };
       
       console.log('Updating alert in database:', alertId, 'with data:', updateData);
@@ -186,7 +188,6 @@ const Alerts = () => {
     }
   };
 
-  // NUEVA FUNCIÓN: Eliminar alertas resueltas y guardarlas en el historial
   const handleDeleteResolvedAlerts = async () => {
     if (!alerts || !alerts.length) return;
     try {
@@ -255,7 +256,6 @@ const Alerts = () => {
         >
           Resolver todas
         </button>
-        {/* BOTÓN NUEVO: Eliminar resueltas */}
         <button
           className="bg-red-600 text-white rounded px-4 py-2 font-semibold shadow hover:bg-red-700 transition"
           onClick={handleDeleteResolvedAlerts}
