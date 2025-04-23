@@ -246,7 +246,7 @@ const Alerts = () => {
   return <div className="min-h-screen bg-[#1C2526] text-white font-sans">
       <AlertsNavigation />
 
-      <div className="container mx-auto flex justify-end pt-4 gap-3 py-[32px] px-[33px]">
+      <div className="container flex justify-center pt-4 gap-3 py-[32px] mx-0 px-0">
         <button className="bg-pozo-orange text-white rounded px-4 py-2 font-semibold shadow hover:bg-orange-500 transition" onClick={handleResolveAllAlerts} disabled={!alerts || alerts.length === 0 || alerts.every(a => a.resuelto)}>
           Resolver todas
         </button>
