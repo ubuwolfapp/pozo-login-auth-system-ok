@@ -180,6 +180,34 @@ export const taskService = {
     }
   },
 
+  async saveTaskProgress(updatedTask: Task) {
+    try {
+      const { data, error } = await supabase
+        .from('tareas')
+        .update({
+          descripcion: updatedTask.descripcion,
+          link: updatedTask.link,
+          foto_url: updatedTask.foto_url,
+          doc_url: updatedTask.doc_url,
+        })
+        .eq('id', updatedTask.id)
+        .eq('asignado_a', updatedTask.asignado_a)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error saving task progress:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el progreso",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  },
+
   async uploadTaskFile(file: File, taskId: string, fileType: 'photo' | 'document') {
     try {
       const fileExt = file.name.split('.').pop();
