@@ -15,6 +15,7 @@ import WellDetails from "./pages/WellDetails";
 import Cameras from "./pages/Cameras";
 import Map from "./pages/Map";
 import TaskHistory from "./pages/TaskHistory";
+import TaskDetails from "./pages/TaskDetails";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tasks/:id" 
+            element={
+              <ProtectedRoute>
+                <TaskDetails />
               </ProtectedRoute>
             } 
           />

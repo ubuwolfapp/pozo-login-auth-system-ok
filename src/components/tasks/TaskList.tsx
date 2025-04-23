@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Task } from '@/services/taskService';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from 'react-router-dom';
 import TaskDetailModal from "./TaskDetailModal";
 
 interface TaskListProps {
@@ -20,8 +20,8 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -36,7 +36,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
-  // Filtrado según "asignadas por mí" o "las mías"
   const filteredTasks = tasks.filter(task => {
     if (showOnly === "assigned_by_me") {
       return task.asignado_por === myEmail;
@@ -47,8 +46,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     return true;
   });
 
-  const handleStatusClick = (task: Task) => {
-    // Solo permitir cambiar el estado si es el asignado actual
+  const handleStatusClick = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
     if (task.asignado_a !== myEmail) {
       toast({
         title: "Solo el usuario asignado puede cambiar el estado.",
@@ -79,22 +78,15 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
     }
   };
 
-  const handleCardClick = (task: Task) => {
-    setSelectedTask(task);
-    setIsDetailModalOpen(true);
-  };
-
-  const handleTaskUpdated = () => {
-    queryClient.invalidateQueries({ queryKey: ['tasks'] });
-    setIsDetailModalOpen(false);
-  };
-
   return (
     <>
       <div className="space-y-4">
         {filteredTasks.map((task) => (
-          <Card key={task.id} className="cursor-pointer hover:ring-2 hover:ring-cyan-500 transition"
-                onClick={() => handleCardClick(task)}>
+          <Card 
+            key={task.id} 
+            className="cursor-pointer hover:ring-2 hover:ring-cyan-500 transition"
+            onClick={() => navigate(`/tasks/${task.id}`)}
+          >
             <CardHeader className="p-4">
               <div className="flex items-start justify-between">
                 <CardTitle className="text-lg font-semibold">
@@ -115,10 +107,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
                 </div>
                 <Badge
                   className={`cursor-pointer ${getStatusColor(task.estado)}`}
-                  onClick={e => { 
-                    e.stopPropagation();
-                    handleStatusClick(task);
-                  }}
+                  onClick={(e) => handleStatusClick(task, e)}
                 >
                   {task.estado}
                 </Badge>
@@ -139,16 +128,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
         currentStatus={selectedTask?.estado || 'pendiente'}
         onStatusChange={handleStatusChange}
       />
-
-      <TaskDetailModal
-        open={isDetailModalOpen}
-        onOpenChange={setIsDetailModalOpen}
-        task={selectedTask}
-        onTaskUpdated={handleTaskUpdated}
-      />
     </>
   );
 };
 
 export default TaskList;
-
