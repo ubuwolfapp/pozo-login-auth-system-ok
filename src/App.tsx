@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -13,10 +12,10 @@ import NotFound from "./pages/NotFound";
 import Tasks from "./pages/Tasks";
 import Settings from "./pages/Settings";
 import WellDetails from "./pages/WellDetails";
-import Cameras from "./pages/Cameras"; // Nueva página de cámaras
-import Map from "./pages/Map"; // Nueva página de mapa centralizado
+import Cameras from "./pages/Cameras";
+import Map from "./pages/Map";
+import TaskHistory from "./pages/TaskHistory";
 
-// Create a new QueryClient instance outside of component
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,12 +23,10 @@ const App = () => (
     <BrowserRouter>
       <TooltipProvider>
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<Navigate to="/auth/login" replace />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/register" element={<Register />} />
           
-          {/* Protected routes */}
           <Route 
             path="/dashboard" 
             element={
@@ -78,7 +75,6 @@ const App = () => (
               </ProtectedRoute>
             } 
           />
-          {/* Nuevas rutas */}
           <Route 
             path="/cameras" 
             element={
@@ -92,6 +88,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Map />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/task-history" 
+            element={
+              <ProtectedRoute>
+                <TaskHistory />
               </ProtectedRoute>
             } 
           />
