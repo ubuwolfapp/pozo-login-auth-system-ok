@@ -56,7 +56,9 @@ const TaskHistory = () => {
               <Card key={task.id} className="bg-slate-800 border-slate-700 p-4">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-medium">{task.titulo}</h3>
-                  <Badge variant={task.estado === 'resuelta' ? 'success' : 'default'}>
+                  <Badge 
+                    variant={task.estado === 'resuelta' ? 'secondary' : 'default'}
+                  >
                     {task.estado}
                   </Badge>
                 </div>
