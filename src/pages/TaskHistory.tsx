@@ -48,10 +48,10 @@ const TaskHistory = () => {
 
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="bg-slate-800 border-slate-700 p-4">
+            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="border-slate-700 p-4 bg-slate-700">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-medium text-orange-600">{task.titulo}</h3>
-                    <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'}>
+                    <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-orange-600">
                       {task.estado}
                     </Badge>
                   </div>
