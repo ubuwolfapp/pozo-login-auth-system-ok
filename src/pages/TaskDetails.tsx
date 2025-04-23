@@ -151,7 +151,7 @@ const TaskDetails = () => {
           <div className="space-y-6">
             <div>
               <h1 className="text-2xl font-bold">{task.titulo}</h1>
-              <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'}>
+              <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="px-[34px] bg-red-700">
                 {task.estado}
               </Badge>
               {task.es_critica && <span className="ml-2 text-red-500 font-semibold">Crítica</span>}
@@ -207,11 +207,11 @@ const TaskDetails = () => {
                 <h2 className="text-xl font-semibold">Actualizar Tarea</h2>
                 <div>
                   <label className="block mb-2">Descripción del progreso</label>
-                  <Textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Describe el progreso de la tarea" rows={3} />
+                  <Textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Describe el progreso de la tarea" rows={3} className="bg-zinc-900" />
                 </div>
                 <div>
                   <label className="block mb-2">Link opcional</label>
-                  <Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://enlace-a-documentos.com" />
+                  <Input value={link} onChange={e => setLink(e.target.value)} placeholder="https://enlace-a-documentos.com" className="bg-zinc-900" />
                 </div>
                 <div>
                   <label className="block mb-2">Foto (opcional)</label>
@@ -219,7 +219,7 @@ const TaskDetails = () => {
                 if (e.target.files && e.target.files.length > 0) {
                   setFotoFile(e.target.files[0]);
                 }
-              }} />
+              }} className="bg-zinc-400" />
                   {fotoFile && <div className="text-xs text-gray-400 mt-1">Archivo: {fotoFile.name}</div>}
                 </div>
                 <div>
@@ -228,7 +228,7 @@ const TaskDetails = () => {
                 if (e.target.files && e.target.files.length > 0) {
                   setDocumentFile(e.target.files[0]);
                 }
-              }} />
+              }} className="bg-zinc-400" />
                   {documentFile && <div className="text-xs text-gray-400 mt-1">Archivo: {documentFile.name}</div>}
                 </div>
                 <div className="flex gap-4">
