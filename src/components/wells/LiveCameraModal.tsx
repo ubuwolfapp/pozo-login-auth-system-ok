@@ -18,6 +18,15 @@ interface LiveCameraModalProps {
 }
 
 const LiveCameraModal = ({ open, onClose, camera }: LiveCameraModalProps) => {
+  // Convert video URL to embed URL if it's a YouTube URL
+  const getEmbedUrl = (url: string) => {
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1].split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl">
@@ -28,14 +37,12 @@ const LiveCameraModal = ({ open, onClose, camera }: LiveCameraModalProps) => {
           )}
         </DialogHeader>
         <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
-          <video
-            src={camera.url_stream}
-            controls
-            autoPlay
-            className="w-full h-full object-contain"
-          >
-            Tu navegador no soporta la reproducción de video.
-          </video>
+          <iframe
+            src={getEmbedUrl(camera.url_stream)}
+            className="w-full h-full"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          />
         </div>
       </DialogContent>
     </Dialog>

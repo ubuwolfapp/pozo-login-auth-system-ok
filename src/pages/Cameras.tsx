@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { wellService } from '@/services/wellService';
@@ -40,15 +39,15 @@ const Cameras = () => {
       id: 'example-1',
       nombre: 'Pozo Alpha',
       camaras_pozos: [
-        { id: 'cam-1', nombre: 'Cámara Principal', descripcion: 'Vista general', url_stream: '/lovable-uploads/b95d5f26-748c-4aa2-afa7-debb2c4a40d2.jpg' },
-        { id: 'cam-2', nombre: 'Cámara Secundaria', descripcion: 'Área de válvulas', url_stream: '/lovable-uploads/b95d5f26-748c-4aa2-afa7-debb2c4a40d2.jpg' }
+        { id: 'cam-1', nombre: 'Cámara Principal', descripcion: 'Vista general', url_stream: 'https://www.youtube.com/watch?v=c4PQsaMkNro' },
+        { id: 'cam-2', nombre: 'Cámara Secundaria', descripcion: 'Área de válvulas', url_stream: 'https://www.youtube.com/watch?v=c4PQsaMkNro' }
       ]
     },
     {
       id: 'example-2',
       nombre: 'Pozo Beta',
       camaras_pozos: [
-        { id: 'cam-3', nombre: 'Cámara de Seguridad', descripcion: 'Perímetro', url_stream: '/lovable-uploads/b95d5f26-748c-4aa2-afa7-debb2c4a40d2.jpg' }
+        { id: 'cam-3', nombre: 'Cámara de Seguridad', descripcion: 'Perímetro', url_stream: 'https://www.youtube.com/watch?v=c4PQsaMkNro' }
       ]
     }
   ];

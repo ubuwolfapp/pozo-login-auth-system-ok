@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Image, FileText, Clock, FolderOpen, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TaskDetailModalProps {
   open: boolean;
@@ -78,6 +79,103 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     } else {
       setDocumentFile(null);
     }
+  };
+
+  const handleSaveProgress = async () => {
+    if (!task) return;
+    setIsSaving(true);
+    try {
+      let foto_url = fotoUrl;
+      if (fotoFile) {
+        try {
+          const fileExt = fotoFile.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `task-photos/${task.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('task-photos')
+            .upload(filePath, fotoFile);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-photos')
+            .getPublicUrl(filePath);
+
+          foto_url = publicUrl;
+          toast({
+            title: "Foto subida",
+            description: "La foto se ha subido correctamente",
+          });
+        } catch (error) {
+          console.error("Error al subir foto:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir la foto",
+            variant: "destructive"
+          });
+        }
+      }
+
+      let doc_url = task.doc_url;
+      if (documentFile) {
+        try {
+          const fileExt = documentFile.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `task-docs/${task.id}/${fileName}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('task-docs')
+            .upload(filePath, documentFile);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('task-docs')
+            .getPublicUrl(filePath);
+
+          doc_url = publicUrl;
+          toast({
+            title: "Documento subido",
+            description: "El documento se ha subido correctamente",
+          });
+        } catch (error) {
+          console.error("Error al subir documento:", error);
+          toast({
+            title: "Error",
+            description: "No se pudo subir el documento",
+            variant: "destructive"
+          });
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('tareas')
+        .update({
+          descripcion,
+          link,
+          foto_url,
+          doc_url,
+        })
+        .eq('id', task.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast({
+        title: "¡Progreso guardado!",
+        description: "Los cambios se han guardado correctamente.",
+      });
+      if (onTaskUpdated) onTaskUpdated();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el progreso",
+        variant: "destructive",
+      });
+    }
+    setIsSaving(false);
   };
 
   const handleResolve = async () => {
@@ -177,115 +275,124 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Detalle de Tarea</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 text-sm">
-          <div>
-            <span className="font-bold">{task.titulo}</span>{" "}
-            <Badge className="uppercase">{task.estado}</Badge>
-            {task.es_critica && (
-              <span className="ml-2 text-red-500 font-semibold">Crítica</span>
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 px-1">
+            <div>
+              <span className="font-bold">{task.titulo}</span>{" "}
+              <Badge className="uppercase">{task.estado}</Badge>
+              {task.es_critica && (
+                <span className="ml-2 text-red-500 font-semibold">Crítica</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <FolderOpen className="w-4 h-4" />
+              <span>Pozo: <b>{task.pozo_id}</b></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>Limite: {new Date(task.fecha_limite).toLocaleDateString()}</span>
+            </div>
+            <div>
+              <span className="text-gray-500 mr-1">Asignado por:</span> {task.asignado_por}<br />
+              <span className="text-gray-500 mr-1">Asignado a:</span> {task.asignado_a}
+            </div>
+            <div>
+              <span className="font-medium">Descripción:</span> <br />
+              {task.descripcion ? (
+                <span>{task.descripcion}</span>
+              ) : (
+                <span className="italic text-gray-400">Sin descripción</span>
+              )}
+            </div>
+            {task.link && (
+              <div className="flex gap-1 items-center text-blue-400">
+                <FileText className="w-4 h-4" />
+                <a href={task.link} target="_blank" rel="noopener noreferrer" className="underline break-all">{task.link}</a>
+              </div>
+            )}
+            {task.foto_url && (
+              <div>
+                <p className="flex items-center gap-1 mb-1">
+                  <Image className="w-4 h-4" />
+                  <span className="font-medium">Foto adjunta:</span>
+                </p>
+                <a href={task.foto_url} target="_blank" rel="noopener noreferrer">
+                  <img 
+                    src={task.foto_url} 
+                    alt="Foto de tarea" 
+                    className="rounded-md max-h-60 mt-1 border hover:opacity-90 transition-opacity cursor-pointer" 
+                  />
+                </a>
+              </div>
+            )}
+            {task.doc_url && (
+              <div className="flex gap-2 items-center">
+                <FileText className="w-4 h-4" />
+                <a 
+                  href={task.doc_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 underline flex items-center gap-1"
+                >
+                  Documento adjunto
+                  <Download size={16} />
+                </a>
+              </div>
+            )}
+            
+            {task.estado !== "resuelta" && user?.email === task.asignado_a && (
+              <>
+                <div>
+                  <label className="block mb-1">Descripción del progreso</label>
+                  <Textarea
+                    value={descripcion}
+                    onChange={e => setDescripcion(e.target.value)}
+                    placeholder="Describe el progreso de la tarea"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Link opcional</label>
+                  <Input
+                    value={link}
+                    onChange={e => setLink(e.target.value)}
+                    placeholder="https://enlace-a-documentos.com"
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1">Foto (opcional)</label>
+                  <Input type="file" accept="image/*" onChange={handleFileChange} />
+                  {fotoFile && <div className="text-xs text-gray-500">Archivo: {fotoFile.name}</div>}
+                </div>
+                <div>
+                  <label className="block mb-1">Documento (opcional)</label>
+                  <Input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" onChange={handleDocumentChange} />
+                  {documentFile && <div className="text-xs text-gray-500">Archivo: {documentFile.name}</div>}
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleSaveProgress}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Guardando..." : "Guardar Progreso"}
+                  </Button>
+                  <Button
+                    className="bg-green-700 text-white"
+                    onClick={handleResolve}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Guardando..." : "Marcar como Resuelta"}
+                  </Button>
+                </DialogFooter>
+              </>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <FolderOpen className="w-4 h-4" />
-            <span>Pozo: <b>{task.pozo_id}</b></span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            <span>Limite: {new Date(task.fecha_limite).toLocaleDateString()}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 mr-1">Asignado por:</span> {task.asignado_por}<br />
-            <span className="text-gray-500 mr-1">Asignado a:</span> {task.asignado_a}
-          </div>
-          <div>
-            <span className="font-medium">Descripción:</span> <br />
-            {task.descripcion ? (
-              <span>{task.descripcion}</span>
-            ) : (
-              <span className="italic text-gray-400">Sin descripción</span>
-            )}
-          </div>
-          {task.link && (
-            <div className="flex gap-1 items-center text-blue-400">
-              <FileText className="w-4 h-4" />
-              <a href={task.link} target="_blank" rel="noopener noreferrer" className="underline break-all">{task.link}</a>
-            </div>
-          )}
-          {task.foto_url && (
-            <div>
-              <p className="flex items-center gap-1 mb-1">
-                <Image className="w-4 h-4" />
-                <span className="font-medium">Foto adjunta:</span>
-              </p>
-              <a href={task.foto_url} target="_blank" rel="noopener noreferrer">
-                <img 
-                  src={task.foto_url} 
-                  alt="Foto de tarea" 
-                  className="rounded-md max-h-60 mt-1 border hover:opacity-90 transition-opacity cursor-pointer" 
-                />
-              </a>
-            </div>
-          )}
-          {task.doc_url && (
-            <div className="flex gap-2 items-center">
-              <FileText className="w-4 h-4" />
-              <a 
-                href={task.doc_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-400 underline flex items-center gap-1"
-              >
-                Documento adjunto
-                <Download size={16} />
-              </a>
-            </div>
-          )}
-        </div>
-        {task.estado !== "resuelta" && user?.email === task.asignado_a && (
-          <>
-            <hr className="my-2" />
-            <div>
-              <label className="block mb-1">Descripción de la resolución</label>
-              <Textarea
-                value={descripcion}
-                onChange={e => setDescripcion(e.target.value)}
-                placeholder="Describe cómo resolviste la tarea"
-                rows={3}
-              />
-            </div>
-            <div className="mt-2">
-              <label className="block mb-1">Link opcional</label>
-              <Input
-                value={link}
-                onChange={e => setLink(e.target.value)}
-                placeholder="https://enlace-a-documentos.com"
-              />
-            </div>
-            <div className="mt-2">
-              <label className="block mb-1">Foto (opcional)</label>
-              <Input type="file" accept="image/*" onChange={handleFileChange} />
-              {fotoFile && <div className="text-xs text-gray-500">Archivo: {fotoFile.name}</div>}
-            </div>
-            <div className="mt-2">
-              <label className="block mb-1">Documento (opcional)</label>
-              <Input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" onChange={handleDocumentChange} />
-              {documentFile && <div className="text-xs text-gray-500">Archivo: {documentFile.name}</div>}
-            </div>
-            <DialogFooter>
-              <Button
-                className="bg-green-700 text-white"
-                onClick={handleResolve}
-                disabled={isSaving}
-              >
-                {isSaving ? "Guardando..." : "Marcar como Resuelta"}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
+        </ScrollArea>
 
         <hr className="my-3" />
         <div>
