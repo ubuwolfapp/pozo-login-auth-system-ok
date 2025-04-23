@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { taskService } from '@/services/taskService';
 import TaskList from '@/components/tasks/TaskList';
 import AddTaskModal from '@/components/tasks/AddTaskModal';
 import NavigationBar from '@/components/NavigationBar';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, History } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Tasks = () => {
@@ -54,13 +54,24 @@ const Tasks = () => {
       <div className="container mx-auto px-4 py-6">
         <header className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Tareas</h1>
-          <Button
-            className="bg-cyan-500 hover:bg-cyan-600"
-            onClick={() => setIsAddModalOpen(true)}
-          >
-            <Plus className="h-5 w-5 mr-1" />
-            Nueva Tarea
-          </Button>
+          <div className="flex gap-2">
+            <Link to="/task-history">
+              <Button
+                variant="outline"
+                className="border-cyan-500 text-cyan-500"
+              >
+                <History className="h-5 w-5 mr-1" />
+                Ver Historial
+              </Button>
+            </Link>
+            <Button
+              className="bg-cyan-500 hover:bg-cyan-600"
+              onClick={() => setIsAddModalOpen(true)}
+            >
+              <Plus className="h-5 w-5 mr-1" />
+              Nueva Tarea
+            </Button>
+          </div>
         </header>
         <div className="grid md:grid-cols-2 gap-10">
           <div>

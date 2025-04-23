@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeIcon, ChartBarIcon, ListBulletIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
+import { HomeIcon, ChartBarIcon, ListBulletIcon, Cog6ToothIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { Map, Video, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
@@ -78,6 +79,13 @@ const NavigationBar: React.FC = () => {
           label="Tareas"
           isActive={currentPath === '/tasks'} 
           onClick={() => navigate('/tasks')} 
+        />
+        
+        <NavigationIcon 
+          icon={<ClockIcon className="h-6 w-6" />} 
+          label="Historial"
+          isActive={currentPath === '/task-history'} 
+          onClick={() => navigate('/task-history')} 
         />
         
         <NavigationIcon 

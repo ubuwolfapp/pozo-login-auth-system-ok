@@ -279,7 +279,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         <DialogHeader>
           <DialogTitle>Detalle de Tarea</DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 pr-4">
           <div className="space-y-4 px-1">
             <div>
               <span className="font-bold">{task.titulo}</span>{" "}

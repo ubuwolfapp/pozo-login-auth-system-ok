@@ -29,17 +29,27 @@ const TaskHistory = () => {
     return matchesDate && matchesSearch;
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-slate-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Historial de Tareas</h1>
         
-        <div className="space-y-4 mb-6">
+        {/* Filtros */}
+        <div className="bg-slate-800 p-4 rounded-lg mb-6 space-y-4">
+          <h2 className="font-medium">Filtros</h2>
           <Input
             placeholder="Buscar por título, descripción o asignado..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-slate-800 border-slate-700 text-white"
+            className="bg-slate-700 border-slate-600 text-white"
           />
           
           <DateSelector
@@ -48,30 +58,40 @@ const TaskHistory = () => {
             onStartDateSelect={(date) => date && setStartDate(date)}
             onEndDateSelect={(date) => date && setEndDate(date)}
           />
+          
+          <div className="text-sm text-gray-400">
+            Mostrando {filteredTasks.length} de {tasks.length} tareas
+          </div>
         </div>
 
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {filteredTasks.map((task) => (
-              <Card key={task.id} className="bg-slate-800 border-slate-700 p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium">{task.titulo}</h3>
-                  <Badge 
-                    variant={task.estado === 'resuelta' ? 'secondary' : 'default'}
-                  >
-                    {task.estado}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-400 mb-2">{task.descripcion}</p>
-                <div className="text-sm">
-                  <p>Asignado a: {task.asignado_a}</p>
-                  <p>Fecha: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
-                  {task.fecha_limite && (
-                    <p>Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
-                  )}
-                </div>
-              </Card>
-            ))}
+            {filteredTasks.length > 0 ? (
+              filteredTasks.map((task) => (
+                <Card key={task.id} className="bg-slate-800 border-slate-700 p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium">{task.titulo}</h3>
+                    <Badge 
+                      variant={task.estado === 'resuelta' ? 'secondary' : 'default'}
+                    >
+                      {task.estado}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-2">{task.descripcion}</p>
+                  <div className="text-sm">
+                    <p>Asignado a: {task.asignado_a}</p>
+                    <p>Fecha: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
+                    {task.fecha_limite && (
+                      <p>Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
+                    )}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-10 text-gray-400">
+                No se encontraron tareas con los filtros aplicados
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>
