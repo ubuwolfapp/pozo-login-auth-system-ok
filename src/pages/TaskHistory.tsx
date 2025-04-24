@@ -11,7 +11,6 @@ import NavigationBar from '@/components/NavigationBar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Task } from '@/services/taskService';
 import { Clock, FolderOpen, FileText } from 'lucide-react';
-import { format } from 'date-fns';
 
 const TaskHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
