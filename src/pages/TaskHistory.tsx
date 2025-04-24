@@ -70,15 +70,15 @@ const TaskHistory = () => {
             {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600" onClick={() => setSelectedTask(task)}>
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-slate-50 text-lg font-bold">{task.titulo}</h3>
-                  <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-orange-600">
+                  <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-blue-400">
                     {task.estado}
                   </Badge>
                 </div>
                 <p className="text-sm mb-2 text-orange-50">{task.descripcion}</p>
                 <div className="text-sm">
-                  <p className="text-slate-50">Asignado a: {task.asignado_a}</p>
-                  <p className="text-slate-50">Fecha Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
-                  <p className="text-slate-50 text-xs">Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
+                  <p className="text-slate-50 mx-[10px]">Asignado a: {task.asignado_a}</p>
+                  <p className="text-slate-50 mx-[10px]">Fecha Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
+                  <p className="text-slate-50 text-xs text-left mx-[10px]">Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
                 </div>
               </Card>) : <div className="text-center py-10 text-gray-400">
                 No se encontraron tareas con los filtros aplicados
