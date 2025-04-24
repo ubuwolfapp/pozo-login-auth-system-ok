@@ -12,14 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Task } from '@/services/taskService';
 import { Clock, FolderOpen, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 const TaskHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskStatus, setTaskStatus] = useState<'all' | 'pendiente' | 'en_progreso' | 'resuelta'>('all');
-
   const {
     data: tasks = [],
     isLoading
@@ -27,38 +25,26 @@ const TaskHistory = () => {
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
-
   const filteredTasks = tasks.filter(task => {
     const taskDate = new Date(task.created_at);
     const matchesDate = taskDate >= startDate && taskDate <= endDate;
-    const matchesSearch = 
-      task.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      task.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      task.asignado_a.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = task.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || task.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) || task.asignado_a.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
     return matchesDate && matchesSearch && matchesStatus;
   });
-
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
       </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-slate-900 text-white pb-20">
+  return <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Historial de Tareas</h1>
         
         <div className="bg-slate-800 p-4 rounded-lg mb-6 space-y-4">
           <h2 className="font-medium">Filtros</h2>
           <div className="flex flex-col md:flex-row gap-4">
-            <Input 
-              placeholder="Buscar por título, descripción o asignado..." 
-              value={searchQuery} 
-              onChange={e => setSearchQuery(e.target.value)} 
-              className="bg-slate-700 border-slate-600 text-white flex-1" 
-            />
+            <Input placeholder="Buscar por título, descripción o asignado..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-slate-700 border-slate-600 text-white flex-1" />
             <Select value={taskStatus} onValueChange={(value: 'all' | 'pendiente' | 'en_progreso' | 'resuelta') => setTaskStatus(value)}>
               <SelectTrigger className="w-[180px] bg-slate-700 text-white border-slate-600">
                 <SelectValue placeholder="Estado de Tarea" />
@@ -72,12 +58,7 @@ const TaskHistory = () => {
             </Select>
           </div>
           
-          <DateSelector 
-            startDate={startDate} 
-            endDate={endDate} 
-            onStartDateSelect={date => date && setStartDate(date)} 
-            onEndDateSelect={date => date && setEndDate(date)} 
-          />
+          <DateSelector startDate={startDate} endDate={endDate} onStartDateSelect={date => date && setStartDate(date)} onEndDateSelect={date => date && setEndDate(date)} />
           
           <div className="text-sm text-gray-400">
             Mostrando {filteredTasks.length} de {tasks.length} tareas
@@ -86,18 +67,10 @@ const TaskHistory = () => {
 
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {filteredTasks.length > 0 ? filteredTasks.map(task => (
-              <Card 
-                key={task.id} 
-                className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600"
-                onClick={() => setSelectedTask(task)}
-              >
+            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600" onClick={() => setSelectedTask(task)}>
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-medium text-orange-600">{task.titulo}</h3>
-                  <Badge 
-                    variant={task.estado === 'resuelta' ? 'secondary' : 'default'} 
-                    className="bg-orange-600"
-                  >
+                  <h3 className="text-slate-50 font-medium text-lg">{task.titulo}</h3>
+                  <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-orange-600">
                     {task.estado}
                   </Badge>
                 </div>
@@ -107,12 +80,9 @@ const TaskHistory = () => {
                   <p className="text-slate-50">Fecha Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
                   <p className="text-slate-50 text-xs">Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
                 </div>
-              </Card>
-            )) : (
-              <div className="text-center py-10 text-gray-400">
+              </Card>) : <div className="text-center py-10 text-gray-400">
                 No se encontraron tareas con los filtros aplicados
-              </div>
-            )}
+              </div>}
           </div>
         </ScrollArea>
       </div>
@@ -143,24 +113,14 @@ const TaskHistory = () => {
             </div>
             <div>
               <span className="font-medium">Descripción:</span><br />
-              {selectedTask?.descripcion 
-                ? <span>{selectedTask.descripcion}</span> 
-                : <span className="italic text-gray-400">Sin descripción</span>
-              }
+              {selectedTask?.descripcion ? <span>{selectedTask.descripcion}</span> : <span className="italic text-gray-400">Sin descripción</span>}
             </div>
-            {selectedTask?.link && (
-              <div className="flex gap-1 items-center text-blue-400">
+            {selectedTask?.link && <div className="flex gap-1 items-center text-blue-400">
                 <FileText className="w-4 h-4" />
-                <a 
-                  href={selectedTask.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="underline break-all"
-                >
+                <a href={selectedTask.link} target="_blank" rel="noopener noreferrer" className="underline break-all">
                   {selectedTask.link}
                 </a>
-              </div>
-            )}
+              </div>}
             <div>
               <span className="text-gray-400 mr-1">Fecha de Creación:</span>
               {selectedTask ? format(new Date(selectedTask.created_at), 'dd/MM/yyyy HH:mm') : ''}
@@ -170,8 +130,6 @@ const TaskHistory = () => {
       </Dialog>
       
       <NavigationBar />
-    </div>
-  );
+    </div>;
 };
-
 export default TaskHistory;
