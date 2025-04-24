@@ -22,8 +22,8 @@ const TaskList: React.FC<TaskListProps> = ({
           <Card className="p-4 transition-colors px-[19px] py-[18px] my-[14px] bg-slate-700">
             <div className="flex justify-between items-start">
               <div>
-                <h3 className="font-medium">{task.titulo}</h3>
-                {showCreationDate && <p className="text-xs text-gray-400 mt-1">
+                <h3 className="text-slate-50 text-lg text-left font-bold">{task.titulo}</h3>
+                {showCreationDate && <p className="text-xs mt-1 text-slate-300">
                     Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}
                   </p>}
               </div>
