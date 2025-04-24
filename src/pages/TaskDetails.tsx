@@ -11,6 +11,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image, FileText, Clock, FolderOpen, Download, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationBar from "@/components/NavigationBar";
+import { format } from 'date-fns';
 
 const TaskDetails = () => {
   const { id } = useParams();
@@ -176,6 +177,9 @@ const TaskDetails = () => {
               {task.es_critica && 
                 <span className="ml-2 text-red-500 font-semibold">Crítica</span>
               }
+              <div className="text-sm text-gray-400 mt-2">
+                Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

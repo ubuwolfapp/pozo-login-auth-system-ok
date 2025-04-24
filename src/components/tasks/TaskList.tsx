@@ -1,134 +1,55 @@
-import React, { useState } from 'react';
-import { Task } from '@/services/taskService';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React from 'react';
+import { format } from 'date-fns';
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, AlertTriangle } from 'lucide-react';
-import ChangeStatusModal from './ChangeStatusModal';
-import { useQueryClient } from '@tanstack/react-query';
-import { taskService } from '@/services/taskService';
-import { toast } from '@/hooks/use-toast';
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from 'react-router-dom';
-import TaskDetailModal from "./TaskDetailModal";
+import { Link } from 'react-router-dom';
+import { Task } from '@/services/taskService';
 
 interface TaskListProps {
   tasks: Task[];
-  myEmail: string | null;
-  showOnly?: "assigned_by_me" | "assigned_to_me" | undefined;
+  myEmail: string;
+  showOnly?: 'assigned_by_me' | 'assigned_to_me';
+  showCreationDate?: boolean;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, myEmail, showOnly }) => {
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const navigate = useNavigate();
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pendiente':
-        return 'bg-yellow-500';
-      case 'en_progreso':
-        return 'bg-blue-500';
-      case 'resuelta':
-        return 'bg-green-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const filteredTasks = tasks.filter(task => {
-    if (showOnly === "assigned_by_me") {
-      return task.asignado_por === myEmail;
-    }
-    if (showOnly === "assigned_to_me") {
-      return task.asignado_a === myEmail;
-    }
-    return true;
-  });
-
-  const handleStatusClick = (task: Task, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (task.asignado_a !== myEmail) {
-      toast({
-        title: "Solo el usuario asignado puede cambiar el estado.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setSelectedTask(task);
-    setIsStatusModalOpen(true);
-  };
-
-  const handleStatusChange = async (newStatus: Task['estado']) => {
-    if (!selectedTask) return;
-
-    try {
-      await taskService.updateTaskStatus(selectedTask.id, newStatus, myEmail || "");
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({
-        title: "Estado actualizado",
-        description: "El estado de la tarea ha sido actualizado exitosamente",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el estado de la tarea",
-        variant: "destructive",
-      });
-    }
-  };
+const TaskList: React.FC<TaskListProps> = ({ 
+  tasks, 
+  myEmail, 
+  showOnly = 'assigned_to_me',
+  showCreationDate = false 
+}) => {
+  const filteredTasks = tasks.filter(task => 
+    showOnly === 'assigned_by_me' 
+      ? task.asignado_por === myEmail 
+      : task.asignado_a === myEmail
+  );
 
   return (
-    <>
-      <div className="space-y-4">
-        {filteredTasks.map((task) => (
-          <Card 
-            key={task.id} 
-            className="cursor-pointer hover:ring-2 hover:ring-cyan-500 transition"
-            onClick={() => navigate(`/tasks/${task.id}`)}
-          >
-            <CardHeader className="p-4">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg font-semibold">
-                  {task.titulo}
-                </CardTitle>
-                {task.es_critica && (
-                  <AlertTriangle className="h-5 w-5 text-red-500" />
+    <div className="space-y-4">
+      {filteredTasks.map(task => (
+        <Link to={`/tasks/${task.id}`} key={task.id}>
+          <Card className="p-4 hover:bg-slate-800 transition-colors">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium">{task.titulo}</h3>
+                {showCreationDate && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}
+                  </p>
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    {new Date(task.fecha_limite).toLocaleDateString()}
-                  </span>
-                </div>
-                <Badge
-                  className={`cursor-pointer ${getStatusColor(task.estado)}`}
-                  onClick={(e) => handleStatusClick(task, e)}
-                >
-                  {task.estado}
-                </Badge>
-              </div>
-              <div className="mt-2 text-sm text-gray-600">
-                Asignado a: {task.asignado_a}
-                <br />
-                Asignado por: {task.asignado_por}
-              </div>
-            </CardContent>
+              <Badge 
+                variant={task.estado === 'resuelta' ? 'secondary' : 'default'}
+                className={task.estado === 'resuelta' ? 'bg-green-600' : 'bg-orange-600'}
+              >
+                {task.estado}
+              </Badge>
+            </div>
           </Card>
-        ))}
-      </div>
-
-      <ChangeStatusModal
-        open={isStatusModalOpen}
-        onOpenChange={setIsStatusModalOpen}
-        currentStatus={selectedTask?.estado || 'pendiente'}
-        onStatusChange={handleStatusChange}
-      />
-    </>
+        </Link>
+      ))}
+    </div>
   );
 };
 

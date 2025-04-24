@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
 import { taskService } from '@/services/taskService';
@@ -91,11 +92,21 @@ const Tasks = () => {
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <h2 className="font-semibold text-lg mb-2">Tareas asignadas por mí</h2>
-            <TaskList tasks={filteredTasks} myEmail={userEmail} showOnly="assigned_by_me" />
+            <TaskList 
+              tasks={filteredTasks} 
+              myEmail={userEmail} 
+              showOnly="assigned_by_me" 
+              showCreationDate={true}
+            />
           </div>
           <div>
             <h2 className="font-semibold text-lg mb-2">Mis tareas asignadas</h2>
-            <TaskList tasks={filteredTasks} myEmail={userEmail} showOnly="assigned_to_me" />
+            <TaskList 
+              tasks={filteredTasks} 
+              myEmail={userEmail} 
+              showOnly="assigned_to_me" 
+              showCreationDate={true}
+            />
           </div>
         </div>
       </div>
