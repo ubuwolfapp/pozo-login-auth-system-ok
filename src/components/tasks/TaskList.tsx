@@ -19,7 +19,7 @@ const TaskList: React.FC<TaskListProps> = ({
   const filteredTasks = tasks.filter(task => showOnly === 'assigned_by_me' ? task.asignado_por === myEmail : task.asignado_a === myEmail);
   return <div className="space-y-4">
       {filteredTasks.map(task => <Link to={`/tasks/${task.id}`} key={task.id}>
-          <Card className="p-4 transition-colors px-[19px] py-[18px] my-[14px] bg-slate-50">
+          <Card className="p-4 transition-colors px-[19px] py-[18px] my-[14px] bg-slate-700">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-medium">{task.titulo}</h3>
