@@ -11,12 +11,14 @@ import NavigationBar from '@/components/NavigationBar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Task } from '@/services/taskService';
 import { Clock, FolderOpen, FileText } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const TaskHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskStatus, setTaskStatus] = useState<'all' | 'pendiente' | 'en_progreso' | 'resuelta'>('all');
 
   const {
     data: tasks = [],
@@ -33,7 +35,8 @@ const TaskHistory = () => {
       task.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
       task.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) || 
       task.asignado_a.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesDate && matchesSearch;
+    const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
+    return matchesDate && matchesSearch && matchesStatus;
   });
 
   if (isLoading) {
@@ -49,12 +52,25 @@ const TaskHistory = () => {
         
         <div className="bg-slate-800 p-4 rounded-lg mb-6 space-y-4">
           <h2 className="font-medium">Filtros</h2>
-          <Input 
-            placeholder="Buscar por título, descripción o asignado..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
-            className="bg-slate-700 border-slate-600 text-white" 
-          />
+          <div className="flex flex-col md:flex-row gap-4">
+            <Input 
+              placeholder="Buscar por título, descripción o asignado..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              className="bg-slate-700 border-slate-600 text-white flex-1" 
+            />
+            <Select value={taskStatus} onValueChange={(value: 'all' | 'pendiente' | 'en_progreso' | 'resuelta') => setTaskStatus(value)}>
+              <SelectTrigger className="w-[180px] bg-slate-700 text-white border-slate-600">
+                <SelectValue placeholder="Estado de Tarea" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los Estados</SelectItem>
+                <SelectItem value="pendiente">Pendientes</SelectItem>
+                <SelectItem value="en_progreso">En Progreso</SelectItem>
+                <SelectItem value="resuelta">Resueltas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
           <DateSelector 
             startDate={startDate} 
