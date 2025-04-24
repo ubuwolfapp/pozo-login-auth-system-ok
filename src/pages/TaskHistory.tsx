@@ -69,7 +69,7 @@ const TaskHistory = () => {
           <div className="space-y-4">
             {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600" onClick={() => setSelectedTask(task)}>
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-slate-50 font-medium text-lg">{task.titulo}</h3>
+                  <h3 className="text-slate-50 text-lg font-bold">{task.titulo}</h3>
                   <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-orange-600">
                     {task.estado}
                   </Badge>
