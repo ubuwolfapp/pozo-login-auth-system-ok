@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -9,10 +8,12 @@ import NavigationBar from '@/components/NavigationBar';
 import { Button } from '@/components/ui/button';
 import { Plus, History } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Tasks = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [preselectedWell, setPreselectedWell] = useState<string | undefined>(undefined);
+  const [taskStatus, setTaskStatus] = useState<'all' | 'pendiente' | 'en_progreso' | 'resuelta'>('all');
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
@@ -24,7 +25,10 @@ const Tasks = () => {
     queryFn: taskService.getTasks
   });
 
-  // Detectar ?openModal=true&well=xxx en la URL
+  const filteredTasks = tasks.filter(task => 
+    taskStatus === 'all' || task.estado === taskStatus
+  );
+
   useEffect(() => {
     const openModal = searchParams.get('openModal');
     const wellParam = searchParams.get('well');
@@ -54,7 +58,18 @@ const Tasks = () => {
       <div className="container mx-auto px-4 py-6">
         <header className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Tareas</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <Select value={taskStatus} onValueChange={(value: 'all' | 'pendiente' | 'en_progreso' | 'resuelta') => setTaskStatus(value)}>
+              <SelectTrigger className="w-[180px] bg-slate-800 text-white">
+                <SelectValue placeholder="Estado de Tarea" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los Estados</SelectItem>
+                <SelectItem value="pendiente">Pendientes</SelectItem>
+                <SelectItem value="en_progreso">En Progreso</SelectItem>
+                <SelectItem value="resuelta">Resueltas</SelectItem>
+              </SelectContent>
+            </Select>
             <Link to="/task-history">
               <Button
                 variant="outline"
@@ -76,11 +91,11 @@ const Tasks = () => {
         <div className="grid md:grid-cols-2 gap-10">
           <div>
             <h2 className="font-semibold text-lg mb-2">Tareas asignadas por mí</h2>
-            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_by_me" />
+            <TaskList tasks={filteredTasks} myEmail={userEmail} showOnly="assigned_by_me" />
           </div>
           <div>
             <h2 className="font-semibold text-lg mb-2">Mis tareas asignadas</h2>
-            <TaskList tasks={tasks} myEmail={userEmail} showOnly="assigned_to_me" />
+            <TaskList tasks={filteredTasks} myEmail={userEmail} showOnly="assigned_to_me" />
           </div>
         </div>
       </div>
@@ -91,7 +106,7 @@ const Tasks = () => {
           setIsAddModalOpen(open);
           if (!open) setPreselectedWell(undefined);
         }}
-        onSuccess={handleTaskAdded}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['tasks'] })}
         preselectedWell={preselectedWell}
       />
 

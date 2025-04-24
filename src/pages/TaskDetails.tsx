@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -274,7 +273,7 @@ const TaskDetails = () => {
                     value={descripcion} 
                     onChange={e => setDescripcion(e.target.value)}
                     placeholder="Describe el progreso de la tarea"
-                    rows={3}
+                    rows={6}
                     className="bg-zinc-900"
                   />
                 </div>
