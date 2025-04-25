@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '@/components/Logo';
@@ -100,6 +99,15 @@ const Login: React.FC = () => {
             <path d="M0,40 C25,30 50,50 75,45 C100,40 125,20 150,25 C175,30 200,50 225,35 C250,20 275,40 300,30" 
                   stroke="#3D8BFF" strokeWidth="2" fill="none" />
           </svg>
+        </div>
+        
+        {/* NUEVO: Imagen agregada arriba del formulario */}
+        <div className="mb-6 flex justify-center">
+          <img 
+            src="/assets/login-image.png" 
+            alt="Ilustración de inicio de sesión" 
+            className="max-w-xs w-full"
+          />
         </div>
         
         {/* Formulario de login */}
