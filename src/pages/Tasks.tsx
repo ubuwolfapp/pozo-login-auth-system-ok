@@ -74,10 +74,10 @@ const Tasks = () => {
             <Link to="/task-history">
               <Button
                 variant="outline"
-                className="border-cyan-500 text-cyan-500"
+                className="border-cyan-500 text-cyan-500 px-2"
+                aria-label="Ver Historial"
               >
-                <History className="h-5 w-5 mr-1" />
-                Ver Historial
+                <History className="h-5 w-5" />
               </Button>
             </Link>
             <Button
