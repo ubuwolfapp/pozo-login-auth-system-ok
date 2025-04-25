@@ -55,7 +55,6 @@ const MapPage = () => {
 
   // Handle well selection
   const handleSelectWell = (well: Well) => {
-    // Create popup for the selected well
     if (!map.current) return;
     
     // Remove existing popups
@@ -85,8 +84,6 @@ const MapPage = () => {
       localStorage.setItem('mapbox_token', tempToken);
       setStoredToken(tempToken);
       setShowTokenDialog(false);
-      
-      // Force reload of the page to reinitialize map with new token
       window.location.reload();
     }
   };
@@ -103,7 +100,6 @@ const MapPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
-      {/* Top bar with user info and logout */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 fixed top-0 left-0 right-0 z-10 py-[20px] rounded-none">
         <div className="container mx-auto flex items-center justify-between">
           <h2 className="text-sm font-medium">
