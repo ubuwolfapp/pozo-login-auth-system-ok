@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from 'react-router-dom';
 import { Task } from '@/services/taskService';
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 interface TaskListProps {
   tasks: Task[];
@@ -13,15 +14,23 @@ interface TaskListProps {
   showCreationDate?: boolean;
 }
 
+const ITEMS_PER_PAGE = 5;
+
 const TaskList: React.FC<TaskListProps> = ({
   tasks,
   myEmail,
   showOnly = 'assigned_to_me',
   showCreationDate = false
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const filteredTasks = tasks.filter(task => 
     showOnly === 'assigned_by_me' ? task.asignado_por === myEmail : task.asignado_a === myEmail
   );
+
+  const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedTasks = filteredTasks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const truncateDescription = (description: string | null | undefined) => {
     if (!description) return '';
@@ -31,7 +40,7 @@ const TaskList: React.FC<TaskListProps> = ({
 
   return (
     <div className="space-y-4">
-      {filteredTasks.map(task => (
+      {paginatedTasks.map(task => (
         <Link to={`/tasks/${task.id}`} key={task.id}>
           <Card className="p-4 transition-colors px-[19px] py-[18px] my-[14px] bg-slate-700">
             <div className="flex justify-between items-start">
@@ -58,6 +67,37 @@ const TaskList: React.FC<TaskListProps> = ({
           </Card>
         </Link>
       ))}
+
+      {totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(page)}
+                  isActive={currentPage === page}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };
