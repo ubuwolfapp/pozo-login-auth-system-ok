@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
@@ -53,13 +52,17 @@ const TaskHistory = () => {
     queryFn: taskService.getTasks
   });
 
-  const filteredTasks = tasks.filter(task => {
-    const taskDate = new Date(task.created_at);
-    const matchesDate = taskDate >= startDate && taskDate <= endDate;
-    const matchesSearch = task.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || task.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) || task.asignado_a.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
-    return matchesDate && matchesSearch && matchesStatus;
-  });
+  const filteredTasks = tasks
+    .filter(task => {
+      const taskDate = new Date(task.created_at);
+      const matchesDate = taskDate >= startDate && taskDate <= endDate;
+      const matchesSearch = task.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          task.descripcion?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          task.asignado_a.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
+      return matchesDate && matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">

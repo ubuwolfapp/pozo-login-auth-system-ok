@@ -47,9 +47,11 @@ const TaskList: React.FC<TaskListProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   
-  const filteredTasks = tasks.filter(task => 
-    showOnly === 'assigned_by_me' ? task.asignado_por === myEmail : task.asignado_a === myEmail
-  );
+  const filteredTasks = tasks
+    .filter(task => 
+      showOnly === 'assigned_by_me' ? task.asignado_por === myEmail : task.asignado_a === myEmail
+    )
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   const totalPages = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
