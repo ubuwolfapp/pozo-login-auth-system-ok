@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, History, Plus, Trash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PhotoUpload from '@/components/wells/PhotoUpload';
-import { ButtonGroup } from '@/components/ui/button-group';
 
 interface WellHeaderProps {
   wellName: string;

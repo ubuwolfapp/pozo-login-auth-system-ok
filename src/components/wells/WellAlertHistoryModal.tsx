@@ -3,17 +3,30 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
-import { AlertCircle, BookOpen } from 'lucide-react';
+import { AlertCircle, BookOpen, Trash } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface WellAlertHistoryModalProps {
   wellId: string;
   open: boolean;
   onClose: () => void;
+  onDeleteAlert?: (alertId: string) => void;
 }
 
-const WellAlertHistoryModal: React.FC<WellAlertHistoryModalProps> = ({ wellId, open, onClose }) => {
+const WellAlertHistoryModal: React.FC<WellAlertHistoryModalProps> = ({ wellId, open, onClose, onDeleteAlert }) => {
   const { data: alerts, isLoading } = useQuery({
     queryKey: ['alert-history', wellId],
     queryFn: async () => {
@@ -52,6 +65,7 @@ const WellAlertHistoryModal: React.FC<WellAlertHistoryModalProps> = ({ wellId, o
                   <TableHead>Mensaje</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Resolución</TableHead>
+                  {onDeleteAlert && <TableHead className="w-16">Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -71,6 +85,34 @@ const WellAlertHistoryModal: React.FC<WellAlertHistoryModalProps> = ({ wellId, o
                     <TableCell>
                       <div className="whitespace-pre-line">{alert.resolucion || '-'}</div>
                     </TableCell>
+                    {onDeleteAlert && (
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-400">
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-slate-800 text-white border-slate-700">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-gray-400">
+                                Esta acción no se puede deshacer.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-slate-700 hover:bg-slate-600">Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => onDeleteAlert(alert.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
