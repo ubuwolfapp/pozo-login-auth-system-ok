@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,14 +10,39 @@ import { format, subDays } from 'date-fns';
 import NavigationBar from '@/components/NavigationBar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Task } from '@/services/taskService';
-import { Clock, FolderOpen, FileText } from 'lucide-react';
+import { Clock, FolderOpen, FileText, Trash } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from 'react-toastify';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+
 const TaskHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskStatus, setTaskStatus] = useState<'all' | 'pendiente' | 'en_progreso' | 'resuelta'>('all');
+  const queryClient = useQueryClient();
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      await taskService.deleteTask(taskId);
+      
+      toast({
+        title: "Tarea eliminada",
+        description: "La tarea ha sido eliminada correctamente",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar la tarea",
+        variant: "destructive"
+      });
+    }
+  };
+
   const {
     data: tasks = [],
     isLoading
@@ -25,6 +50,7 @@ const TaskHistory = () => {
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
+
   const filteredTasks = tasks.filter(task => {
     const taskDate = new Date(task.created_at);
     const matchesDate = taskDate >= startDate && taskDate <= endDate;
@@ -32,11 +58,13 @@ const TaskHistory = () => {
     const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
     return matchesDate && matchesSearch && matchesStatus;
   });
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
       </div>;
   }
+
   return <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Historial de Tareas</h1>
@@ -125,6 +153,40 @@ const TaskHistory = () => {
               <span className="text-gray-400 mr-1">Fecha de Creación:</span>
               {selectedTask ? format(new Date(selectedTask.created_at), 'dd/MM/yyyy HH:mm') : ''}
             </div>
+            <div className="flex justify-end space-x-2 mt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    <Trash className="h-4 w-4 mr-2" />
+                    Eliminar Tarea
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-slate-800 text-white border-slate-700">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-400">
+                      Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-slate-700 hover:bg-slate-600">
+                      Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        if (selectedTask) {
+                          handleDeleteTask(selectedTask.id);
+                          setSelectedTask(null);
+                        }
+                      }}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -132,4 +194,5 @@ const TaskHistory = () => {
       <NavigationBar />
     </div>;
 };
+
 export default TaskHistory;
