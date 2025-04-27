@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NavigationBar from '@/components/NavigationBar';
-import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, Thermometer, Droplet, Brain, Language } from 'lucide-react';
+import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, Thermometer, Droplet, Brain, Languages } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -279,7 +279,7 @@ const Settings = () => {
             <div className="bg-slate-800 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Language className="h-5 w-5 text-gray-400" />
+                  <Languages className="h-5 w-5 text-gray-400" />
                   <span>{texts.language}</span>
                 </div>
                 <Select value={selectedLanguage} onValueChange={handleLanguageChange}>

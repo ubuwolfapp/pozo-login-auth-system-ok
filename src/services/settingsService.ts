@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -78,7 +79,7 @@ export const settingsService = {
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: settings.openai_activo ?? true,
+        openai_activo: settings.openai_activo ?? false,
       } as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -139,7 +140,7 @@ export const settingsService = {
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? true
+          openai_activo: data.openai_activo ?? false
         } as UserSettings;
       } else {
         const { data, error } = await supabase
@@ -159,7 +160,7 @@ export const settingsService = {
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? true
+          openai_activo: data.openai_activo ?? false
         } as UserSettings;
       }
     } catch (error) {
