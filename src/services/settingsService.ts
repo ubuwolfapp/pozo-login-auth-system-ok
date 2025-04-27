@@ -59,7 +59,7 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
-          openai_activo: true,
+          openai_activo: false, // Default value
         };
 
         const { data: newSettings, error: insertError } = await supabase
@@ -74,13 +74,16 @@ export const settingsService = {
 
       if (error) throw error;
       
-      return {
+      // Create a new object with the required properties and defaults
+      const userSettings: UserSettings = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: settings.openai_activo ?? false,
-      } as UserSettings;
+        openai_activo: settings.openai_activo ?? false, // Add default if missing
+      };
+      
+      return userSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -120,7 +123,7 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
-          openai_activo: true,
+          openai_activo: false, // Default value
           ...settings
         };
 
@@ -137,11 +140,14 @@ export const settingsService = {
           description: "Configuración creada correctamente",
         });
 
-        return {
+        // Create a new object with the required properties and defaults
+        const userSettings: UserSettings = {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? false
-        } as UserSettings;
+          openai_activo: data.openai_activo ?? false, // Add default if missing
+        };
+        
+        return userSettings;
       } else {
         const { data, error } = await supabase
           .from('configuracion_usuario')
@@ -157,11 +163,14 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
-        return {
+        // Create a new object with the required properties and defaults
+        const userSettings: UserSettings = {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? false
-        } as UserSettings;
+          openai_activo: data.openai_activo ?? false, // Add default if missing
+        };
+        
+        return userSettings;
       }
     } catch (error) {
       console.error('Error updating settings:', error);
