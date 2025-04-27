@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+
 const TaskHistory = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
@@ -22,6 +23,7 @@ const TaskHistory = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskStatus, setTaskStatus] = useState<'all' | 'pendiente' | 'en_progreso' | 'resuelta'>('all');
   const queryClient = useQueryClient();
+
   const handleDeleteTask = async (taskId: string) => {
     try {
       await taskService.deleteTask(taskId);
@@ -41,6 +43,7 @@ const TaskHistory = () => {
       });
     }
   };
+
   const {
     data: tasks = [],
     isLoading
@@ -48,6 +51,7 @@ const TaskHistory = () => {
     queryKey: ['tasks'],
     queryFn: taskService.getTasks
   });
+
   const filteredTasks = tasks.filter(task => {
     const taskDate = new Date(task.created_at);
     const matchesDate = taskDate >= startDate && taskDate <= endDate;
@@ -55,11 +59,13 @@ const TaskHistory = () => {
     const matchesStatus = taskStatus === 'all' || task.estado === taskStatus;
     return matchesDate && matchesSearch && matchesStatus;
   }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-screen bg-slate-900">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-cyan-500"></div>
       </div>;
   }
+
   return <div className="min-h-screen bg-slate-900 text-white pb-20">
       <div className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Historial de Tareas</h1>
@@ -90,7 +96,7 @@ const TaskHistory = () => {
 
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} onClick={() => setSelectedTask(task)} className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600 rounded-sm">
+            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} onClick={() => setSelectedTask(task)} className="border-white p-4 bg-slate-700 cursor-pointer hover:bg-slate-600 rounded-sm">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-slate-50 text-lg font-bold">{task.titulo}</h3>
                   <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className={task.estado === 'resuelta' ? 'bg-green-600' : 'bg-orange-600'}>
@@ -186,4 +192,5 @@ const TaskHistory = () => {
       <NavigationBar />
     </div>;
 };
+
 export default TaskHistory;
