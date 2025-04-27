@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
@@ -77,9 +78,17 @@ const TaskHistory = () => {
         <div className="bg-slate-800 p-4 rounded-lg mb-6 space-y-4">
           <h2 className="font-medium">Filtros</h2>
           <div className="flex flex-col md:flex-row gap-4">
-            <Input placeholder="Buscar por título, descripción o asignado..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-slate-700 border-slate-600 text-white flex-1" />
-            <Select value={taskStatus} onValueChange={(value: 'all' | 'pendiente' | 'en_progreso' | 'resuelta') => setTaskStatus(value)}>
-              <SelectTrigger className="w-[180px] bg-slate-700 text-white border-slate-600">
+            <Input 
+              placeholder="Buscar por título, descripción o asignado..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              className="bg-slate-700 border-slate-600 text-white flex-1" 
+            />
+            <Select 
+              value={taskStatus} 
+              onValueChange={(value: 'all' | 'pendiente' | 'en_progreso' | 'resuelta') => setTaskStatus(value)}
+            >
+              <SelectTrigger className="w-[180px] bg-slate-800 text-white">
                 <SelectValue placeholder="Estado de Tarea" />
               </SelectTrigger>
               <SelectContent>
@@ -91,7 +100,12 @@ const TaskHistory = () => {
             </Select>
           </div>
           
-          <DateSelector startDate={startDate} endDate={endDate} onStartDateSelect={date => date && setStartDate(date)} onEndDateSelect={date => date && setEndDate(date)} />
+          <DateSelector 
+            startDate={startDate} 
+            endDate={endDate} 
+            onStartDateSelect={date => date && setStartDate(date)} 
+            onEndDateSelect={date => date && setEndDate(date)} 
+          />
           
           <div className="text-sm text-gray-400">
             Mostrando {filteredTasks.length} de {tasks.length} tareas
@@ -100,10 +114,18 @@ const TaskHistory = () => {
 
         <ScrollArea className="h-[calc(100vh-300px)]">
           <div className="space-y-4">
-            {filteredTasks.length > 0 ? filteredTasks.map(task => <Card key={task.id} className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600" onClick={() => setSelectedTask(task)}>
+            {filteredTasks.length > 0 ? filteredTasks.map(task => (
+              <Card 
+                key={task.id} 
+                className="border-slate-700 p-4 bg-slate-700 cursor-pointer hover:bg-slate-600" 
+                onClick={() => setSelectedTask(task)}
+              >
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-slate-50 text-lg font-bold">{task.titulo}</h3>
-                  <Badge variant={task.estado === 'resuelta' ? 'secondary' : 'default'} className="bg-blue-400">
+                  <Badge 
+                    variant={task.estado === 'resuelta' ? 'secondary' : 'default'} 
+                    className={task.estado === 'resuelta' ? 'bg-green-600' : 'bg-orange-600'}
+                  >
                     {task.estado}
                   </Badge>
                 </div>
@@ -113,9 +135,12 @@ const TaskHistory = () => {
                   <p className="text-slate-50 mx-[10px]">Fecha Límite: {format(new Date(task.fecha_limite), 'dd/MM/yyyy')}</p>
                   <p className="text-slate-50 text-xs text-left mx-[10px]">Creada: {format(new Date(task.created_at), 'dd/MM/yyyy HH:mm')}</p>
                 </div>
-              </Card>) : <div className="text-center py-10 text-gray-400">
+              </Card>
+            )) : (
+              <div className="text-center py-10 text-gray-400">
                 No se encontraron tareas con los filtros aplicados
-              </div>}
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>
@@ -136,7 +161,10 @@ const TaskHistory = () => {
             </div>
             <div>
               <span className="text-gray-400 mr-1">Estado:</span>
-              <Badge variant={selectedTask?.estado === 'resuelta' ? 'secondary' : 'default'}>
+              <Badge 
+                variant={selectedTask?.estado === 'resuelta' ? 'secondary' : 'default'}
+                className={selectedTask?.estado === 'resuelta' ? 'bg-green-600' : 'bg-orange-600'}
+              >
                 {selectedTask?.estado}
               </Badge>
             </div>
@@ -148,12 +176,14 @@ const TaskHistory = () => {
               <span className="font-medium">Descripción:</span><br />
               {selectedTask?.descripcion ? <span>{selectedTask.descripcion}</span> : <span className="italic text-gray-400">Sin descripción</span>}
             </div>
-            {selectedTask?.link && <div className="flex gap-1 items-center text-blue-400">
+            {selectedTask?.link && (
+              <div className="flex gap-1 items-center text-blue-400">
                 <FileText className="w-4 h-4" />
                 <a href={selectedTask.link} target="_blank" rel="noopener noreferrer" className="underline break-all">
                   {selectedTask.link}
                 </a>
-              </div>}
+              </div>
+            )}
             <div>
               <span className="text-gray-400 mr-1">Fecha de Creación:</span>
               {selectedTask ? format(new Date(selectedTask.created_at), 'dd/MM/yyyy HH:mm') : ''}
