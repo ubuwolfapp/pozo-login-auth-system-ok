@@ -70,22 +70,21 @@ export const settingsService = {
 
         if (insertError) throw insertError;
         
-        return {
-          ...newSettings,
-          openai_activo: false // Ensure this property exists
-        } as UserSettings;
+        return newSettings as UserSettings;
       }
 
       if (error) throw error;
       
       // Create a complete user settings object with all required properties
-      return {
+      const completeSettings = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: false // Ensure the property exists with a default value
+        openai_activo: settings.openai_activo ?? false // Ensure the property exists
       } as UserSettings;
+      
+      return completeSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -142,12 +141,7 @@ export const settingsService = {
           description: "Configuración creada correctamente",
         });
 
-        // Return complete settings object with all properties
-        return {
-          ...data,
-          simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: settings.openai_activo ?? false // Use provided value or default
-        } as UserSettings;
+        return data as UserSettings;
       } else {
         const { data, error } = await supabase
           .from('configuracion_usuario')
@@ -163,12 +157,11 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
-        // Return complete settings object with all properties
+        // Ensure the openai_activo property is present
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          // Fix the error: Don't try to access openai_activo on data object
-          openai_activo: settings.openai_activo !== undefined ? settings.openai_activo : false
+          openai_activo: settings.openai_activo !== undefined ? settings.openai_activo : (data.openai_activo ?? false)
         } as UserSettings;
       }
     } catch (error) {
