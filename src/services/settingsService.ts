@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -166,8 +167,8 @@ export const settingsService = {
         return {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: settings.openai_activo ?? data.openai_activo ?? false 
-          // Use provided value, existing value, or default
+          // Fix the error: Don't try to access openai_activo on data object
+          openai_activo: settings.openai_activo !== undefined ? settings.openai_activo : false
         } as UserSettings;
       }
     } catch (error) {
