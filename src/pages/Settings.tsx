@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NavigationBar from '@/components/NavigationBar';
-import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, Thermometer, Droplet } from 'lucide-react';
+import { ArrowLeft, Bell, Globe, Mail, MessageSquare, CircleAlert, Thermometer, Droplet, Brain, Language } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
@@ -17,6 +17,7 @@ const Settings = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("general");
   const [selectedWellId, setSelectedWellId] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('es');
 
   // Consultas para obtener configuraciones y pozos
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -47,7 +48,9 @@ const Settings = () => {
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
+        openai_activo: settings.openai_activo ?? false,
       });
+      setSelectedLanguage(settings.idioma || 'es');
     }
   }, [settings]);
 
@@ -134,6 +137,12 @@ const Settings = () => {
     });
   };
 
+  const handleLanguageChange = (value: string) => {
+    setSelectedLanguage(value);
+    if (!localSettings) return;
+    setLocalSettings(prev => prev ? { ...prev, idioma: value } : prev);
+  };
+
   if (isLoadingSettings || isLoadingWells || !localSettings) {
     return <div className="min-h-screen bg-slate-900 text-white p-6">
       <div className="flex justify-center items-center h-64">
@@ -141,6 +150,56 @@ const Settings = () => {
       </div>
     </div>;
   }
+
+  const texts = selectedLanguage === 'en' ? {
+    settings: "Settings",
+    general: "General",
+    wells: "Wells",
+    ai: "AI Technology",
+    notifications: "Notifications",
+    push: "Push",
+    email: "Email",
+    sms: "SMS",
+    language: "Language",
+    spanish: "Spanish",
+    english: "English",
+    simulationValues: "Value Simulation",
+    simulationDescription: "If disabled, random pressure, temperature, and flow values will not be generated for wells.",
+    defaultAlertThresholds: "Default Alert Thresholds",
+    pressure: "Pressure",
+    temperature: "Temperature",
+    flow: "Flow",
+    selectWell: "Select Well",
+    wellThresholds: "Well Thresholds",
+    saveChanges: "Save Changes",
+    aiSettings: "AI Settings",
+    aiFeatures: "AI Features",
+    aiDescription: "Enable or disable AI features in the application",
+  } : {
+    settings: "Configuración",
+    general: "General",
+    wells: "Pozos",
+    ai: "Tecnología IA",
+    notifications: "Notificaciones",
+    push: "Push",
+    email: "Correo",
+    sms: "SMS",
+    language: "Idioma",
+    spanish: "Español",
+    english: "Inglés",
+    simulationValues: "Simulación de valores",
+    simulationDescription: "Si está desactivado, no se generarán valores aleatorios de presión, temperatura ni flujo para los pozos.",
+    defaultAlertThresholds: "Umbrales de Alerta Predeterminados",
+    pressure: "Presión",
+    temperature: "Temperatura",
+    flow: "Flujo",
+    selectWell: "Seleccionar Pozo",
+    wellThresholds: "Umbrales del Pozo",
+    saveChanges: "Guardar Cambios",
+    aiSettings: "Configuración de IA",
+    aiFeatures: "Funciones de IA",
+    aiDescription: "Activar o desactivar funciones de IA en la aplicación",
+  };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20">
@@ -153,7 +212,7 @@ const Settings = () => {
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-2xl font-bold">Configuración</h1>
+          <h1 className="text-2xl font-bold">{texts.settings}</h1>
         </header>
 
         <Tabs
@@ -163,8 +222,9 @@ const Settings = () => {
           className="space-y-4"
         >
           <TabsList className="bg-slate-800 border-slate-700">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="pozos">Pozos</TabsTrigger>
+            <TabsTrigger value="general">{texts.general}</TabsTrigger>
+            <TabsTrigger value="pozos">{texts.wells}</TabsTrigger>
+            <TabsTrigger value="ia">{texts.ai}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="space-y-4">
@@ -173,7 +233,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Bell className="h-5 w-5 text-gray-400" />
-                  <span>Notificaciones</span>
+                  <span>{texts.notifications}</span>
                 </div>
                 <Switch
                   checked={localSettings.notificaciones_activas}
@@ -184,7 +244,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Bell className="h-5 w-5 text-gray-400" />
-                  <span>Push</span>
+                  <span>{texts.push}</span>
                 </div>
                 <Switch
                   checked={localSettings.push_activo}
@@ -195,7 +255,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Mail className="h-5 w-5 text-gray-400" />
-                  <span>Correo</span>
+                  <span>{texts.email}</span>
                 </div>
                 <Switch
                   checked={localSettings.correo_activo}
@@ -206,7 +266,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <MessageSquare className="h-5 w-5 text-gray-400" />
-                  <span>SMS</span>
+                  <span>{texts.sms}</span>
                 </div>
                 <Switch
                   checked={localSettings.sms_activo}
@@ -215,31 +275,54 @@ const Settings = () => {
               </div>
             </div>
 
+            {/* Language Selection */}
+            <div className="bg-slate-800 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Language className="h-5 w-5 text-gray-400" />
+                  <span>{texts.language}</span>
+                </div>
+                <Select value={selectedLanguage} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="w-[140px] bg-slate-700 border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-700 border-slate-600">
+                    <SelectItem value="es" className="text-white">
+                      {texts.spanish}
+                    </SelectItem>
+                    <SelectItem value="en" className="text-white">
+                      {texts.english}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Simulación de valores */}
             <div className="bg-slate-800 rounded-lg p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="font-medium">Simulación de valores</span>
+                  <span className="font-medium">{texts.simulationValues}</span>
                 </div>
                 <Switch
                   checked={localSettings.simulacion_activa}
                   onCheckedChange={() => handleSwitchChange('simulacion_activa')}
                 />
               </div>
-              <span className="text-xs text-gray-400">Si está desactivado, no se generarán valores aleatorios de presión, temperatura ni flujo para los pozos.</span>
+              <span className="text-xs text-gray-400">{texts.simulationDescription}</span>
             </div>
 
             {/* Umbrales de Alerta Generales */}
             <div className="bg-slate-800 rounded-lg p-4 space-y-4">
               <h2 className="flex items-center gap-2 mb-4">
                 <CircleAlert className="h-5 w-5 text-gray-400" />
-                Umbrales de Alerta Predeterminados
+                {texts.defaultAlertThresholds}
               </h2>
 
               <div className="flex items-center justify-between">
                 <span className="text-orange-500 flex items-center gap-2">
                   <CircleAlert className="h-4 w-4" />
-                  Presión
+                  {texts.pressure}
                 </span>
                 <div className="flex items-center gap-2">
                   <Input
@@ -255,7 +338,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <span className="text-red-500 flex items-center gap-2">
                   <Thermometer className="h-4 w-4" />
-                  Temperatura
+                  {texts.temperature}
                 </span>
                 <div className="flex items-center gap-2">
                   <Input
@@ -271,7 +354,7 @@ const Settings = () => {
               <div className="flex items-center justify-between">
                 <span className="text-cyan-500 flex items-center gap-2">
                   <Droplet className="h-4 w-4" />
-                  Flujo
+                  {texts.flow}
                 </span>
                 <div className="flex items-center gap-2">
                   <Input
@@ -285,21 +368,7 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Idioma Section */}
-            <div className="bg-slate-800 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-gray-400" />
-                  <span>Idioma</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span>Español</span>
-                  <ArrowLeft className="h-5 w-5 rotate-180" />
-                </div>
-              </div>
-            </div>
-            
-            {/* Guardar cambios */}
+            {/* Save Changes Button */}
             <div className="mt-6">
               <Button
                 onClick={handleSaveGeneralChanges}
@@ -309,7 +378,7 @@ const Settings = () => {
                 {updateSettingsMutation.isPending && (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 )}
-                Guardar Cambios
+                {texts.saveChanges}
               </Button>
             </div>
           </TabsContent>
@@ -343,13 +412,13 @@ const Settings = () => {
                 <div className="bg-slate-800 rounded-lg p-4 space-y-4">
                   <h2 className="flex items-center gap-2 mb-4">
                     <CircleAlert className="h-5 w-5 text-gray-400" />
-                    Umbrales de Alerta para {wells?.find(w => w.id === selectedWellId)?.nombre}
+                    {texts.wellThresholds} para {wells?.find(w => w.id === selectedWellId)?.nombre}
                   </h2>
 
                   <div className="flex items-center justify-between">
                     <span className="text-orange-500 flex items-center gap-2">
                       <CircleAlert className="h-4 w-4" />
-                      Presión
+                      {texts.pressure}
                     </span>
                     <div className="flex items-center gap-2">
                       <Input
@@ -365,7 +434,7 @@ const Settings = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-red-500 flex items-center gap-2">
                       <Thermometer className="h-4 w-4" />
-                      Temperatura
+                      {texts.temperature}
                     </span>
                     <div className="flex items-center gap-2">
                       <Input
@@ -381,7 +450,7 @@ const Settings = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-cyan-500 flex items-center gap-2">
                       <Droplet className="h-4 w-4" />
-                      Flujo
+                      {texts.flow}
                     </span>
                     <div className="flex items-center gap-2">
                       <Input
@@ -405,7 +474,7 @@ const Settings = () => {
                     {updateWellUmbralMutation.isPending && (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     )}
-                    Guardar Cambios
+                    {texts.saveChanges}
                   </Button>
                 </div>
               </>
@@ -419,9 +488,44 @@ const Settings = () => {
 
             {!selectedWellId && (
               <div className="bg-slate-800 rounded-lg p-4 text-center text-gray-400">
-                Seleccione un pozo para configurar sus umbrales
+                {texts.selectWell}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="ia" className="space-y-4">
+            <div className="bg-slate-800 rounded-lg p-4 space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Brain className="h-5 w-5 text-gray-400" />
+                {texts.aiSettings}
+              </h2>
+
+              <div>
+                <h3 className="text-lg mb-2">{texts.aiFeatures}</h3>
+                <p className="text-sm text-gray-400 mb-4">{texts.aiDescription}</p>
+
+                <div className="flex items-center justify-between">
+                  <span>OpenAI</span>
+                  <Switch
+                    checked={localSettings.openai_activo}
+                    onCheckedChange={() => handleSwitchChange('openai_activo')}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6">
+                <Button
+                  onClick={handleSaveGeneralChanges}
+                  disabled={updateSettingsMutation.isPending}
+                  className="relative bg-pozo-orange hover:bg-opacity-90"
+                >
+                  {updateSettingsMutation.isPending && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  {texts.saveChanges}
+                </Button>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

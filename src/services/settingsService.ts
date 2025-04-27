@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -14,6 +13,7 @@ export interface UserSettings {
   umbral_flujo: number;
   idioma: string;
   simulacion_activa: boolean;
+  openai_activo: boolean;
 }
 
 export interface PozoUmbral {
@@ -58,6 +58,7 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
+          openai_activo: true,
         };
 
         const { data: newSettings, error: insertError } = await supabase
@@ -77,6 +78,7 @@ export const settingsService = {
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
+        openai_activo: settings.openai_activo ?? true,
       } as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
@@ -117,6 +119,7 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
+          openai_activo: true,
           ...settings
         };
 
@@ -135,7 +138,8 @@ export const settingsService = {
 
         return {
           ...data,
-          simulacion_activa: data.simulacion_activa ?? true
+          simulacion_activa: data.simulacion_activa ?? true,
+          openai_activo: data.openai_activo ?? true
         } as UserSettings;
       } else {
         const { data, error } = await supabase
@@ -154,7 +158,8 @@ export const settingsService = {
 
         return {
           ...data,
-          simulacion_activa: data.simulacion_activa ?? true
+          simulacion_activa: data.simulacion_activa ?? true,
+          openai_activo: data.openai_activo ?? true
         } as UserSettings;
       }
     } catch (error) {
