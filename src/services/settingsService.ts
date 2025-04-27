@@ -69,18 +69,26 @@ export const settingsService = {
           .single();
 
         if (insertError) throw insertError;
-        return newSettings as UserSettings;
+        
+        // Add the missing openai_activo property if it doesn't exist
+        const completeSettings: UserSettings = {
+          ...(newSettings as any),
+          openai_activo: newSettings.openai_activo ?? false
+        };
+        
+        return completeSettings;
       }
 
       if (error) throw error;
       
-      // Create a new object with the required properties and defaults
+      // Create a new object with all required properties and defaults
+      // Use type assertion after adding the missing property
       const userSettings: UserSettings = {
-        ...settings,
+        ...(settings as any),
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: settings.openai_activo ?? false, // Add default if missing
+        openai_activo: settings.openai_activo ?? false // Add default if missing
       };
       
       return userSettings;
@@ -140,11 +148,12 @@ export const settingsService = {
           description: "Configuración creada correctamente",
         });
 
-        // Create a new object with the required properties and defaults
+        // Create a new object with all required properties and defaults
+        // Use type assertion after adding the missing property
         const userSettings: UserSettings = {
-          ...data,
+          ...(data as any),
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? false, // Add default if missing
+          openai_activo: data.openai_activo ?? false // Add default if missing
         };
         
         return userSettings;
@@ -163,11 +172,12 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
-        // Create a new object with the required properties and defaults
+        // Create a new object with all required properties and defaults
+        // Use type assertion after adding the missing property
         const userSettings: UserSettings = {
-          ...data,
+          ...(data as any),
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? false, // Add default if missing
+          openai_activo: data.openai_activo ?? false // Add default if missing
         };
         
         return userSettings;
