@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -76,17 +75,16 @@ export const settingsService = {
 
       if (error) throw error;
       
-      // Create a complete user settings object with all required properties
-      // Using type assertion with UserSettings to ensure proper typing
-      const completeSettings = {
+      // Add openai_activo with a default value to the settings object
+      const settingsWithOpenAI = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: settings.openai_activo ?? false
+        openai_activo: false  // Default value when not present
       };
       
-      return completeSettings as UserSettings;
+      return settingsWithOpenAI as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -114,13 +112,9 @@ export const settingsService = {
 
       if (checkError) throw checkError;
 
-      // Prepare the update data and make sure openai_activo is included
-      const updateData = {
-        ...settings,
-        // Explicitly include openai_activo if it was provided
-        ...(settings.openai_activo !== undefined && { openai_activo: settings.openai_activo })
-      };
-
+      // Prepare the update data specifically including openai_activo if provided
+      const updateData = { ...settings };
+      
       if (!existingSettings) {
         const defaultSettings = {
           usuario_id: userId,
@@ -152,6 +146,11 @@ export const settingsService = {
 
         return data as UserSettings;
       } else {
+        // Add openai_activo field explicitly if it's included in settings
+        if ('openai_activo' in settings) {
+          console.log("Updating openai_activo to:", settings.openai_activo);
+        }
+
         const { data, error } = await supabase
           .from('configuracion_usuario')
           .update(updateData)
@@ -172,7 +171,7 @@ export const settingsService = {
           umbral_temperatura: data.umbral_temperatura ?? 85,
           umbral_flujo: data.umbral_flujo ?? 600,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: data.openai_activo ?? false
+          openai_activo: 'openai_activo' in settings ? settings.openai_activo : false
         };
         
         return completeSettings as UserSettings;
