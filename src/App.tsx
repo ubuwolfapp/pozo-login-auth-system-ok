@@ -1,9 +1,7 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { LanguageProvider } from "./contexts/LanguageContext";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -23,100 +21,98 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <BrowserRouter>
-        <TooltipProvider>
-          <Routes>
-            <Route path="/" element={<Navigate to="/auth/login" replace />} />
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<Register />} />
-            
-            <Route 
-              path="/dashboard" 
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/tasks" 
-              element={
-                <ProtectedRoute>
-                  <Tasks />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/tasks/:id" 
-              element={
-                <ProtectedRoute>
-                  <TaskDetails />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/alerts" 
-              element={
-                <ProtectedRoute>
-                  <Alerts />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/reports" 
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <Settings />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/wells/:id" 
-              element={
-                <ProtectedRoute>
-                  <WellDetails />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/cameras" 
-              element={
-                <ProtectedRoute>
-                  <Cameras />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/map" 
-              element={
-                <ProtectedRoute>
-                  <Map />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/task-history" 
-              element={
-                <ProtectedRoute>
-                  <TaskHistory />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </TooltipProvider>
-      </BrowserRouter>
-    </LanguageProvider>
+    <BrowserRouter>
+      <TooltipProvider>
+        <Routes>
+          <Route path="/" element={<Navigate to="/auth/login" replace />} />
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tasks" 
+            element={
+              <ProtectedRoute>
+                <Tasks />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/tasks/:id" 
+            element={
+              <ProtectedRoute>
+                <TaskDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/alerts" 
+            element={
+              <ProtectedRoute>
+                <Alerts />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/wells/:id" 
+            element={
+              <ProtectedRoute>
+                <WellDetails />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/cameras" 
+            element={
+              <ProtectedRoute>
+                <Cameras />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/map" 
+            element={
+              <ProtectedRoute>
+                <Map />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/task-history" 
+            element={
+              <ProtectedRoute>
+                <TaskHistory />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+      </TooltipProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
