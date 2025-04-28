@@ -60,7 +60,7 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
-          openai_activo: false, // Default value
+          openai_activo: false,
         };
 
         const { data: newSettings, error: insertError } = await supabase
@@ -78,15 +78,15 @@ export const settingsService = {
       
       // Create a complete user settings object with all required properties
       // Using type assertion with UserSettings to ensure proper typing
-      const completeSettings: UserSettings = {
+      const completeSettings = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: false // Default value if not present in settings
+        openai_activo: settings.openai_activo ?? false
       };
       
-      return completeSettings;
+      return completeSettings as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -114,6 +114,13 @@ export const settingsService = {
 
       if (checkError) throw checkError;
 
+      // Prepare the update data and make sure openai_activo is included
+      const updateData = {
+        ...settings,
+        // Explicitly include openai_activo if it was provided
+        ...(settings.openai_activo !== undefined && { openai_activo: settings.openai_activo })
+      };
+
       if (!existingSettings) {
         const defaultSettings = {
           usuario_id: userId,
@@ -126,8 +133,8 @@ export const settingsService = {
           umbral_flujo: 600,
           idioma: 'español',
           simulacion_activa: true,
-          openai_activo: false, // Default value
-          ...settings
+          openai_activo: false,
+          ...updateData
         };
 
         const { data, error: insertError } = await supabase
@@ -147,7 +154,7 @@ export const settingsService = {
       } else {
         const { data, error } = await supabase
           .from('configuracion_usuario')
-          .update(settings)
+          .update(updateData)
           .eq('usuario_id', userId)
           .select()
           .single();
@@ -160,20 +167,15 @@ export const settingsService = {
         });
 
         // Create a complete settings object with all required properties
-        const completeSettings: UserSettings = {
+        const completeSettings = {
           ...data,
           umbral_temperatura: data.umbral_temperatura ?? 85,
           umbral_flujo: data.umbral_flujo ?? 600,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: false // Default value if not present in data
+          openai_activo: data.openai_activo ?? false
         };
         
-        // If openai_activo was explicitly provided in the settings update, use that value
-        if (settings.openai_activo !== undefined) {
-          completeSettings.openai_activo = settings.openai_activo;
-        }
-        
-        return completeSettings;
+        return completeSettings as UserSettings;
       }
     } catch (error) {
       console.error('Error updating settings:', error);
