@@ -15,6 +15,7 @@ export interface UserSettings {
   idioma: string;
   simulacion_activa: boolean;
   openai_activo: boolean;
+  created_at?: string;
 }
 
 export interface PozoUmbral {
@@ -76,13 +77,13 @@ export const settingsService = {
       if (error) throw error;
       
       // Create a complete user settings object with all required properties
-      const completeSettings = {
+      const completeSettings: UserSettings = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
         openai_activo: settings.openai_activo ?? false // Ensure the property exists
-      } as UserSettings;
+      };
       
       return completeSettings;
     } catch (error) {
@@ -157,12 +158,14 @@ export const settingsService = {
           description: "Configuración actualizada correctamente",
         });
 
-        // Ensure the openai_activo property is present
-        return {
+        // Create a complete settings object with all required properties
+        const completeSettings: UserSettings = {
           ...data,
           simulacion_activa: data.simulacion_activa ?? true,
           openai_activo: settings.openai_activo !== undefined ? settings.openai_activo : (data.openai_activo ?? false)
-        } as UserSettings;
+        };
+        
+        return completeSettings;
       }
     } catch (error) {
       console.error('Error updating settings:', error);
