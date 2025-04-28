@@ -4,7 +4,7 @@ import { toast } from "@/components/ui/use-toast";
 import { UserSettings } from "./types";
 
 export const userSettingsService = {
-  async getUserSettings() {
+  async getUserSettings(): Promise<UserSettings | null> {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -46,15 +46,16 @@ export const userSettingsService = {
 
       if (error) throw error;
       
-      const settingsWithOpenAI = {
+      // Ensure all fields have proper defaults
+      const settingsWithDefaults = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: false
+        openai_activo: settings.openai_activo ?? false
       };
       
-      return settingsWithOpenAI as UserSettings;
+      return settingsWithDefaults as UserSettings;
     } catch (error) {
       console.error('Error fetching user settings:', error);
       toast({
@@ -66,7 +67,7 @@ export const userSettingsService = {
     }
   },
 
-  async updateSettings(settings: Partial<UserSettings>) {
+  async updateSettings(settings: Partial<UserSettings>): Promise<UserSettings | null> {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -133,12 +134,13 @@ export const userSettingsService = {
           description: "Configuración actualizada correctamente",
         });
 
+        // Ensure all fields have proper defaults in the returned data
         const completeSettings = {
           ...data,
           umbral_temperatura: data.umbral_temperatura ?? 85,
           umbral_flujo: data.umbral_flujo ?? 600,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: 'openai_activo' in settings ? settings.openai_activo : false
+          openai_activo: 'openai_activo' in settings ? settings.openai_activo : (data.openai_activo ?? false)
         };
         
         return completeSettings as UserSettings;

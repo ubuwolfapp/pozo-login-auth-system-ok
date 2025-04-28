@@ -1,13 +1,13 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { settingsService } from "@/services/settingsService";
+import { settingsService, UserSettings } from "@/services/settingsService";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export const useAI = () => {
   const { language } = useLanguage();
   
   // Obtener la configuración de IA
-  const { data: settings } = useQuery({
+  const { data: settings } = useQuery<UserSettings | null>({
     queryKey: ['userSettings'],
     queryFn: settingsService.getUserSettings
   });

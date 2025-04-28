@@ -24,7 +24,7 @@ const Settings = () => {
   const { language, setLanguage, translations } = useLanguage();
 
   // Consultas para obtener configuraciones y pozos
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+  const { data: settings, isLoading: isLoadingSettings } = useQuery<UserSettings | null>({
     queryKey: ['userSettings'],
     queryFn: settingsService.getUserSettings
   });
@@ -77,7 +77,7 @@ const Settings = () => {
 
   // Mutaciones para actualizar
   const updateSettingsMutation = useMutation({
-    mutationFn: settingsService.updateSettings,
+    mutationFn: (data: Partial<UserSettings>) => settingsService.updateSettings(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['userSettings'] });
     },
