@@ -77,12 +77,13 @@ export const settingsService = {
       if (error) throw error;
       
       // Create a complete user settings object with all required properties
+      // Using type assertion with UserSettings to ensure proper typing
       const completeSettings: UserSettings = {
         ...settings,
         umbral_temperatura: settings.umbral_temperatura ?? 85,
         umbral_flujo: settings.umbral_flujo ?? 600,
         simulacion_activa: settings.simulacion_activa ?? true,
-        openai_activo: settings.openai_activo ?? false // Ensure the property exists
+        openai_activo: false // Default value if not present in settings
       };
       
       return completeSettings;
@@ -161,9 +162,16 @@ export const settingsService = {
         // Create a complete settings object with all required properties
         const completeSettings: UserSettings = {
           ...data,
+          umbral_temperatura: data.umbral_temperatura ?? 85,
+          umbral_flujo: data.umbral_flujo ?? 600,
           simulacion_activa: data.simulacion_activa ?? true,
-          openai_activo: settings.openai_activo !== undefined ? settings.openai_activo : (data.openai_activo ?? false)
+          openai_activo: false // Default value if not present in data
         };
+        
+        // If openai_activo was explicitly provided in the settings update, use that value
+        if (settings.openai_activo !== undefined) {
+          completeSettings.openai_activo = settings.openai_activo;
+        }
         
         return completeSettings;
       }
