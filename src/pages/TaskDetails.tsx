@@ -8,11 +8,10 @@ import { Task, taskService } from "@/services/taskService";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Image, FileText, Clock, FolderOpen, Download, ArrowLeft, Trash } from 'lucide-react';
+import { Image, FileText, Clock, FolderOpen, Download, ArrowLeft } from 'lucide-react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NavigationBar from "@/components/NavigationBar";
 import { format } from 'date-fns';
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 const TaskDetails = () => {
   const { id } = useParams();
@@ -130,25 +129,6 @@ const TaskDetails = () => {
       });
     }
     setIsSaving(false);
-  };
-
-  const handleDeleteTask = async () => {
-    try {
-      if (!task) return;
-      await taskService.deleteTask(task.id);
-      toast({
-        title: "Tarea eliminada",
-        description: "La tarea ha sido eliminada correctamente"
-      });
-      navigate('/tasks');
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar la tarea",
-        variant: "destructive"
-      });
-    }
   };
 
   if (isLoading) {
@@ -364,38 +344,6 @@ const TaskDetails = () => {
                     {isSaving ? "Guardando..." : "Marcar como Resuelta"}
                   </Button>
                 </div>
-              </div>
-            )}
-
-            {task.estado === 'resuelta' && (
-              <div className="mt-4">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <Trash className="h-4 w-4 mr-2" />
-                      Eliminar Tarea
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-slate-800 text-white border-slate-700">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                      <AlertDialogDescription className="text-gray-400">
-                        Esta acción no se puede deshacer.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-slate-700 hover:bg-slate-600">
-                        Cancelar
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteTask}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Eliminar
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             )}
 
