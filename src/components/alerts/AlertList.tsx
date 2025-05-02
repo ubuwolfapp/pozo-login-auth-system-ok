@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AlertTriangle, Check, Image, FileText, Trash } from 'lucide-react';
 import { format } from 'date-fns';
@@ -62,7 +63,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
   };
 
   const handleResolveClick = async () => {
-    if (!selectedAlert) return;
+    if (!selectedAlert || !onAlertResolved) return;
     
     try {
       setIsSubmitting(true);
@@ -75,6 +76,14 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileExt = photoFile.name.split('.').pop();
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-photos/${selectedAlert.id}/${fileName}`;
+
+          // Asegurar que el bucket existe antes de subir
+          await supabase.storage.createBucket('alert-photos', {
+            public: true
+          }).catch(err => {
+            // Si el bucket ya existe, ignoramos el error
+            console.log('Bucket already exists or error:', err);
+          });
 
           const { error: uploadError } = await supabase.storage
             .from('alert-photos')
@@ -108,6 +117,14 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-docs/${selectedAlert.id}/${fileName}`;
 
+          // Asegurar que el bucket existe antes de subir
+          await supabase.storage.createBucket('alert-docs', {
+            public: true
+          }).catch(err => {
+            // Si el bucket ya existe, ignoramos el error
+            console.log('Bucket already exists or error:', err);
+          });
+
           const { error: uploadError } = await supabase.storage
             .from('alert-docs')
             .upload(filePath, documentFile);
@@ -136,9 +153,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
       
       console.log("Resolving alert:", selectedAlert.id, "Resolution text:", resolutionText);
       
-      if (onAlertResolved) {
-        await onAlertResolved(selectedAlert.id, resolutionText, photoUrl, docUrl);
-      }
+      await onAlertResolved(selectedAlert.id, resolutionText, photoUrl, docUrl);
       
       setSelectedAlert(null);
       setResolutionText("");
@@ -249,7 +264,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
         ))}
       </div>
 
-      <Dialog open={!!selectedAlert} onOpenChange={() => setSelectedAlert(null)}>
+      <Dialog open={!!selectedAlert} onOpenChange={(open) => !open && setSelectedAlert(null)}>
         <DialogContent className="bg-[#1C2526] text-white border-gray-700">
           <DialogHeader>
             <DialogTitle>Resolver Alerta</DialogTitle>
