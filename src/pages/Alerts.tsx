@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -129,10 +128,10 @@ const Alerts = () => {
         console.error('Error updating alert in database:', error);
         toast({
           title: "Error",
-          description: "No se pudo guardar la resolución de la alerta",
+          description: "No se pudo guardar la resolución de la alerta: " + error.message,
           variant: "destructive"
         });
-        throw error;
+        return; // Salir de la función para evitar mostrar mensaje de éxito
       }
       
       toast({
@@ -140,15 +139,16 @@ const Alerts = () => {
         description: "La alerta ha sido marcada como resuelta"
       });
       
+      // Invalidar la caché para refrescar los datos
       await queryClient.invalidateQueries({
         queryKey: ['alerts']
       });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resolving alert:', error);
       toast({
         title: "Error",
-        description: "Ocurrió un error al resolver la alerta",
+        description: "Ocurrió un error al resolver la alerta: " + (error.message || 'Error desconocido'),
         variant: "destructive"
       });
     }

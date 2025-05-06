@@ -77,13 +77,22 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-photos/${selectedAlert.id}/${fileName}`;
 
-          // Asegurar que el bucket existe antes de subir
-          await supabase.storage.createBucket('alert-photos', {
-            public: true
-          }).catch(err => {
-            // Si el bucket ya existe, ignoramos el error
-            console.log('Bucket already exists or error:', err);
-          });
+          // Verificar si el bucket ya existe antes de intentar crearlo
+          const { data: existingBuckets } = await supabase
+            .storage
+            .listBuckets();
+          
+          const photoBucketExists = existingBuckets?.some(bucket => bucket.name === 'alert-photos');
+          
+          // Crear el bucket solo si no existe
+          if (!photoBucketExists) {
+            await supabase.storage
+              .createBucket('alert-photos', {
+                public: true
+              }).catch(err => {
+                console.log('Error al crear bucket de fotos:', err);
+              });
+          }
 
           const { error: uploadError } = await supabase.storage
             .from('alert-photos')
@@ -117,13 +126,22 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-docs/${selectedAlert.id}/${fileName}`;
 
-          // Asegurar que el bucket existe antes de subir
-          await supabase.storage.createBucket('alert-docs', {
-            public: true
-          }).catch(err => {
-            // Si el bucket ya existe, ignoramos el error
-            console.log('Bucket already exists or error:', err);
-          });
+          // Verificar si el bucket ya existe antes de intentar crearlo
+          const { data: existingBuckets } = await supabase
+            .storage
+            .listBuckets();
+          
+          const docBucketExists = existingBuckets?.some(bucket => bucket.name === 'alert-docs');
+          
+          // Crear el bucket solo si no existe
+          if (!docBucketExists) {
+            await supabase.storage
+              .createBucket('alert-docs', {
+                public: true
+              }).catch(err => {
+                console.log('Error al crear bucket de documentos:', err);
+              });
+          }
 
           const { error: uploadError } = await supabase.storage
             .from('alert-docs')
@@ -151,16 +169,17 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
         }
       }
       
-      console.log("Resolving alert:", selectedAlert.id, "Resolution text:", resolutionText);
+      console.log("Resolviendo alerta:", selectedAlert.id, "Texto de resolución:", resolutionText);
       
       await onAlertResolved(selectedAlert.id, resolutionText, photoUrl, docUrl);
       
-      setSelectedAlert(null);
+      // Limpiar todo después de resolver
       setResolutionText("");
       setPhotoFile(null);
       setDocumentFile(null);
+      setSelectedAlert(null);
     } catch (error) {
-      console.error("Error resolving alert:", error);
+      console.error("Error resolviendo alerta:", error);
       toast({
         title: "Error",
         description: "No se pudo resolver la alerta",
