@@ -178,6 +178,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
       }
       
       console.log("Resolviendo alerta:", selectedAlert.id, "Texto de resolución:", resolutionText);
+      console.log("URL de foto:", photoUrl, "URL de documento:", docUrl);
       
       await onAlertResolved(selectedAlert.id, resolutionText, photoUrl, docUrl);
       
