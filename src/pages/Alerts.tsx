@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import PressureChart from '@/components/PressureChart';
@@ -109,13 +110,27 @@ const Alerts = () => {
     try {
       const fecha_resolucion = new Date().toISOString();
       
-      const updateData = {
+      // Prepare the update data object
+      const updateData: {
+        resuelto: boolean;
+        resolucion: string;
+        fecha_resolucion: string;
+        foto_url?: string | null;
+        doc_url?: string | null;
+      } = {
         resuelto: true,
         resolucion: resolutionText,
-        fecha_resolucion,
-        foto_url: photoUrl || null,
-        doc_url: docUrl || null
+        fecha_resolucion
       };
+      
+      // Only add photo_url and doc_url if they exist
+      if (photoUrl !== undefined) {
+        updateData.foto_url = photoUrl;
+      }
+      
+      if (docUrl !== undefined) {
+        updateData.doc_url = docUrl;
+      }
       
       console.log('Updating alert in database:', alertId, 'with data:', updateData);
       
@@ -131,7 +146,7 @@ const Alerts = () => {
           description: "No se pudo guardar la resolución de la alerta: " + error.message,
           variant: "destructive"
         });
-        return; // Salir de la función para evitar mostrar mensaje de éxito
+        return; // Exit function to avoid showing success message
       }
       
       toast({
@@ -139,7 +154,7 @@ const Alerts = () => {
         description: "La alerta ha sido marcada como resuelta"
       });
       
-      // Invalidar la caché para refrescar los datos
+      // Invalidate cache to refresh data
       await queryClient.invalidateQueries({
         queryKey: ['alerts']
       });

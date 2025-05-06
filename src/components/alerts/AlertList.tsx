@@ -77,14 +77,14 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-photos/${selectedAlert.id}/${fileName}`;
 
-          // Verificar si el bucket ya existe antes de intentar crearlo
+          // Check if bucket exists before trying to create it
           const { data: existingBuckets } = await supabase
             .storage
             .listBuckets();
           
           const photoBucketExists = existingBuckets?.some(bucket => bucket.name === 'alert-photos');
           
-          // Crear el bucket solo si no existe
+          // Create bucket only if it doesn't exist
           if (!photoBucketExists) {
             await supabase.storage
               .createBucket('alert-photos', {
@@ -98,7 +98,10 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
             .from('alert-photos')
             .upload(filePath, photoFile);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Error uploading photo:', uploadError);
+            throw uploadError;
+          }
 
           const { data: { publicUrl } } = supabase.storage
             .from('alert-photos')
@@ -117,6 +120,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
             description: "No se pudo subir la foto",
             variant: "destructive"
           });
+          // Continue execution, we'll just proceed without the photo
         }
       }
 
@@ -126,14 +130,14 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `alert-docs/${selectedAlert.id}/${fileName}`;
 
-          // Verificar si el bucket ya existe antes de intentar crearlo
+          // Check if bucket exists before trying to create it
           const { data: existingBuckets } = await supabase
             .storage
             .listBuckets();
           
           const docBucketExists = existingBuckets?.some(bucket => bucket.name === 'alert-docs');
           
-          // Crear el bucket solo si no existe
+          // Create bucket only if it doesn't exist
           if (!docBucketExists) {
             await supabase.storage
               .createBucket('alert-docs', {
@@ -147,7 +151,10 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
             .from('alert-docs')
             .upload(filePath, documentFile);
 
-          if (uploadError) throw uploadError;
+          if (uploadError) {
+            console.error('Error uploading document:', uploadError);
+            throw uploadError;
+          }
 
           const { data: { publicUrl } } = supabase.storage
             .from('alert-docs')
@@ -166,6 +173,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
             description: "No se pudo subir el documento",
             variant: "destructive"
           });
+          // Continue execution, we'll just proceed without the document
         }
       }
       
@@ -173,7 +181,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
       
       await onAlertResolved(selectedAlert.id, resolutionText, photoUrl, docUrl);
       
-      // Limpiar todo después de resolver
+      // Clean up everything after resolving
       setResolutionText("");
       setPhotoFile(null);
       setDocumentFile(null);
