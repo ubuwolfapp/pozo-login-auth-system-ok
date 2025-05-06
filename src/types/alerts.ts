@@ -17,6 +17,8 @@ export interface Alert {
   };
   unidad?: string | null;
   valor?: number | null;
+  foto_url?: string | null;
+  doc_url?: string | null;
 }
 
 export type AlertFromDatabase = Database['public']['Tables']['alertas']['Row'] & {

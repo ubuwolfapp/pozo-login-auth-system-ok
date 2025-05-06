@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import ResolutionDetailsModal from './ResolutionDetailsModal';
 
 interface AlertListProps {
   alerts: Alert[] | undefined;
@@ -26,6 +27,7 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [photoFile, setPhotoFile] = React.useState<File | null>(null);
   const [documentFile, setDocumentFile] = React.useState<File | null>(null);
+  const [viewingResolvedAlert, setViewingResolvedAlert] = React.useState<Alert | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -245,10 +247,13 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
                     Resolver
                   </Button>
                 ) : (
-                  <span className="text-white flex items-center">
-                    <Check className="h-4 w-4 mr-1" />
-                    Resuelta
-                  </span>
+                  <Button
+                    onClick={() => setViewingResolvedAlert(alert)}
+                    variant="secondary"
+                    className="bg-[#2F4F4F] hover:bg-[#3A5A5A] text-white"
+                  >
+                    Ver Detalles
+                  </Button>
                 )}
                 
                 {onDeleteAlert && (
@@ -352,6 +357,12 @@ const AlertList = ({ alerts, isLoading, onAlertResolved, onDeleteAlert }: AlertL
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ResolutionDetailsModal
+        alert={viewingResolvedAlert}
+        open={!!viewingResolvedAlert}
+        onClose={() => setViewingResolvedAlert(null)}
+      />
     </>
   );
 };
